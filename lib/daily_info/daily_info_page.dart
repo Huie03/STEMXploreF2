@@ -196,7 +196,7 @@ class _DailyChallengePageState extends State<DailyInfoPage> {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              isEnglish ? 'Did you know?' : 'Tahukah anda?',
+              isEnglish ? 'Do you know' : 'Tahukah anda',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
