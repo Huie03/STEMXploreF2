@@ -7,14 +7,14 @@ import '/navigation_provider.dart';
 import 'package:stemxploref2/widgets/curved_navigation_bar.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart'; // Import the toggle
 
-class Challenge {
+class Info {
   final String titleEn;
   final String titleMs;
   final String factEn;
   final String factMs;
   final String imagePath;
 
-  Challenge({
+  Info({
     required this.titleEn,
     required this.titleMs,
     required this.factEn,
@@ -23,20 +23,20 @@ class Challenge {
   });
 }
 
-class DailyChallengePage extends StatefulWidget {
-  static const routeName = '/daily-challenge';
-  const DailyChallengePage({super.key});
+class DailyInfoPage extends StatefulWidget {
+  static const routeName = '/daily-info';
+  const DailyInfoPage({super.key});
 
   @override
-  State<DailyChallengePage> createState() => _DailyChallengePageState();
+  State<DailyInfoPage> createState() => _DailyChallengePageState();
 }
 
-class _DailyChallengePageState extends State<DailyChallengePage> {
+class _DailyChallengePageState extends State<DailyInfoPage> {
   bool _isCompleted = false;
   bool _isLoading = true;
 
-  final List<Challenge> _challenges = [
-    Challenge(
+  final List<Info> _challenges = [
+    Info(
       titleEn: 'Nutrition',
       titleMs: 'Nutrisi',
       factEn:
@@ -45,7 +45,7 @@ class _DailyChallengePageState extends State<DailyChallengePage> {
           'Karbohidrat adalah sumber tenaga utama bagi tubuh kita dan membantu kita kekal aktif. Makanan seperti nasi, roti dan buah-buahan mengandungi karbohidrat. Pengambilan makanan seimbang membantu tubuh kita membesar dengan sihat dan kuat.',
       imagePath: 'assets/images/nutrition.png',
     ),
-    Challenge(
+    Info(
       titleEn: 'Biodiversity',
       titleMs: 'Kepelbagaian Biologi',
       factEn:
@@ -54,7 +54,7 @@ class _DailyChallengePageState extends State<DailyChallengePage> {
           'Kepelbagaian biologi merujuk kepada kepelbagaian organisma hidup seperti tumbuhan dan haiwan dalam sesuatu habitat dan membantu mengekalkan kestabilan ekosistem. Hutan yang mempunyai pelbagai spesies biasanya lebih sihat.',
       imagePath: 'assets/images/biodiversity.png',
     ),
-    Challenge(
+    Info(
       titleEn: 'Ecosystem',
       titleMs: 'Ekosistem',
       factEn:
@@ -103,7 +103,7 @@ class _DailyChallengePageState extends State<DailyChallengePage> {
 
     final int dayIndex = DateTime.now().day % _challenges.length;
     final currentChallenge = _challenges[dayIndex];
-    final String title = isEnglish ? 'Daily Challenge' : 'Cabaran Harian';
+    final String title = isEnglish ? 'Daily Info' : 'Maklumat Harian';
 
     return Scaffold(
       body: GradientBackground(
@@ -112,11 +112,10 @@ class _DailyChallengePageState extends State<DailyChallengePage> {
             children: [
               // --- CUSTOM APP BAR ---
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const SizedBox(width: 50),
                     Text(
                       title,
                       style: const TextStyle(
@@ -160,7 +159,7 @@ class _DailyChallengePageState extends State<DailyChallengePage> {
     );
   }
 
-  Widget _buildChallengeCard(Challenge challenge, bool isEnglish) {
+  Widget _buildChallengeCard(Info info, bool isEnglish) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -178,8 +177,8 @@ class _DailyChallengePageState extends State<DailyChallengePage> {
         children: [
           Text(
             isEnglish
-                ? 'STEM Fact of the Day – ${challenge.titleEn}'
-                : 'Fakta STEM Hari Ini – ${challenge.titleMs}',
+                ? 'STEM Fact of the Day – ${info.titleEn}'
+                : 'Fakta STEM Hari Ini – ${info.titleMs}',
             textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
@@ -187,7 +186,7 @@ class _DailyChallengePageState extends State<DailyChallengePage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Image.asset(
-              challenge.imagePath,
+              info.imagePath,
               height: 160,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -203,7 +202,7 @@ class _DailyChallengePageState extends State<DailyChallengePage> {
           ),
           const SizedBox(height: 5),
           Text(
-            isEnglish ? challenge.factEn : challenge.factMs,
+            isEnglish ? info.factEn : info.factMs,
             textAlign: TextAlign.justify,
             style: const TextStyle(fontSize: 15, height: 1.4),
           ),

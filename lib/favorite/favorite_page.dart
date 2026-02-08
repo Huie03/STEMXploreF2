@@ -4,17 +4,17 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import '/widgets/gradient_background.dart';
 import '/widgets/language_toggle.dart';
-import '/bookmark/bookmark_provider.dart';
+import 'favorite_provider.dart';
 
-class BookmarkPage extends StatefulWidget {
-  static const String routeName = '/bookmark';
-  const BookmarkPage({super.key});
+class FavoritePage extends StatefulWidget {
+  static const String routeName = '/favorite';
+  const FavoritePage({super.key});
 
   @override
-  State<BookmarkPage> createState() => _BookmarkPageState();
+  State<FavoritePage> createState() => _FavoritePageState();
 }
 
-class _BookmarkPageState extends State<BookmarkPage> {
+class _FavoritePageState extends State<FavoritePage> {
   @override
   Widget build(BuildContext context) {
     final localization = FlutterLocalization.instance;
@@ -22,8 +22,8 @@ class _BookmarkPageState extends State<BookmarkPage> {
         localization.currentLocale?.languageCode == 'en' ||
         localization.currentLocale == null;
 
-    final bookmarkProvider = context.watch<BookmarkProvider>();
-    final bookmarks = bookmarkProvider.bookmarks;
+    final favoriteProvider = context.watch<FavoriteProvider>();
+    final favorites = favoriteProvider.bookmarks;
 
     return Scaffold(
       body: GradientBackground(
@@ -31,7 +31,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
           child: Column(
             children: [
               // Exact same header logic as InfoPage
-              _buildCustomAppBar(isEnglish ? "Bookmark" : "Penanda Buku"),
+              _buildCustomAppBar(isEnglish ? "Favorite" : "Kegemaran"),
               const SizedBox(height: 20),
 
               Padding(
@@ -53,9 +53,9 @@ class _BookmarkPageState extends State<BookmarkPage> {
               const SizedBox(height: 15),
 
               Expanded(
-                child: bookmarks.isEmpty
+                child: favorites.isEmpty
                     ? _buildNoRecordContainer(isEnglish)
-                    : _buildBookmarkList(context, bookmarks, isEnglish),
+                    : _buildFavoriteList(context, favorites, isEnglish),
               ),
             ],
           ),
@@ -67,11 +67,10 @@ class _BookmarkPageState extends State<BookmarkPage> {
   // UPDATED: Matches InfoPage structure and padding exactly
   Widget _buildCustomAppBar(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const SizedBox(width: 50), // Matches InfoPage
           Text(
             title,
             style: const TextStyle(
@@ -120,16 +119,16 @@ class _BookmarkPageState extends State<BookmarkPage> {
     );
   }
 
-  Widget _buildBookmarkList(
+  Widget _buildFavoriteList(
     BuildContext context,
-    List<Map<String, String>> bookmarks,
+    List<Map<String, String>> favorites,
     bool isEnglish,
   ) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 25),
-      itemCount: bookmarks.length,
+      itemCount: favorites.length,
       itemBuilder: (context, index) {
-        final item = bookmarks[index];
+        final item = favorites[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 15),
           child: Slidable(
@@ -140,10 +139,10 @@ class _BookmarkPageState extends State<BookmarkPage> {
               children: [
                 SlidableAction(
                   onPressed: (context) {
-                    Provider.of<BookmarkProvider>(
+                    Provider.of<FavoriteProvider>(
                       context,
                       listen: false,
-                    ).toggleBookmark(item);
+                    ).toggleFavorite(item);
                   },
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,

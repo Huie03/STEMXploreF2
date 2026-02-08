@@ -100,15 +100,13 @@ class _SettingsPageState extends State<SettingsPage> {
   // Consistent AppBar Logic used in FAQ and Bookmark pages
   Widget _buildCustomAppBar(String title, bool isEnglish) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const SizedBox(width: 50), // Spacer to balance the layout
           Expanded(
             child: Text(
               title,
-              textAlign: TextAlign.center,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 22,

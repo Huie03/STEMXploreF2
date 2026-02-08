@@ -49,10 +49,10 @@ class _InfoPageState extends State<InfoPage> {
                       const SizedBox(height: 10),
                       Image.asset(
                         'assets/images/Logo_F2_2.png',
-                        height: 220,
+                        height: 280,
                         fit: BoxFit.contain,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 15),
                       Text(
                         description,
                         textAlign: TextAlign.justify,
@@ -62,7 +62,7 @@ class _InfoPageState extends State<InfoPage> {
                           color: Colors.black,
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 45),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -93,11 +93,10 @@ class _InfoPageState extends State<InfoPage> {
 
   Widget _buildCustomAppBar(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const SizedBox(width: 50),
           Text(
             title,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),

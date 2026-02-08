@@ -11,14 +11,14 @@ import 'stem_info/stem_info_page.dart';
 import 'learning_materials/learning_materials_page.dart';
 import 'quiz_game/quiz_game_page.dart';
 import 'pages/stem_careers_page.dart';
-import 'daily_challenge/daily_challenge_page.dart';
+import 'daily_info/daily_info_page.dart';
 import 'pages/faq_page.dart';
-import 'bookmark/bookmark_page.dart';
+import 'favorite/favorite_page.dart';
 import 'pages/info_page.dart';
 import 'pages/settings_page.dart';
 import 'stem_highlights/highlight.dart';
 import 'stem_highlights/highlight_detail_page.dart';
-import 'bookmark/bookmark_provider.dart';
+import 'favorite/favorite_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +29,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => BookmarkProvider()),
+        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
       ],
       child: const STEMXploreApp(),
     ),
@@ -73,10 +73,10 @@ class _STEMXploreAppState extends State<STEMXploreApp> {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFEDFB1),
-          primary: const Color(0xFFFEDFB1),
+          seedColor: const Color(0xFFEFA638),
+          primary: const Color(0xFFEFA638),
         ),
-        scaffoldBackgroundColor: const Color(0xFFFEDFB1),
+        scaffoldBackgroundColor: const Color(0xFFEFA638),
 
         // ADD THIS SECTION TO REMOVE THE ICON BACKGROUND
         navigationBarTheme: NavigationBarThemeData(
@@ -96,9 +96,9 @@ class _STEMXploreAppState extends State<STEMXploreApp> {
         LearningMaterialPage.routeName: (_) => const LearningMaterialPage(),
         QuizGamePage.routeName: (_) => const QuizGamePage(),
         StemCareersPage.routeName: (_) => const StemCareersPage(),
-        DailyChallengePage.routeName: (_) => const DailyChallengePage(),
+        DailyInfoPage.routeName: (_) => const DailyInfoPage(),
         FaqPage.routeName: (_) => const FaqPage(),
-        BookmarkPage.routeName: (_) => const BookmarkPage(),
+        FavoritePage.routeName: (_) => const FavoritePage(),
         InfoPage.routeName: (_) => const InfoPage(),
         SettingsPage.routeName: (_) => SettingsPage(),
       },

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/gradient_background.dart';
 import '/navigation_provider.dart';
-import 'package:stemxploref2/bookmark/bookmark_provider.dart';
+import 'package:stemxploref2/favorite/favorite_provider.dart';
 import 'package:stemxploref2/widgets/curved_navigation_bar.dart';
 
 class MaterialDetailPage extends StatefulWidget {
@@ -18,7 +18,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
   final String _currentChapter = "Chapter 3 - Nutrition";
 
   void _handleBookmark() {
-    final bookmarkProvider = Provider.of<BookmarkProvider>(
+    final bookmarkProvider = Provider.of<FavoriteProvider>(
       context,
       listen: false,
     );
@@ -29,10 +29,10 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
       "image": 'assets/images/science_book_cover.png',
     };
 
-    bookmarkProvider.toggleBookmark(materialData);
+    bookmarkProvider.toggleFavorite(materialData);
 
     // Show popup only if we just added the bookmark
-    if (bookmarkProvider.isBookmarked(_currentTitle, _currentChapter)) {
+    if (bookmarkProvider.isFavorited(_currentTitle, _currentChapter)) {
       setState(() => _showPopup = true);
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) setState(() => _showPopup = false);
@@ -42,7 +42,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isBookmarked = context.watch<BookmarkProvider>().isBookmarked(
+    final isBookmarked = context.watch<FavoriteProvider>().isFavorited(
       _currentTitle,
       _currentChapter,
     );

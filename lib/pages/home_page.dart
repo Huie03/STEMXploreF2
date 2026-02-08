@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
     {'key': 'learning', 'icon': 'assets/icons/2.png', 'index': 5},
     {'key': 'quiz', 'icon': 'assets/icons/3.png', 'index': 6},
     {'key': 'careers', 'icon': 'assets/icons/4.png', 'index': 7},
-    {'key': 'challenge', 'icon': 'assets/icons/5.png', 'index': 8},
+    {'key': 'info', 'icon': 'assets/icons/5.png', 'index': 8},
     {'key': 'faq', 'icon': 'assets/icons/6.png', 'index': 9},
   ];
 
@@ -83,7 +83,7 @@ class _HomePageState extends State<HomePage> {
       'learning': {'en': 'Learning Material', 'ms': 'Bahan Pembelajaran'},
       'quiz': {'en': 'Quiz Game', 'ms': 'Permainan Kuiz'},
       'careers': {'en': 'STEM Careers', 'ms': 'Kerjaya STEM'},
-      'challenge': {'en': 'Daily Challenge', 'ms': 'Cabaran Harian'},
+      'info': {'en': 'Daily Info', 'ms': 'Maklumat Harian'},
       'faq': {'en': 'FAQ', 'ms': 'Soalan Lazim'},
       'highlights': {'en': 'STEM Highlights:', 'ms': 'Sorotan STEM:'},
       'readMore': {'en': 'Read more', 'ms': 'Baca lagi'},
@@ -127,7 +127,7 @@ class _HomePageState extends State<HomePage> {
                           crossAxisCount: 2, // Fixed at 2 columns as requested
                           mainAxisSpacing: 15,
                           crossAxisSpacing: 15,
-                          childAspectRatio: 1.3,
+                          childAspectRatio: 1.2,
                           physics: const NeverScrollableScrollPhysics(),
                           children: _features.map((feature) {
                             return FeatureButton(
@@ -139,8 +139,8 @@ class _HomePageState extends State<HomePage> {
                           }).toList(),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      const Divider(thickness: 1, height: 15),
+                      const SizedBox(height: 20),
+                      const Divider(thickness: 1, height: 20),
                       _buildHighlightsSection(isEnglish, isTablet),
                     ],
                   ),
@@ -243,7 +243,7 @@ class _HomePageState extends State<HomePage> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: const BoxDecoration(
-                  color: Color.fromARGB(255, 241, 175, 20),
+                  color: Color(0xFFF2C458),
                   shape: BoxShape.circle,
                 ),
                 child: RichText(
@@ -276,7 +276,7 @@ class _HomePageState extends State<HomePage> {
     return GestureDetector(
       onTap: () => widget.onHighlightTap(h),
       child: Container(
-        width: 260,
+        width: 280,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -316,7 +316,7 @@ class _HomePageState extends State<HomePage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 5),
                     Text(
                       isEnglish ? h.subtitle : h.subtitleMs,
                       style: const TextStyle(

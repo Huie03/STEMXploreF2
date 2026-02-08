@@ -2,57 +2,57 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // Required for jsonEncode and jsonDecode
 
-class BookmarkProvider with ChangeNotifier {
-  List<Map<String, String>> _bookmarks = [];
+class FavoriteProvider with ChangeNotifier {
+  List<Map<String, String>> _favorites = [];
 
-  List<Map<String, String>> get bookmarks => _bookmarks;
+  List<Map<String, String>> get bookmarks => _favorites;
 
-  BookmarkProvider() {
-    _loadBookmarks(); // Load saved data as soon as the app starts
+  FavoriteProvider() {
+    _loadFavorites(); // Load saved data as soon as the app starts
   }
 
   // Save to local storage
   Future<void> _saveToPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     // Convert the List of Maps into a JSON string
-    String encodedData = jsonEncode(_bookmarks);
-    await prefs.setString('user_bookmarks', encodedData);
+    String encodedData = jsonEncode(_favorites);
+    await prefs.setString('user_favorites', encodedData);
   }
 
   // Load from local storage
-  Future<void> _loadBookmarks() async {
+  Future<void> _loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
-    String? savedData = prefs.getString('user_bookmarks');
+    String? savedData = prefs.getString('user_favorites');
 
     if (savedData != null) {
       // Decode the JSON string back into a List of Maps
       List<dynamic> decodedData = jsonDecode(savedData);
-      _bookmarks = decodedData
+      _favorites = decodedData
           .map((item) => Map<String, String>.from(item))
           .toList();
       notifyListeners();
     }
   }
 
-  void toggleBookmark(Map<String, String> material) {
-    final index = _bookmarks.indexWhere(
+  void toggleFavorite(Map<String, String> material) {
+    final index = _favorites.indexWhere(
       (m) =>
           m['title'] == material['title'] &&
           m['chapter'] == material['chapter'],
     );
 
     if (index >= 0) {
-      _bookmarks.removeAt(index);
+      _favorites.removeAt(index);
     } else {
-      _bookmarks.add(material);
+      _favorites.add(material);
     }
 
     _saveToPrefs(); // Save changes to the phone's memory
     notifyListeners();
   }
 
-  bool isBookmarked(String title, String chapter) {
-    return _bookmarks.any(
+  bool isFavorited(String title, String chapter) {
+    return _favorites.any(
       (m) => m['title'] == title && m['chapter'] == chapter,
     );
   }

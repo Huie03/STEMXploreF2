@@ -26,7 +26,7 @@ class _StemInfoPageState extends State<StemInfoPage> {
     final List<Map<String, String>> stemData = isEnglish
         ? [
             {
-              'title': 'Watch: What is STEM?',
+              'title': 'Video: STEM Meaning',
               'preview':
                   'Learn what STEM means and how Science, Technology, Engineering, and Math work together. '
                   'See simple examples of how STEM is used in real life.\n\n'
@@ -42,7 +42,7 @@ class _StemInfoPageState extends State<StemInfoPage> {
               'detailImage': 'assets/images/STEM 2.png',
             },
             {
-              'title': 'Did you know importance of STEM?',
+              'title': 'Importance of STEM',
               'preview':
                   'STEM is important because it helps students understand the world, encourages innovation, and equips them with skills for modern jobs.',
               'detailImage': ' ',
@@ -62,7 +62,7 @@ class _StemInfoPageState extends State<StemInfoPage> {
           ]
         : [
             {
-              'title': 'Tonton: Apakah itu STEM?',
+              'title': 'Video: Maksud STEM',
               'preview':
                   'Ketahui maksud STEM dan bagaimana Sains, Teknologi, Kejuruteraan, dan Matematik berfungsi bersama. '
                   'Lihat contoh mudah bagaimana STEM digunakan dalam kehidupan sebenar.\n\n'
@@ -78,7 +78,7 @@ class _StemInfoPageState extends State<StemInfoPage> {
               'detailImage': 'assets/images/STEM 2.png',
             },
             {
-              'title': 'Tahukah anda kepentingan STEM?',
+              'title': 'Kepentingan STEM',
               'preview':
                   'STEM adalah penting kerana ia membantu murid memahami dunia, menggalakkan inovasi, dan melengkapi mereka dengan kemahiran untuk kerjaya moden.',
               'detailImage': ' ',
@@ -105,11 +105,10 @@ class _StemInfoPageState extends State<StemInfoPage> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const SizedBox(width: 50),
                     Text(
                       title,
                       style: const TextStyle(

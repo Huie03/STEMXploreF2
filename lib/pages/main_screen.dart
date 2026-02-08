@@ -5,14 +5,14 @@ import '/widgets/curved_navigation_bar.dart';
 
 // Page Imports
 import 'home_page.dart';
-import '../bookmark/bookmark_page.dart';
+import '../favorite/favorite_page.dart';
 import 'info_page.dart';
 import 'settings_page.dart';
 import '/stem_info/stem_info_page.dart';
 import '/learning_materials/learning_materials_page.dart';
 import '/quiz_game/quiz_game_page.dart';
 import '/pages/stem_careers_page.dart';
-import '/daily_challenge/daily_challenge_page.dart';
+import '../daily_info/daily_info_page.dart';
 import '/pages/faq_page.dart';
 import '/stem_highlights/highlight_detail_page.dart';
 
@@ -40,14 +40,14 @@ class _MainScreenState extends State<MainScreen> {
 
     final List<Widget> pages = [
       HomePage(onHighlightTap: onHighlightSelected), // 0
-      const BookmarkPage(), // 1
+      const FavoritePage(), // 1
       const InfoPage(), // 2
       const SettingsPage(), // 3
       const StemInfoPage(), // 4
       const LearningMaterialPage(), // 5
       const QuizGamePage(), // 6
       const StemCareersPage(), // 7
-      const DailyChallengePage(), // 8
+      const DailyInfoPage(), // 8
       const FaqPage(), // 9
 
       selectedHighlight != null

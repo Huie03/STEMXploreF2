@@ -45,7 +45,7 @@ class FeatureButton extends StatelessWidget {
                     height: imageSize,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(

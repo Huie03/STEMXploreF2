@@ -270,7 +270,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
   // Data helpers to keep build clean
   List<Map<String, String>> _getEnglishData() => [
     {
-      'title': 'Watch: What is STEM?',
+      'title': 'Video: STEM Meaning',
       'preview':
           'Learn what STEM means and how Science, Technology, Engineering, and Math work together. '
           'See simple examples of how STEM is used in real life.\n\n'
@@ -284,7 +284,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
       'detailImage': 'assets/images/STEM 2.png',
     },
     {
-      'title': 'Did you know importance of STEM?',
+      'title': 'Importance of STEM',
       'preview':
           'STEM is important because it helps students understand the world, encourages innovation, and equips them with skills for modern jobs.',
       'detailImage': ' ',
@@ -303,7 +303,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
 
   List<Map<String, String>> _getMalayData() => [
     {
-      'title': 'Tonton: Apakah itu STEM?',
+      'title': 'Video: Maksud STEM',
       'preview':
           'Ketahui maksud STEM dan bagaimana Sains, Teknologi, Kejuruteraan, dan Matematik berfungsi bersama. '
           'Lihat contoh mudah bagaimana STEM digunakan dalam kehidupan sebenar.\n\n'
@@ -317,7 +317,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
       'detailImage': 'assets/images/STEM 2.png',
     },
     {
-      'title': 'Tahukah anda kepentingan STEM?',
+      'title': 'Kepentingan STEM',
       'preview':
           'STEM adalah penting kerana ia membantu murid memahami dunia, menggalakkan inovasi, dan melengkapi mereka dengan kemahiran untuk kerjaya moden.',
       'detailImage': ' ',
