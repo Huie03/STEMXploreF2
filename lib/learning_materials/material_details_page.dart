@@ -6,6 +6,7 @@ import 'package:stemxploref2/favorite/favorite_provider.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/box_shadow.dart';
+import 'package:stemxploref2/navigation_provider.dart';
 
 class MaterialDetailPage extends StatefulWidget {
   final Map<String, dynamic> chapterData;
@@ -19,6 +20,7 @@ class MaterialDetailPage extends StatefulWidget {
 class _MaterialDetailPageState extends State<MaterialDetailPage> {
   @override
   Widget build(BuildContext context) {
+    final navProvider = context.watch<NavigationProvider>();
     final themeProvider = Provider.of<ThemeProvider>(context);
     final bool isDark = themeProvider.isDarkMode;
 
@@ -70,11 +72,9 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
                 fullChapterString,
                 isBookmarked,
                 isEnglish,
-                widget.chapterData['image_url'] ?? infographicPath,
                 textColor,
                 isDark,
               ),
-              const SizedBox(height: 0),
               Expanded(
                 child: _buildMainContent(infographicPath, cardBg, isDark),
               ),
@@ -131,7 +131,6 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     String display,
     bool isBookmarked,
     bool isEnglish,
-    String img,
     Color textColor,
     bool isDark,
   ) {
@@ -151,36 +150,49 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
             ),
           ),
           IconButton(
-            onPressed: () {
+            onPressed: () async {
+              // Make this async
               final Map<String, String> dataToToggle = {
                 'title': rawSub,
                 'chapter_num': num,
                 'title_en': tEn,
                 'title_ms': tMs,
-                'image': img,
+                'infographic_en':
+                    widget.chapterData['infographic_en']?.toString() ?? '',
+                'infographic_ms':
+                    widget.chapterData['infographic_ms']?.toString() ?? '',
+                'image':
+                    widget.chapterData['image_url'] ??
+                    '', // Ensure this key matches
               };
 
-              final bool currentlyBookmarked = isBookmarked;
+              // Store the state BEFORE toggling to know if we are adding or removing
+              final bool willBeAdded = !isBookmarked;
 
-              Provider.of<FavoriteProvider>(
+              // Await the toggle so the UI waits for the server
+              await Provider.of<FavoriteProvider>(
                 context,
                 listen: false,
               ).toggleFavorite(dataToToggle);
 
-              _showCenterPopup(
-                isEnglish,
-                isAdding: !currentlyBookmarked,
-                isDark: isDark,
-              );
+              // Now show the popup
+              if (mounted) {
+                _showCenterPopup(
+                  isEnglish,
+                  isAdding: willBeAdded,
+                  isDark: isDark,
+                );
+              }
             },
             icon: Icon(
               isBookmarked ? Icons.bookmark : Icons.bookmark_border,
               size: 30,
+              // Ensure the color logic correctly reflects the boolean state
               color: isBookmarked
                   ? (isDark
                         ? const Color(0xFFEFA638)
-                        : Colors.black) //Fill icon
-                  : (isDark ? Colors.white : Colors.white), //Outline icon
+                        : Colors.black) // Filled color
+                  : (isDark ? Colors.white : Colors.black), // Border color
             ),
           ),
         ],

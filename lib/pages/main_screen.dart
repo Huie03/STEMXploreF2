@@ -33,18 +33,29 @@ class _MainScreenState extends State<MainScreen> {
   String? selectedSubjectName;
   Map<String, dynamic>? selectedChapterData;
   String? selectedQuizData;
+  int _lastIndexBeforeDetail = 12;
 
   void onSubjectSelected(String subjectName) {
     setState(() => selectedSubjectName = subjectName);
     Provider.of<NavigationProvider>(context, listen: false).setIndex(12);
   }
 
+  // When coming from Learning Materials (SubjectChapters)
   void onChapterSelected(Map<String, dynamic> chapterData) {
-    setState(() => selectedChapterData = chapterData);
-    Provider.of<NavigationProvider>(
-      context,
-      listen: false,
-    ).setIndex(13); // Go to Detail
+    setState(() {
+      selectedChapterData = chapterData;
+      _lastIndexBeforeDetail = 12; // User came from Subjects/Chapters
+    });
+    Provider.of<NavigationProvider>(context, listen: false).setIndex(13);
+  }
+
+  // When coming from Favorites
+  void onFavoriteChapterSelected(Map<String, dynamic> chapterData) {
+    setState(() {
+      selectedChapterData = chapterData;
+      _lastIndexBeforeDetail = 1; // User came from Favorites
+    });
+    Provider.of<NavigationProvider>(context, listen: false).setIndex(13);
   }
 
   void onQuizSubjectSelected(String subjectAndMode) {
@@ -74,7 +85,15 @@ class _MainScreenState extends State<MainScreen> {
 
     final List<Widget> pages = [
       HomePage(onHighlightTap: onHighlightSelected), // 0
-      const FavoritePage(), // 1
+      FavoritePage(
+        onChapterTap: (chapterData) {
+          setState(() {
+            selectedChapterData = chapterData;
+            _lastIndexBeforeDetail = 1; // Explicitly set to Favorites index
+          });
+          navProvider.setIndex(13); // Navigate to Details
+        },
+      ),
       const InfoPage(), // 2
       const SettingsPage(), // 3
       StemInfoPage(onSelect: onStemSelect), // 4
@@ -139,7 +158,8 @@ class _MainScreenState extends State<MainScreen> {
           setState(() => selectedQuizData = null);
           navProvider.setIndex(6); // Back to Quiz List from the Game
         } else if (navProvider.currentIndex == 13) {
-          navProvider.setIndex(12); // Back to Chapters from Detail
+          // Use the stored variable to return to the correct index
+          navProvider.setIndex(_lastIndexBeforeDetail);
         } else if (navProvider.currentIndex == 12) {
           navProvider.setIndex(5); // Back to Subjects from Chapters
         } else if (navProvider.currentIndex == 10 ||

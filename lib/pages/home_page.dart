@@ -195,7 +195,7 @@ class _HomePageState extends State<HomePage> {
         Container(
           padding: const EdgeInsets.all(6),
           decoration: const BoxDecoration(
-            color: Color(0xFFF2C458),
+            color: Color(0xFFFF9E00),
             shape: BoxShape.circle,
           ),
           child: RichText(

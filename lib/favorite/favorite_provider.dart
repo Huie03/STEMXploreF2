@@ -1,50 +1,76 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../ipaddress.dart'; // Ensure this points to http://10.0.2.2/stemxplore/
 
 class FavoriteProvider with ChangeNotifier {
-  List<Map<String, String>> _favorites = [];
+  List<Map<String, dynamic>> _favorites = [];
+  final String _currentUserId = "1"; // Replace with your Auth logic
 
-  List<Map<String, String>> get bookmarks => _favorites;
+  List<Map<String, dynamic>> get bookmarks => _favorites;
 
   FavoriteProvider() {
-    _loadFavorites();
+    fetchBookmarksFromServer();
   }
 
-  Future<void> _saveToPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    String encodedData = jsonEncode(_favorites);
-    await prefs.setString('user_favorites', encodedData);
-  }
-
-  Future<void> _loadFavorites() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? savedData = prefs.getString('user_favorites');
-
-    if (savedData != null) {
-      List<dynamic> decodedData = jsonDecode(savedData);
-      _favorites = decodedData
-          .map((item) => Map<String, String>.from(item))
-          .toList();
-      notifyListeners();
-    }
-  }
-
-  void toggleFavorite(Map<String, String> material) {
-    final index = _favorites.indexWhere(
-      (m) =>
-          m['title'] == material['title'] &&
-          m['chapter_num'] == material['chapter_num'],
+  // Fetch list from MySQL
+  Future<void> fetchBookmarksFromServer() async {
+    final url = Uri.parse(
+      '${ipadress.baseUrl}get_bookmarks.php?user_id=$_currentUserId',
     );
 
-    if (index >= 0) {
-      _favorites.removeAt(index);
-    } else {
-      _favorites.add(material);
-    }
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
 
-    _saveToPrefs();
-    notifyListeners();
+        _favorites = data.map((item) {
+          return {
+            'title': item['subject'] ?? '',
+            'chapter_num': item['chapter_number'] ?? '',
+            'title_en': item['title_en'] ?? '',
+            'title_ms': item['title_ms'] ?? '',
+            'image': item['image_url'] ?? '',
+            'infographic_en': item['infographic_en'] ?? '',
+            'infographic_ms': item['infographic_ms'] ?? '',
+          };
+        }).toList();
+
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Error fetching: $e");
+    }
+  }
+
+  // Toggle bookmark in MySQL
+  // Inside FavoriteProvider
+  Future<void> toggleFavorite(Map<String, dynamic> material) async {
+    final url = Uri.parse('${ipadress.baseUrl}toggle_bookmark.php');
+
+    try {
+      final response = await http.post(
+        url,
+        body: {
+          'user_id': _currentUserId,
+          'subject': material['title'] ?? '',
+          'chapter_number': material['chapter_num'] ?? '',
+          'title_en': material['title_en'] ?? '',
+          'title_ms': material['title_ms'] ?? '',
+          'infographic_en': material['infographic_en'] ?? '',
+          'infographic_ms': material['infographic_ms'] ?? '',
+          'image_url': material['image'] ?? '',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Refresh local list from server to get accurate state
+        await fetchBookmarksFromServer();
+        // notifyListeners() is called inside fetchBookmarksFromServer
+      }
+    } catch (e) {
+      debugPrint("Network Error: $e");
+    }
   }
 
   bool isFavorited(String title, String chapterNum) {

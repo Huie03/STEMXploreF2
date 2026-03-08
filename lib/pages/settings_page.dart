@@ -16,7 +16,7 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final FlutterLocalization localization = FlutterLocalization.instance;
-  bool _isSoundOn = true;
+  final Color allIconColor = const Color(0xFFEB9000);
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSettingsCard(
                 cardBg: cardBg,
                 icon: isDark ? Icons.dark_mode : Icons.light_mode,
-                iconColor: isDark ? const Color(0xFFFFAB40) : Colors.black,
+                iconColor: isDark ? allIconColor : Colors.black,
                 title: isEnglish ? "Theme Mode" : "Mod Tema",
                 subtitle: isEnglish
                     ? (isDark ? "Dark Mode" : "Light Mode")
@@ -58,7 +58,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 isDark: isDark,
                 trailing: Switch(
                   value: isDark,
-                  activeColor: Colors.orange,
+                  activeColor: allIconColor,
                   onChanged: (value) => themeProvider.toggleTheme(),
                 ),
               ),
@@ -71,9 +71,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 icon: themeProvider.isSoundEnabled
                     ? Icons.volume_up
                     : Icons.volume_off,
-                iconColor: themeProvider.isSoundEnabled
-                    ? Colors.orangeAccent
-                    : Colors.grey,
+                iconColor: allIconColor,
                 title: isEnglish ? "Sound" : "Suara",
 
                 // 2. Text automatically follows the Provider (Default: On / Buka)
@@ -86,7 +84,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 trailing: Switch(
                   //Switch starts 'ON' because isSoundEnabled is true
                   value: themeProvider.isSoundEnabled,
-                  activeColor: Colors.orange,
+                  activeColor: allIconColor,
                   onChanged: (value) {
                     themeProvider.toggleSound(value);
                   },

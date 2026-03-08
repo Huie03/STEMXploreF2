@@ -85,7 +85,7 @@ class _STEMXploreAppState extends State<STEMXploreApp> {
         StemCareersPage.routeName: (_) => const StemCareersPage(),
         DailyInfoPage.routeName: (_) => const DailyInfoPage(),
         FaqPage.routeName: (_) => const FaqPage(),
-        FavoritePage.routeName: (_) => const FavoritePage(),
+        //FavoritePage.routeName: (_) => const FavoritePage(),
         InfoPage.routeName: (_) => const InfoPage(),
         SettingsPage.routeName: (_) => SettingsPage(),
       },

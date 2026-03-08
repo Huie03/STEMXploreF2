@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:stemxploref2/navigation_provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
+import '../learning_materials/material_details_page.dart'; // Ensure this import is correct
 import '../widgets/gradient_background.dart';
 import '../widgets/language_toggle.dart';
 import 'favorite_provider.dart';
@@ -10,9 +11,10 @@ import '../widgets/box_shadow.dart';
 
 class FavoritePage extends StatelessWidget {
   static const String routeName = '/favorite';
-  const FavoritePage({super.key});
+  final Function(Map<String, dynamic>) onChapterTap; // Add this
 
-  // Translation Helper
+  const FavoritePage({super.key, required this.onChapterTap});
+
   String _translateSubject(String subject, bool isEnglish) {
     if (isEnglish) return subject;
     switch (subject) {
@@ -131,7 +133,7 @@ class FavoritePage extends StatelessWidget {
 
   Widget _buildFavoriteList(
     BuildContext context,
-    List<Map<String, String>> favorites,
+    List<Map<String, dynamic>> favorites, // Change to dynamic
     bool isEnglish,
     bool isDark,
   ) {
@@ -150,7 +152,8 @@ class FavoritePage extends StatelessWidget {
             ? (item['title_en'] ?? "")
             : (item['title_ms'] ?? "");
         final String chapterNum = item['chapter_num'] ?? "1";
-        final String fullSubtitle = "$label $chapterNum- $title";
+        final String fullSubtitle = "$label $chapterNum - $title";
+
         return Padding(
           padding: const EdgeInsets.only(bottom: 15),
           child: Slidable(
@@ -171,39 +174,55 @@ class FavoritePage extends StatelessWidget {
                 ),
               ],
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: isDark ? Colors.white10 : colorScheme.outlineVariant,
-                ),
-                boxShadow: isDark ? [] : appBoxShadow,
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(15),
-                title: Text(
-                  subject,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
+            child: InkWell(
+              onTap: () {
+                // Map the data to include infographics
+                final Map<String, dynamic> chapterData = {
+                  'subject': item['title'],
+                  'chapter_number': item['chapter_num'],
+                  'title_en': item['title_en'],
+                  'title_ms': item['title_ms'],
+                  'image_url': item['image'],
+                  'infographic_en': item['infographic_en'],
+                  'infographic_ms': item['infographic_ms'],
+                };
+                onChapterTap(chapterData);
+              },
+              borderRadius: BorderRadius.circular(25),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : colorScheme.outlineVariant,
                   ),
+                  boxShadow: isDark ? [] : appBoxShadow,
                 ),
-                subtitle: Text(
-                  fullSubtitle,
-                  style: TextStyle(
-                    color: isDark ? Colors.white70 : Colors.black87,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(15),
+                  title: Text(
+                    subject,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
                   ),
-                ),
-                trailing: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(
-                    item['image'] ?? '',
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stack) =>
-                        const Icon(Icons.book, size: 40, color: Colors.grey),
+                  subtitle: Text(
+                    fullSubtitle,
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                  trailing: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      item['image'] ?? '',
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stack) =>
+                          const Icon(Icons.book, size: 40, color: Colors.grey),
+                    ),
                   ),
                 ),
               ),

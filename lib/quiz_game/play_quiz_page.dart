@@ -8,8 +8,9 @@ import '../widgets/box_shadow.dart';
 import '../widgets/language_toggle.dart';
 import '../ipaddress.dart';
 import '../navigation_provider.dart';
-import '../quiz_game/quiz_ui.dart'; // Ensure correct path
+import '../quiz_game/quiz_ui.dart';
 import 'package:confetti/confetti.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class PlayQuizPage extends StatefulWidget {
   final String subjectAndMode;
@@ -43,12 +44,16 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   Timer? _timer;
   String _liveTime = "00:00";
 
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   @override
   void initState() {
     super.initState();
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 3),
     );
+    _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    _audioPlayer.setVolume(1.0);
     _resetAndStartQuiz();
   }
 
@@ -57,6 +62,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     _timer?.cancel();
     _stopwatch.stop();
     _confettiController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -83,6 +89,16 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     _difficulty = parts.length > 1 ? parts[1].trim() : "Easy";
   }
 
+  Future<void> _startBackgroundMusic() async {
+    try {
+      // This must match the filename in your pubspec.yaml exactly
+      await _audioPlayer.play(AssetSource('audio/quiz_background_music.mp3'));
+      debugPrint("Music started successfully");
+    } catch (e) {
+      debugPrint("Error playing audio: $e");
+    }
+  }
+
   Future<void> _fetchQuestions() async {
     try {
       final url = Uri.parse(
@@ -96,10 +112,12 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
           setState(() {
             _questions = decodedData;
             _isLoading = false;
-            if (_questions.isNotEmpty)
+            if (_questions.isNotEmpty) {
               _startTimer();
-            else
+              _startBackgroundMusic();
+            } else {
               _errorMessage = "No questions found.";
+            }
           });
         }
       }
@@ -110,6 +128,10 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
           _errorMessage = "Connection Failed.";
         });
     }
+  }
+
+  void _stopMusic() {
+    _audioPlayer.stop();
   }
 
   void _startTimer() {
@@ -145,7 +167,10 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) widget.onFinish();
+        if (didPop) {
+          _stopMusic(); //Music stop when exit
+          widget.onFinish();
+        }
       },
       child: Scaffold(
         body: GradientBackground(
@@ -343,10 +368,12 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                         _isLocked = _selectedOptionIndex != null;
                       });
                     } else {
-                      if (_isReviewMode)
+                      if (_isReviewMode) {
+                        _stopMusic();
                         widget.onFinish();
-                      else
+                      } else {
                         _showResultDialog(isEng);
+                      }
                     }
                   }
                 : null,

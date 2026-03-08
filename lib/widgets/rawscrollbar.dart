@@ -90,7 +90,9 @@ class _ArrowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color bgColor = isDark ? const Color(0xFF3D3D3D) : Colors.white;
+    final Color bgColor = isDark
+        ? const Color(0xFF3D3D3D)
+        : const Color.fromARGB(187, 255, 255, 255);
     final Color iconColor = isDark ? Colors.white : Colors.black;
 
     return GestureDetector(

@@ -83,7 +83,7 @@ class _InfoPageState extends State<InfoPage> {
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: const BoxDecoration(
-                              color: Color(0xFFF2C458),
+                              color: Color(0xFFFF9E00),
                               shape: BoxShape.circle,
                             ),
                             child: RichText(
@@ -139,15 +139,15 @@ class _InfoPageState extends State<InfoPage> {
                             ? "About STEMXplore F2"
                             : "Tentang STEMXplore F2",
                         content: isEnglish
-                            ? "STEMXplore F3 is a mobile learning platform designed "
-                                  "for Form 3 students to explore STEM subjects in an "
+                            ? "STEMXplore F2 is a mobile learning platform designed "
+                                  "for Form 2 students to explore STEM subjects in an "
                                   "interactive and career-oriented way.\n\n"
                                   "Our Mission:\n"
                                   "To inspire and empower students to develop critical "
                                   "thinking and problem-solving skills through engaging "
                                   "STEM learning experiences."
-                            : "STEMXplore F3 ialah platform pembelajaran mudah alih "
-                                  "untuk pelajar Tingkatan 3 meneroka subjek STEM secara "
+                            : "STEMXplore F2 ialah platform pembelajaran mudah alih "
+                                  "untuk pelajar Tingkatan 2 meneroka subjek STEM secara "
                                   "interaktif dan berorientasikan kerjaya.\n\n"
                                   "Misi Kami:\n"
                                   "Memberi inspirasi dan memperkasa pelajar membangunkan "
@@ -162,11 +162,11 @@ class _InfoPageState extends State<InfoPage> {
                         icon: Icons.privacy_tip_outlined,
                         title: isEnglish ? "Privacy Policy" : "Dasar Privasi",
                         content: isEnglish
-                            ? "STEMXplore F3 respects your privacy. "
+                            ? "STEMXplore F2 respects your privacy. "
                                   "This application does not collect personal data "
                                   "without consent. All information is used strictly "
                                   "for educational purposes and improving user experience."
-                            : "STEMXplore F3 menghormati privasi anda. "
+                            : "STEMXplore F2 menghormati privasi anda. "
                                   "Aplikasi ini tidak mengumpul data peribadi tanpa kebenaran. "
                                   "Semua maklumat digunakan hanya untuk tujuan pendidikan.",
                         textColor: textColor,
@@ -181,11 +181,11 @@ class _InfoPageState extends State<InfoPage> {
                             ? "Terms of Service"
                             : "Terma Perkhidmatan",
                         content: isEnglish
-                            ? "By using STEMXplore F3, users agree to use the "
+                            ? "By using STEMXplore F2, users agree to use the "
                                   "application for educational purposes only. "
                                   "All content is protected and may not be reproduced "
                                   "without permission."
-                            : "Dengan menggunakan STEMXplore F3, pengguna bersetuju "
+                            : "Dengan menggunakan STEMXplore F2, pengguna bersetuju "
                                   "menggunakan aplikasi ini untuk tujuan pendidikan sahaja. "
                                   "Semua kandungan dilindungi dan tidak boleh diterbitkan semula.",
                         textColor: textColor,
@@ -238,7 +238,7 @@ class _InfoPageState extends State<InfoPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.amber, size: 28),
+          Icon(icon, color: const Color(0xFFFF9E00), size: 28),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
@@ -255,6 +255,7 @@ class _InfoPageState extends State<InfoPage> {
                 const SizedBox(height: 8),
                 Text(
                   content,
+                  textAlign: TextAlign.justify,
                   style: TextStyle(fontSize: 14, height: 1.5, color: textColor),
                 ),
               ],
@@ -284,7 +285,7 @@ class _InfoPageState extends State<InfoPage> {
             onTap: () => setState(() => isPrivacyExpanded = !isPrivacyExpanded),
             child: Row(
               children: [
-                Icon(icon, color: Colors.amber, size: 28),
+                Icon(icon, color: const Color(0xFFFF9E00), size: 28),
                 const SizedBox(width: 15),
                 Expanded(
                   child: Text(
@@ -310,6 +311,7 @@ class _InfoPageState extends State<InfoPage> {
               padding: const EdgeInsets.only(top: 12),
               child: Text(
                 content,
+                textAlign: TextAlign.justify,
                 style: TextStyle(fontSize: 14, height: 1.5, color: textColor),
               ),
             ),
