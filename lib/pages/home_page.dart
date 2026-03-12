@@ -23,7 +23,7 @@ class _HomePageState extends State<HomePage> {
   final List<Highlight> highlights = sampleHighlights;
   final ScrollController _scrollController = ScrollController();
   Timer? _autoScrollTimer;
-  final double _stepSize = 320.0;
+  //final double _stepSize = 320.0;
 
   final List<Map<String, dynamic>> _features = [
     {'key': 'stemInfo', 'icon': 'assets/icons/1.png', 'index': 4},
@@ -255,7 +255,7 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 itemCount: highlights.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 15),
+                separatorBuilder: (_, _) => const SizedBox(width: 15),
                 itemBuilder: (context, index) => _buildHighlightCard(
                   context,
                   highlights[index],

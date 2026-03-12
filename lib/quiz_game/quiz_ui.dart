@@ -28,7 +28,6 @@ class QuizUi {
   static Widget buildProgressHeader({
     required String subject,
     required String difficulty,
-    required String liveTime,
     required double progress,
     required String counterText,
   }) {
@@ -45,14 +44,6 @@ class QuizUi {
                   color: Colors.black,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                liveTime,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: Colors.black,
                 ),
               ),
             ],
@@ -107,16 +98,16 @@ class QuizUi {
     required bool showFeedback,
     required VoidCallback onTap,
   }) {
-    Color borderColor = Colors.black.withOpacity(0.08);
+    Color borderColor = Colors.black.withValues(alpha: 0.08);
     Color bgColor = Colors.transparent;
 
     if (showFeedback) {
       if (index == correctIndex) {
         borderColor = Colors.green;
-        bgColor = Colors.green.withOpacity(0.1);
+        bgColor = Colors.green.withValues(alpha: 0.1);
       } else if (index == selectedIndex) {
         borderColor = Colors.red;
-        bgColor = Colors.red.withOpacity(0.1);
+        bgColor = Colors.red.withValues(alpha: 0.1);
       }
     }
 
@@ -138,7 +129,7 @@ class QuizUi {
               children: [
                 CircleAvatar(
                   radius: 14,
-                  backgroundColor: Colors.orange.withOpacity(0.15),
+                  backgroundColor: Colors.orange.withValues(alpha: 0.15),
                   child: Text(
                     String.fromCharCode(65 + index),
                     style: const TextStyle(
@@ -177,7 +168,6 @@ class QuizUi {
     required BuildContext context,
     required int score,
     required int total,
-    required String time,
     required bool isEnglish,
     required ConfettiController confettiController,
     required VoidCallback onReplay,
@@ -236,15 +226,8 @@ class QuizUi {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  "${(isEnglish ? "Time: " : "Masa: ")} $time",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
                 ),
               ),
               const SizedBox(height: 30),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../ipaddress.dart'; // Ensure this points to http://10.0.2.2/stemxplore/
+import '../ipaddress.dart';
 
 class FavoriteProvider with ChangeNotifier {
   List<Map<String, dynamic>> _favorites = [];
   final String _currentUserId = "1"; // Replace with your Auth logic
-
   List<Map<String, dynamic>> get bookmarks => _favorites;
 
   FavoriteProvider() {
@@ -35,7 +34,6 @@ class FavoriteProvider with ChangeNotifier {
             'infographic_ms': item['infographic_ms'] ?? '',
           };
         }).toList();
-
         notifyListeners();
       }
     } catch (e) {
@@ -47,7 +45,6 @@ class FavoriteProvider with ChangeNotifier {
   // Inside FavoriteProvider
   Future<void> toggleFavorite(Map<String, dynamic> material) async {
     final url = Uri.parse('${ipadress.baseUrl}toggle_bookmark.php');
-
     try {
       final response = await http.post(
         url,
@@ -73,9 +70,16 @@ class FavoriteProvider with ChangeNotifier {
     }
   }
 
-  bool isFavorited(String title, String chapterNum) {
-    return _favorites.any(
-      (m) => m['title'] == title && m['chapter_num'] == chapterNum,
-    );
+  // Inside FavoriteProvider
+  bool isFavorited(String subject, String chapterNum) {
+    return _favorites.any((m) {
+      // Convert both to string and trim to avoid whitespace issues
+      final mSubject = m['title']?.toString().trim() ?? '';
+      final mChapter = m['chapter_num']?.toString().trim() ?? '';
+      final targetSubject = subject.toString().trim();
+      final targetChapter = chapterNum.toString().trim();
+
+      return mSubject == targetSubject && mChapter == targetChapter;
+    });
   }
 }

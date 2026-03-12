@@ -21,7 +21,9 @@ class StemQuizDesign {
       padding:
           padding ?? const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF3D3D3D) : const Color(0xFFFFFDF4),
+        color: isDark
+            ? const Color(0xFF3D3D3D)
+            : const Color.fromARGB(255, 255, 255, 255),
         borderRadius: BorderRadius.circular(cardRadius),
         boxShadow: isDark ? [] : appBoxShadow,
         border: isDark ? Border.all(color: Colors.white10, width: 1) : null,

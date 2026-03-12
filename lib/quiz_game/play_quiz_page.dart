@@ -40,9 +40,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   int? _selectedOptionIndex;
   bool _isLocked = false;
   bool _isReviewMode = false;
-  final Stopwatch _stopwatch = Stopwatch();
-  Timer? _timer;
-  String _liveTime = "00:00";
 
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -59,8 +56,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _stopwatch.stop();
     _confettiController.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -75,8 +70,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       _selectedOptionIndex = null;
       _isLocked = false;
       _isReviewMode = false;
-      _stopwatch.reset();
-      _liveTime = "00:00";
       _errorMessage = null;
     });
     _parseParams();
@@ -113,7 +106,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
             _questions = decodedData;
             _isLoading = false;
             if (_questions.isNotEmpty) {
-              _startTimer();
               _startBackgroundMusic();
             } else {
               _errorMessage = "No questions found.";
@@ -122,31 +114,17 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
         }
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isLoading = false;
           _errorMessage = "Connection Failed.";
         });
+      }
     }
   }
 
   void _stopMusic() {
     _audioPlayer.stop();
-  }
-
-  void _startTimer() {
-    _stopwatch.start();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted)
-        setState(() {
-          _liveTime = _formatTime(_stopwatch.elapsedMilliseconds);
-        });
-    });
-  }
-
-  String _formatTime(int ms) {
-    int sec = (ms / 1000).truncate();
-    return "${(sec / 60).truncate().toString().padLeft(2, '0')}:${(sec % 60).toString().padLeft(2, '0')}";
   }
 
   void _handleAnswer(int selectedIndex, int correctIndex) {
@@ -225,7 +203,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
         QuizUi.buildProgressHeader(
           subject: _subject,
           difficulty: _difficulty,
-          liveTime: _liveTime,
           progress: (_currentQuestionIndex + 1) / _questions.length,
           counterText: "${_currentQuestionIndex + 1}/${_questions.length}",
         ),
@@ -294,7 +271,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       decoration: BoxDecoration(
         color: Colors.blueGrey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blueAccent.withOpacity(0.2)),
+        border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,9 +378,9 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   }
 
   void _showResultDialog(bool isEnglish) {
-    _stopwatch.stop();
-    _timer?.cancel();
-    _confettiController.play();
+    if (_score >= 8) {
+      _confettiController.play();
+    }
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -411,7 +388,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
         context: context,
         score: _score,
         total: _questions.length,
-        time: _liveTime,
         isEnglish: isEnglish,
         confettiController: _confettiController,
         onReplay: () {

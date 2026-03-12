@@ -25,10 +25,12 @@ class ThemeProvider with ChangeNotifier {
   static final lightTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFFFD18A),
-      primary: const Color(0xFFFFD18A),
+      seedColor: const Color(0xFFFFD38F),
+      primary: const Color(0xFFFFD38F),
+      surface: Colors.white, // Explicitly define this
+      onSurface: Colors.black,
     ),
-    scaffoldBackgroundColor: const Color(0xFFFFD18A),
+    scaffoldBackgroundColor: const Color(0xFFFFD38F),
 
     navigationBarTheme: NavigationBarThemeData(
       indicatorColor: Colors.transparent,

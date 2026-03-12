@@ -9,6 +9,7 @@ import '/navigation_provider.dart';
 import 'package:stemxploref2/widgets/curved_navigation_bar.dart';
 import '/widgets/language_toggle.dart';
 import '../widgets/box_shadow.dart';
+import '../ipaddress.dart';
 
 class StemDetailPage extends StatefulWidget {
   final Map<String, String> stemInfo;
@@ -29,8 +30,10 @@ class _StemDetailPageState extends State<StemDetailPage> {
   }
 
   void _initializeController() {
+    // Matches your DB column: 'type'
     if (widget.stemInfo['type'] == 'video') {
-      final String? videoUrl = widget.stemInfo['videoUrl'];
+      // Matches your DB column: 'video_url'
+      final String? videoUrl = widget.stemInfo['video_url'];
       final String? videoId = videoUrl != null
           ? YoutubePlayer.convertUrlToId(videoUrl)
           : null;
@@ -41,7 +44,6 @@ class _StemDetailPageState extends State<StemDetailPage> {
           flags: const YoutubePlayerFlags(
             autoPlay: false,
             mute: false,
-            disableDragSeek: false,
             useHybridComposition: true,
           ),
         );
@@ -66,20 +68,32 @@ class _StemDetailPageState extends State<StemDetailPage> {
     final bool isEnglish = lang == 'en';
     final item = widget.stemInfo;
 
-    final String title = item['title_$lang'] ?? item['title_en'] ?? '';
-    final String? preview = item['preview_$lang'] ?? item['preview_en'];
-    final String? detailImage =
-        item['detailImage_$lang'] ?? item['detailImage_en'];
-    final String? sourceText = item['source_$lang'] ?? item['source_en'];
-    final String appBarTitle = isEnglish ? 'STEM Info' : 'Maklumat STEM';
-
-    bool isVideo = item['type'] == 'video';
-    if (_controller != null) {
-      if (isSoundEnabled) {
-        _controller!.unMute();
-      } else {
-        _controller!.mute();
+    String? getSanitizedValue(String? value) {
+      if (value == null ||
+          value.toLowerCase() == 'null' ||
+          value.trim().isEmpty) {
+        return null;
       }
+      return value;
+    }
+
+    final String title = item['title_$lang'] ?? item['title_en'] ?? '';
+    final String? preview = getSanitizedValue(
+      item['preview_$lang'] ?? item['preview_en'],
+    );
+    final String? detailImage = getSanitizedValue(
+      item['detail_image_$lang'] ?? item['detail_image_en'],
+    );
+    final String? sourceText = getSanitizedValue(
+      item['source_$lang'] ?? item['source_en'],
+    );
+    final String? videoUrl = getSanitizedValue(item['video_url']);
+
+    final String appBarTitle = isEnglish ? 'STEM Info' : 'Maklumat STEM';
+    bool isVideo = item['type'] == 'video';
+
+    if (_controller != null) {
+      isSoundEnabled ? _controller!.unMute() : _controller!.mute();
     }
 
     if (isVideo && _controller != null) {
@@ -87,22 +101,20 @@ class _StemDetailPageState extends State<StemDetailPage> {
         player: YoutubePlayer(
           controller: _controller!,
           showVideoProgressIndicator: true,
-          progressIndicatorColor: Colors.redAccent,
         ),
-        builder: (context, player) {
-          return _buildScaffold(
-            context,
-            isDark,
-            appBarTitle,
-            title,
-            preview,
-            null,
-            sourceText,
-            isEnglish,
-            item,
-            videoPlayer: player,
-          );
-        },
+        builder: (context, player) => _buildScaffold(
+          context,
+          isDark,
+          appBarTitle,
+          title,
+          preview,
+          null,
+          sourceText,
+          isEnglish,
+          item,
+          videoPlayer: player,
+          videoUrl: videoUrl,
+        ),
       );
     } else {
       return _buildScaffold(
@@ -115,6 +127,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
         sourceText,
         isEnglish,
         item,
+        videoUrl: videoUrl,
       );
     }
   }
@@ -130,6 +143,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
     bool isEnglish,
     Map<String, String> item, {
     Widget? videoPlayer,
+    String? videoUrl,
   }) {
     final Color textColor = Theme.of(context).colorScheme.onSurface;
     final Color cardBg = Theme.of(context).colorScheme.surface;
@@ -158,7 +172,6 @@ class _StemDetailPageState extends State<StemDetailPage> {
                   ],
                 ),
               ),
-
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(20, 2, 20, 20),
@@ -186,8 +199,9 @@ class _StemDetailPageState extends State<StemDetailPage> {
                           boxShadow: isDark ? [] : appBoxShadow,
                         ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (preview != null)
+                            if (preview != null && preview.isNotEmpty)
                               Text(
                                 preview,
                                 textAlign: TextAlign.justify,
@@ -197,53 +211,42 @@ class _StemDetailPageState extends State<StemDetailPage> {
                                   color: subTextColor,
                                 ),
                               ),
-
                             const SizedBox(height: 8),
-
                             ClipRRect(
                               borderRadius: BorderRadius.circular(15),
                               child:
-                                  videoPlayer ??
-                                  (detailImage != null
-                                      ? Image.asset(
-                                          detailImage,
-                                          fit: BoxFit.contain,
-                                        )
-                                      : const SizedBox.shrink()),
+                                  videoPlayer ?? _buildImageWidget(detailImage),
                             ),
-
-                            if (sourceText != null ||
-                                item.containsKey('videoUrl')) ...[
+                            // Source Section
+                            if (sourceText != null) ...[
                               const SizedBox(height: 10),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: subTextColor,
-                                    ),
-                                    children: [
-                                      TextSpan(
-                                        text: isEnglish
-                                            ? "Source:\n"
-                                            : "Sumber:\n",
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      if (sourceText != null)
-                                        TextSpan(text: "$sourceText\n"),
-                                      if (item.containsKey('videoUrl'))
-                                        TextSpan(
-                                          text: item['videoUrl'],
-                                          style: TextStyle(
-                                            color: linkColor,
-                                            height: 1.5,
-                                          ),
-                                        ),
-                                    ],
+                              RichText(
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: subTextColor,
                                   ),
+                                  children: [
+                                    TextSpan(
+                                      text: isEnglish
+                                          ? "Source:\n"
+                                          : "Sumber:\n",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    TextSpan(text: sourceText),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            // Video URL Section
+                            if (videoUrl != null) ...[
+                              Text(
+                                videoUrl,
+                                style: TextStyle(
+                                  color: linkColor,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
@@ -260,13 +263,33 @@ class _StemDetailPageState extends State<StemDetailPage> {
       ),
       bottomNavigationBar: AppCurvedNavBar(
         currentIndex: 0,
-        onTap: (index) {
-          Provider.of<NavigationProvider>(
-            context,
-            listen: false,
-          ).setIndex(index);
-        },
+        onTap: (index) => Provider.of<NavigationProvider>(
+          context,
+          listen: false,
+        ).setIndex(index),
       ),
     );
+  }
+
+  // Helper to handle Network vs Local images
+  Widget _buildImageWidget(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty || imagePath == 'null') {
+      return const SizedBox.shrink();
+    }
+
+    // Check if the image path is a full URL or a relative path from your database
+    if (imagePath.startsWith('http')) {
+      return Image.network(imagePath, fit: BoxFit.contain);
+    } else {
+      // Construct the full URL using your baseUrl
+      final String fullUrl = '${ipadress.baseUrl}$imagePath';
+      return Image.network(
+        fullUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.broken_image, size: 50, color: Colors.grey);
+        },
+      );
+    }
   }
 }

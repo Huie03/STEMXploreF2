@@ -5,9 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:stemxploref2/widgets/gradient_background.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart';
 import 'package:stemxploref2/widgets/rawscrollbar.dart';
+import 'package:stemxploref2/theme_provider.dart';
 import '../navigation_provider.dart';
 import '../ipaddress.dart';
-import '../stem_career/career_quiz.dart';
+import '../widgets/box_shadow.dart';
+import 'package:stemxploref2/stem_career/career_quiz.dart';
+import '../stem_career/career_logic.dart';
 
 class StemCareersPage extends StatefulWidget {
   static const routeName = '/stem-careers';
@@ -17,22 +20,16 @@ class StemCareersPage extends StatefulWidget {
   State<StemCareersPage> createState() => _StemCareersPageState();
 }
 
-class _StemCareersPageState extends State<StemCareersPage> {
-  bool _showQuiz = false;
-  bool _showResults = false;
-  bool _isExploreAllMode = false;
-  bool _isLoading = true;
+class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
+  bool _showQuiz = false,
+      _showResults = false,
+      _isExploreAllMode = false,
+      _isLoading = true,
+      _isAlreadyReset = false;
   String? _errorMessage;
-  bool _isAlreadyReset = false;
-
-  final ScrollController _scrollController = ScrollController();
-  final ScrollController _exploreScrollController = ScrollController();
-
   int _expandedIndex = -1;
-  List<dynamic> _dbQuestions = [];
-  List<dynamic> _allCareers = [];
-  final Map<int, int> _singleChoices = {};
-  final Set<int> _multiChoicesQ5 = {};
+  final ScrollController _scrollController = ScrollController(),
+      _exploreScrollController = ScrollController();
 
   @override
   void dispose() {
@@ -44,27 +41,20 @@ class _StemCareersPageState extends State<StemCareersPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final navProvider = Provider.of<NavigationProvider>(context);
-    if (navProvider.currentIndex == 7) {
-      if (!_isAlreadyReset) {
-        _resetState();
-        _isAlreadyReset = true;
-      }
-    } else {
+    if (Provider.of<NavigationProvider>(context).currentIndex == 7 &&
+        !_isAlreadyReset) {
+      _resetState();
+      _isAlreadyReset = true;
+    } else if (Provider.of<NavigationProvider>(context).currentIndex != 7) {
       _isAlreadyReset = false;
     }
   }
 
-  void _resetState() {
-    setState(() {
-      _showQuiz = false;
-      _showResults = false;
-      _isExploreAllMode = false;
-      _expandedIndex = -1;
-      _singleChoices.clear();
-      _multiChoicesQ5.clear();
-    });
-  }
+  void _resetState() => setState(() {
+    _showQuiz = _showResults = _isExploreAllMode = false;
+    _expandedIndex = -1;
+    resetLogicState();
+  });
 
   @override
   void initState() {
@@ -78,13 +68,14 @@ class _StemCareersPageState extends State<StemCareersPage> {
       _errorMessage = null;
     });
     try {
-      final url = Uri.parse('${ipadress.baseUrl}fetch_quiz.php');
-      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      final response = await http
+          .get(Uri.parse('${ipadress.baseUrl}fetch_quiz.php'))
+          .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
-          _dbQuestions = data['questions'] ?? [];
-          _allCareers = data['careers'] ?? [];
+          dbQuestions = data['questions'] ?? [];
+          allCareers = data['careers'] ?? [];
           _isLoading = false;
         });
       } else {
@@ -95,105 +86,30 @@ class _StemCareersPageState extends State<StemCareersPage> {
     }
   }
 
-  void _handleLoadError(String msg) {
-    setState(() {
-      _errorMessage = msg;
-      _isLoading = false;
-    });
-  }
+  void _handleLoadError(String msg) => setState(() {
+    _errorMessage = msg;
+    _isLoading = false;
+  });
 
-  Future<void> _saveResult(String field) async {
-    final List<int> allChoices = [..._singleChoices.values, ..._multiChoicesQ5];
-    try {
-      await http.post(
-        Uri.parse('${ipadress.baseUrl}save_result.php'),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "final_field": field,
-          "selected_options": allChoices.join(','),
-        }),
-      );
-    } catch (e) {
-      debugPrint("Save error: $e");
-    }
-  }
-
-  String _calculateSuggestedField() {
-    int science = 0, math = 0, engineering = 0, tech = 0;
-    void applyScore(String? tag, int weight) {
-      if (tag == null) return;
-      String t = tag.toLowerCase();
-      if (t.contains('sci'))
-        science += weight;
-      else if (t.contains('tech'))
-        tech += weight;
-      else if (t.contains('eng'))
-        engineering += weight;
-      else if (t.contains('math'))
-        math += weight;
-      else if (t == 'all') {
-        science += weight;
-        math += weight;
-        engineering += weight;
-        tech += weight;
-      }
-    }
-
-    for (var entry in _singleChoices.entries) {
-      final q = _dbQuestions.firstWhere(
-        (e) => e['id'].toString() == entry.key.toString(),
-        orElse: () => null,
-      );
-      if (q != null) {
-        final opt = (q['options'] as List).firstWhere(
-          (o) => o['id'].toString() == entry.value.toString(),
-          orElse: () => null,
-        );
-        if (opt != null) applyScore(opt['score_tag'], 2);
-      }
-    }
-
-    if (_dbQuestions.isNotEmpty) {
-      final qSkills = _dbQuestions.last;
-      for (var optId in _multiChoicesQ5) {
-        final opt = (qSkills['options'] as List).firstWhere(
-          (o) => o['id'].toString() == optId.toString(),
-          orElse: () => null,
-        );
-        if (opt != null) applyScore(opt['score_tag'], 1);
-      }
-    }
-    var scores = {
-      'Science': science,
-      'Mathematics': math,
-      'Engineering': engineering,
-      'Technology': tech,
-    };
-    return scores.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
-  }
-
-  Color _getStemColor(String? categoryEn, BuildContext context) {
+  Color _getStemColor(String? cat, BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    switch (categoryEn) {
-      case 'Science':
-        return isDark ? Colors.greenAccent.shade400 : Colors.green.shade700;
-      case 'Technology':
-        return isDark ? Colors.blueAccent.shade200 : Colors.blue.shade700;
-      case 'Engineering':
-        return isDark ? Colors.orangeAccent.shade200 : Colors.orange.shade700;
-      case 'Mathematics':
-        return isDark ? Colors.purpleAccent.shade100 : Colors.purple.shade700;
-      default:
-        return isDark ? Colors.grey.shade400 : Colors.grey;
-    }
+    return switch (cat) {
+      'Science' => isDark ? Colors.greenAccent.shade400 : Colors.green.shade700,
+      'Technology' =>
+        isDark ? Colors.blueAccent.shade200 : Colors.blue.shade700,
+      'Engineering' =>
+        isDark ? Colors.orangeAccent.shade200 : Colors.orange.shade700,
+      'Mathematics' =>
+        isDark ? Colors.purpleAccent.shade100 : Colors.purple.shade700,
+      _ => isDark ? Colors.grey.shade400 : Colors.grey,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
-    final navProvider = Provider.of<NavigationProvider>(context);
-    final bool isEn = navProvider.locale.languageCode == 'en';
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final nav = Provider.of<NavigationProvider>(context);
+    final bool isEn = nav.locale.languageCode == 'en',
+        isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
@@ -201,11 +117,11 @@ class _StemCareersPageState extends State<StemCareersPage> {
         child: SafeArea(
           child: Column(
             children: [
-              _buildCustomAppBar(isEn, isDark),
+              _buildAppBar(isEn, isDark),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  child: _buildCurrentView(isEn, context),
+                  child: _buildBody(isEn, context),
                 ),
               ),
             ],
@@ -215,68 +131,53 @@ class _StemCareersPageState extends State<StemCareersPage> {
     );
   }
 
-  Widget _buildCurrentView(bool isEn, BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_errorMessage != null && (_showQuiz || _isExploreAllMode)) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_errorMessage!, textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            StemQuizDesign.actionButton(
-              context,
-              isEn ? "Try Again" : "Cuba Lagi",
-              _loadData,
-            ),
-            if (!_showQuiz) ...[
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () => setState(() => _errorMessage = null),
-                child: Text(isEn ? "Back" : "Kembali"),
-              ),
-            ],
-          ],
+  Widget _buildAppBar(bool isEn, bool isDark) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          isEn ? 'STEM Career' : 'Kerjaya STEM',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: isDark ? Colors.white : Colors.black,
+          ),
         ),
-      );
-    }
+        const LanguageToggle(),
+      ],
+    ),
+  );
 
+  Widget _buildBody(bool isEn, BuildContext context) {
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_errorMessage != null && (_showQuiz || _isExploreAllMode)) {
+      return _buildErrorState(isEn);
+    }
     if (_isExploreAllMode) return _buildExploreAllView(isEn, context);
     if (_showResults) return _buildResultsView(isEn, context);
-
-    if (_showQuiz && _dbQuestions.isNotEmpty) {
-      return _buildFullQuiz(isEn, context);
-    }
-
-    return _buildStartCard(isEn, context);
+    return _showQuiz
+        ? _buildFullQuiz(isEn, context)
+        : _buildStartCard(isEn, context);
   }
 
-  Widget _buildCustomAppBar(bool isEn, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            isEn ? 'STEM Career' : 'Kerjaya STEM',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: isDark ? Colors.white : Colors.black,
-            ),
-          ),
-          const LanguageToggle(),
-        ],
-      ),
-    );
-  }
+  Widget _buildErrorState(bool isEn) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(_errorMessage!, textAlign: TextAlign.center),
+        const SizedBox(height: 20),
+        StemQuizDesign.actionButton(
+          context,
+          isEn ? "Try Again" : "Cuba Lagi",
+          _loadData,
+        ),
+      ],
+    ),
+  );
 
   Widget _buildStartCard(bool isEn, BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Center(
       child: StemQuizDesign.buildContainer(
         context: context,
@@ -303,16 +204,15 @@ class _StemCareersPageState extends State<StemCareersPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark
-                    ? Colors.white70
-                    : Colors.black.withValues(alpha: 0.7),
+                color: isDark ? Colors.white70 : Colors.black54,
               ),
             ),
             const SizedBox(height: 25),
-            StemQuizDesign.actionButton(context, isEn ? "Start" : "Mula", () {
-              if (_dbQuestions.isEmpty) _loadData();
-              setState(() => _showQuiz = true);
-            }),
+            StemQuizDesign.actionButton(
+              context,
+              isEn ? "Start" : "Mula",
+              () => setState(() => _showQuiz = true),
+            ),
           ],
         ),
       ),
@@ -320,15 +220,8 @@ class _StemCareersPageState extends State<StemCareersPage> {
   }
 
   Widget _buildFullQuiz(bool isEn, BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final singleChoiceQs = _dbQuestions.sublist(0, 4);
-    final q5 = _dbQuestions[4];
-    double progress =
-        (_singleChoices.length + (_multiChoicesQ5.isNotEmpty ? 1 : 0)) / 5;
-    bool allAnswered =
-        (_singleChoices.length == 4 && _multiChoicesQ5.isNotEmpty);
-
+    final progress =
+        (singleChoices.length + (multiChoicesQ5.isNotEmpty ? 1 : 0)) / 5;
     return StemQuizDesign.buildContainer(
       context: context,
       child: Column(
@@ -344,34 +237,24 @@ class _StemCareersPageState extends State<StemCareersPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ...singleChoiceQs.map(
-                        (q) => _buildDynamicSingleChoice(q, isEn, context),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        isEn ? q5['q_text_en'] : q5['q_text_ms'],
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      _buildMultiSelectGrid(q5, isEn, context),
-                      const SizedBox(height: 30),
+                      ...dbQuestions
+                          .sublist(0, 4)
+                          .map((q) => _buildQuestion(q, isEn, context, false)),
+                      _buildQuestion(dbQuestions[4], isEn, context, true),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 15),
           Align(
             alignment: Alignment.centerRight,
             child: StemQuizDesign.actionButton(
               context,
               isEn ? "Done" : "Selesai",
-              allAnswered ? () => _handleQuizCompletion(isEn) : null,
+              (singleChoices.length == 4 && multiChoicesQ5.isNotEmpty)
+                  ? () => _handleCompletion(isEn)
+                  : null,
             ),
           ),
         ],
@@ -379,17 +262,112 @@ class _StemCareersPageState extends State<StemCareersPage> {
     );
   }
 
+  Widget _buildQuestion(Map q, bool isEn, BuildContext context, bool isMulti) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    int qId = int.parse(q['id'].toString());
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isEn ? q['q_text_en'] : q['q_text_ms'],
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (isMulti)
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 2.8,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 10,
+              ),
+              itemCount: (q['options'] as List).length,
+              itemBuilder: (c, i) => _optionRow(
+                q['options'][i],
+                isEn,
+                context,
+                multiChoicesQ5.contains(int.parse(q['options'][i]['id'])),
+                () => setState(() {
+                  int id = int.parse(q['options'][i]['id']);
+                  multiChoicesQ5.contains(id)
+                      ? multiChoicesQ5.remove(id)
+                      : multiChoicesQ5.add(id);
+                }),
+              ),
+            )
+          else
+            ...(q['options'] as List).map(
+              (opt) => _optionRow(
+                opt,
+                isEn,
+                context,
+                singleChoices[qId] == int.parse(opt['id']),
+                () => setState(() => singleChoices[qId] = int.parse(opt['id'])),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _optionRow(
+    Map opt,
+    bool isEn,
+    BuildContext context,
+    bool selected,
+    VoidCallback onTap,
+  ) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color activeColor = const Color(0xFFF19100);
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+              size: 20,
+              color: selected
+                  ? activeColor
+                  : (isDark ? Colors.white38 : Colors.black54),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                isEn ? opt['opt_text_en'] : opt['opt_text_ms'],
+                style: TextStyle(
+                  fontSize: 15,
+                  color: selected
+                      ? activeColor
+                      : (isDark ? Colors.white : Colors.black),
+                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildResultsView(bool isEn, BuildContext context) {
-    final String fieldEn = _calculateSuggestedField();
-    final List filtered = _allCareers
+    final fieldEn = calculateSuggestedField();
+    final filtered = allCareers
         .where((c) => c['category_en'] == fieldEn)
         .toList();
-    final Color suggestedColor = _getStemColor(fieldEn, context);
-
     return SingleChildScrollView(
       child: StemQuizDesign.buildContainer(
         context: context,
-        margin: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
         child: Column(
           children: [
             Text(
@@ -406,31 +384,11 @@ class _StemCareersPageState extends State<StemCareersPage> {
               ),
             ),
             const SizedBox(height: 25),
-            _buildSuggestedFieldText(isEn, fieldEn, suggestedColor),
+            _suggestedHeader(isEn, fieldEn, _getStemColor(fieldEn, context)),
             const SizedBox(height: 15),
-            ...List.generate(filtered.length, (index) {
-              final career = filtered[index];
-              final bool isExpanded = _expandedIndex == index;
-              return Column(
-                children: [
-                  StemQuizDesign.careerExpandableTile(
-                    context,
-                    (isEn ? career['career_en'] : career['career_ms']) ??
-                        'Untitled',
-                    isExpanded,
-                    () => setState(
-                      () => _expandedIndex = isExpanded ? -1 : index,
-                    ),
-                  ),
-                  if (isExpanded)
-                    _buildMindMapPlaceholder(
-                      career.cast<String, dynamic>(),
-                      isEn,
-                    ),
-                  const SizedBox(height: 12),
-                ],
-              );
-            }),
+            ...filtered.asMap().entries.map(
+              (e) => _careerTile(e.value, e.key, isEn, context),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -456,23 +414,38 @@ class _StemCareersPageState extends State<StemCareersPage> {
     );
   }
 
-  Widget _buildExploreAllView(bool isEn, BuildContext context) {
-    final List<String> stemOrder = [
-      'Science',
-      'Technology',
-      'Engineering',
-      'Mathematics',
-    ];
-    List<dynamic> sortedCareers = List.from(_allCareers);
-    sortedCareers.sort((a, b) {
-      int indexA = stemOrder.indexOf(a['category_en'] ?? '');
-      int indexB = stemOrder.indexOf(b['category_en'] ?? '');
-      return indexA.compareTo(indexB == -1 ? 99 : indexB);
-    });
+  Widget _careerTile(Map career, int index, bool isEn, BuildContext context) {
+    final bool isExpanded = _expandedIndex == index;
+    return Column(
+      children: [
+        StemQuizDesign.careerExpandableTile(
+          context,
+          isEn ? career['career_en'] : career['career_ms'],
+          isExpanded,
+          () => setState(() => _expandedIndex = isExpanded ? -1 : index),
+        ),
+        if (isExpanded) _mindMap(career, isEn),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
 
+  Widget _buildExploreAllView(bool isEn, BuildContext context) {
+    List sorted = List.from(allCareers)
+      ..sort(
+        (a, b) => ['Science', 'Technology', 'Engineering', 'Mathematics']
+            .indexOf(a['category_en'])
+            .compareTo(
+              [
+                'Science',
+                'Technology',
+                'Engineering',
+                'Mathematics',
+              ].indexOf(b['category_en']),
+            ),
+      );
     return StemQuizDesign.buildContainer(
       context: context,
-      margin: const EdgeInsets.only(left: 15, right: 15, bottom: 30),
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 25),
       child: Column(
         children: [
@@ -482,45 +455,27 @@ class _StemCareersPageState extends State<StemCareersPage> {
               child: ListView.builder(
                 controller: _exploreScrollController,
                 padding: const EdgeInsets.only(right: 20),
-                itemCount: sortedCareers.length,
-                itemBuilder: (context, index) {
-                  final career = sortedCareers[index];
-                  final String rawCat = career['category_en'] ?? '';
+                itemCount: sorted.length,
+                itemBuilder: (c, i) {
+                  final career = sorted[i], cat = career['category_en'];
                   bool showHeader =
-                      index == 0 ||
-                      rawCat != sortedCareers[index - 1]['category_en'];
-                  final bool isExpanded = _expandedIndex == index;
+                      i == 0 || cat != sorted[i - 1]['category_en'];
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (showHeader)
-                        _buildCategoryHeader(
-                          isEn ? rawCat : (career['category_ms'] ?? rawCat),
-                          rawCat,
-                        ),
-                      StemQuizDesign.careerExpandableTile(
-                        context,
-                        isEn ? career['career_en'] : career['career_ms'],
-                        isExpanded,
-                        () => setState(
-                          () => _expandedIndex = isExpanded ? -1 : index,
-                        ),
-                      ),
-                      if (isExpanded)
-                        _buildMindMapPlaceholder(
-                          career.cast<String, dynamic>(),
-                          isEn,
-                        ),
-                      const SizedBox(height: 12),
+                        _catHeader(isEn ? cat : career['category_ms'], cat),
+                      _careerTile(career, i, isEn, context),
                     ],
                   );
                 },
               ),
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 15), // Spacing added as requested
           Align(
-            alignment: Alignment.bottomRight,
+            alignment:
+                Alignment.bottomRight, // Pins the button to the bottom right
             child: StemQuizDesign.actionButton(
               context,
               isEn ? "Exit" : "Keluar",
@@ -535,189 +490,55 @@ class _StemCareersPageState extends State<StemCareersPage> {
     );
   }
 
+  // --- Minor UI Components ---
   Widget _buildProgressBar(bool isEn, double progress, BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                isEn ? "Progress" : "Kemajuan",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: isDark ? Colors.white : Colors.black,
-                ),
-              ),
-              Text(
-                "${(progress * 100).toInt()}%",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: isDark ? Colors.white : Colors.black,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: isDark ? Colors.white10 : Colors.grey.shade300,
-              color: isDark ? const Color(0xFF50A915) : Colors.green,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            isEn ? "Scroll down to see more" : "Skrol ke bawah untuk lagi",
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark
-                  ? const Color.fromARGB(255, 220, 219, 219)
-                  : const Color.fromARGB(255, 0, 0, 0),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDynamicSingleChoice(
-    Map<String, dynamic> q,
-    bool isEn,
-    BuildContext context,
-  ) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    int qId = int.parse(q['id'].toString());
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isEn ? (q['q_text_en'] ?? '') : (q['q_text_ms'] ?? ''),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: isDark ? Colors.white : Colors.black,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...(q['options'] as List).map((opt) {
-            int optId = int.parse(opt['id'].toString());
-            return _buildOptionRow(
-              context: context,
-              label: isEn
-                  ? (opt['opt_text_en'] ?? '')
-                  : (opt['opt_text_ms'] ?? ''),
-              isSelected: _singleChoices[qId] == optId,
-              onTap: () => setState(() => _singleChoices[qId] = optId),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMultiSelectGrid(Map q5, bool isEn, BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 2.8,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 10,
-      ),
-      itemCount: (q5['options'] as List).length,
-      itemBuilder: (context, index) {
-        final opt = q5['options'][index];
-        int optId = int.parse(opt['id'].toString());
-        bool selected = _multiChoicesQ5.contains(optId);
-        return _buildOptionRow(
-          context: context,
-          label: isEn ? (opt['opt_text_en'] ?? '') : (opt['opt_text_ms'] ?? ''),
-          isSelected: selected,
-          onTap: () => setState(
-            () => selected
-                ? _multiChoicesQ5.remove(optId)
-                : _multiChoicesQ5.add(optId),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildOptionRow({
-    required BuildContext context,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    const Color darkAccent = Color(0xFFEFA638);
-    const Color darkUnselected = Colors.white38;
-    const Color darkText = Colors.white;
-
-    const Color lightAccent = Color.fromARGB(255, 7, 111, 238);
-    const Color lightUnselected = Colors.black54;
-    const Color lightText = Colors.black;
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              size: 20,
-              color: isSelected
-                  ? (isDark ? const Color(0xFFF19100) : const Color(0xFFF19100))
-                  : (isDark ? darkUnselected : lightUnselected),
+            Text(
+              isEn ? "Progress" : "Kemajuan",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
+              ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: isSelected
-                      ? (isDark
-                            ? const Color(0xFFF19100)
-                            : const Color(0xFFF19100))
-                      : (isDark ? darkText : lightText),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                ),
+            Text(
+              "${(progress * 100).toInt()}%",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black,
               ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: progress,
+          minHeight: 8,
+          backgroundColor: isDark ? Colors.white10 : Colors.grey.shade300,
+          color: Colors.green,
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 
-  Widget _buildCategoryHeader(String displayName, String rawCategoryEn) {
-    Color headerColor = _getStemColor(rawCategoryEn, context);
+  Widget _catHeader(String name, String raw) {
+    final color = _getStemColor(raw, context);
     return Padding(
-      padding: const EdgeInsets.only(top: 15, bottom: 10, left: 5),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            displayName.toUpperCase(),
+            name.toUpperCase(),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w900,
-              color: headerColor,
+              color: color,
               letterSpacing: 1.2,
             ),
           ),
@@ -725,28 +546,28 @@ class _StemCareersPageState extends State<StemCareersPage> {
             margin: const EdgeInsets.only(top: 4),
             height: 3,
             width: 35,
-            color: headerColor,
+            color: color,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSuggestedFieldText(bool isEn, String fieldEn, Color color) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _suggestedHeader(bool isEn, String field, Color color) {
     return Align(
-      alignment: Alignment.centerLeft,
+      alignment: Alignment.centerLeft, // This pushes the text to the left slide
       child: RichText(
         text: TextSpan(
           style: TextStyle(
-            color: isDark ? Colors.white : Colors.black,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,
             fontSize: 18,
           ),
           children: [
             TextSpan(text: isEn ? "Suggest field: " : "Bidang dicadangkan: "),
             TextSpan(
-              text: fieldEn,
+              text: field,
               style: TextStyle(fontWeight: FontWeight.bold, color: color),
             ),
           ],
@@ -755,10 +576,8 @@ class _StemCareersPageState extends State<StemCareersPage> {
     );
   }
 
-  Widget _buildMindMapPlaceholder(Map<String, dynamic> career, bool isEn) {
-    final String? imageUrl = isEn
-        ? career['image_en_url']
-        : career['image_ms_url'];
+  Widget _mindMap(Map career, bool isEn) {
+    final path = isEn ? career['image_en_url'] : career['image_ms_url'];
     return Container(
       margin: const EdgeInsets.only(top: 10),
       decoration: BoxDecoration(
@@ -767,15 +586,10 @@ class _StemCareersPageState extends State<StemCareersPage> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        child: imageUrl != null && imageUrl.isNotEmpty
-            ? Image.network(
-                imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (c, e, s) => const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text("Image Error"),
-                ),
-              )
+        child: (path != null && path.isNotEmpty)
+            ? (path.startsWith('http')
+                  ? Image.network(path, fit: BoxFit.contain)
+                  : Image.asset(path, fit: BoxFit.contain))
             : const Padding(
                 padding: EdgeInsets.all(20),
                 child: Text("No image"),
@@ -784,49 +598,64 @@ class _StemCareersPageState extends State<StemCareersPage> {
     );
   }
 
-  void _handleQuizCompletion(bool isEn) {
-    if (_multiChoicesQ5.length < 3) {
-      _showSkillReminder(context, isEn);
-    } else {
-      String res = _calculateSuggestedField();
-      _saveResult(res);
-      setState(() => _showResults = true);
-    }
-  }
+  void _handleCompletion(bool isEn) {
+    // 1. Check the validation requirement
+    if (multiChoicesQ5.length < 3) {
+      // 2. If validation fails, show the custom designed dialog directly
+      final bool isDark = Provider.of<ThemeProvider>(
+        context,
+        listen: false,
+      ).isDarkMode;
 
-  void _showSkillReminder(BuildContext context, bool isEn) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.info_outline, color: Colors.red, size: 35),
-              const SizedBox(height: 12),
-              Text(
-                isEn
-                    ? "Please select at least 3 skills in question 5."
-                    : "Sila pilih sekurang-kurangnya 3 kemahiran dalam soalan 5.",
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: Colors.black),
-              ),
-              const SizedBox(height: 20),
-              StemQuizDesign.actionButton(
-                context,
-                isEn ? "OK" : "OK",
-                () => Navigator.pop(context),
-              ),
-            ],
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF3D3D3D) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              // Applying your imported appBoxShadow for depth
+              boxShadow: isDark ? [] : appBoxShadow,
+              border: isDark ? Border.all(color: Colors.white10) : null,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Using a red warning icon as per your original requirement
+                const Icon(Icons.info_outline, color: Colors.red, size: 40),
+                const SizedBox(height: 15),
+                Text(
+                  isEn
+                      ? "Please select at least 3 skills in question 5."
+                      : "Sila pilih sekurang-kurangnya 3 kemahiran dalam soalan 5.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                // Using your design helper's action button
+                StemQuizDesign.actionButton(
+                  context,
+                  "OK",
+                  () => Navigator.pop(context),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } else {
+      // 3. If validation passes, transition to the results view
+      setState(() {
+        _showResults = true;
+        _expandedIndex = -1; // Reset career tiles expansion
+      });
+    }
   }
 }

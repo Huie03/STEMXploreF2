@@ -264,7 +264,7 @@ class _QuizGamePageState extends State<QuizGamePage> {
           backgroundColor: color,
           foregroundColor: Colors.black,
           elevation: isDark ? 0 : 4,
-          shadowColor: Colors.black.withOpacity(0.5),
+          shadowColor: Colors.black.withValues(alpha: 0.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

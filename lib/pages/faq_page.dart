@@ -1,12 +1,34 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/language_toggle.dart';
-import '/l10n/languages.dart';
-import '/navigation_provider.dart';
+import '../widgets/gradient_background.dart';
+import '../widgets/language_toggle.dart';
+import '../navigation_provider.dart';
 import '../widgets/box_shadow.dart';
 import '../widgets/rawscrollbar.dart';
+import '../ipaddress.dart';
+
+class FaqModel {
+  final String questionEn, questionMs, answerEn, answerMs;
+
+  FaqModel({
+    required this.questionEn,
+    required this.questionMs,
+    required this.answerEn,
+    required this.answerMs,
+  });
+
+  factory FaqModel.fromJson(Map<String, dynamic> json) {
+    return FaqModel(
+      questionEn: json['question_en'] ?? '',
+      questionMs: json['question_ms'] ?? '',
+      answerEn: json['answer_en'] ?? '',
+      answerMs: json['answer_ms'] ?? '',
+    );
+  }
+}
 
 class FaqPage extends StatefulWidget {
   static const routeName = '/faq';
@@ -19,6 +41,32 @@ class FaqPage extends StatefulWidget {
 class _FaqPageState extends State<FaqPage> {
   final ScrollController _scrollController = ScrollController();
   int _expandedIndex = -1;
+  late Future<List<FaqModel>> _faqFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _faqFuture = _fetchFaqs();
+  }
+
+  Future<List<FaqModel>> _fetchFaqs() async {
+    final url = Uri.parse('${ipadress.baseUrl}get_faq.php');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonResponse = json.decode(response.body);
+        return jsonResponse.map((data) => FaqModel.fromJson(data)).toList();
+      } else {
+        debugPrint("Server Error: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      debugPrint("Network Error: $e");
+      return [];
+    }
+  }
 
   @override
   void dispose() {
@@ -35,46 +83,60 @@ class _FaqPageState extends State<FaqPage> {
     final bool isEnglish = navProvider.locale.languageCode == 'en';
     final Color textColor = Theme.of(context).colorScheme.onSurface;
 
-    final String title = isEnglish
-        ? 'Frequent Asked Questions'
-        : 'Soalan Lazim';
-    final List<dynamic> rawFaqData = isEnglish
-        ? EN_DATA['faqs']
-        : MS_DATA['faqs'];
-
     return Scaffold(
       body: GradientBackground(
         child: SafeArea(
           child: Column(
             children: [
-              _buildCustomAppBar(context, title, textColor),
+              _buildCustomAppBar(
+                context,
+                isEnglish ? 'Frequent Asked Questions' : 'Soalan Lazim',
+                textColor,
+              ),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: AppRawScrollbar(
-                    controller: _scrollController,
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(28, 13, 18, 16),
-                      itemCount: rawFaqData.length,
-                      itemBuilder: (context, index) {
-                        final item = rawFaqData[index] as Map<String, dynamic>;
-                        final bool isExpanded = _expandedIndex == index;
+                child: FutureBuilder<List<FaqModel>>(
+                  future: _faqFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          "Error: ${snapshot.error}",
+                          style: TextStyle(color: textColor),
+                        ),
+                      );
+                    }
 
-                        return FaqItem(
-                          question: item['q'] ?? '',
-                          answer: item['a'] ?? '',
-                          isExpanded: isExpanded,
-                          isDark: isDark,
-                          onTap: () {
-                            setState(() {
-                              _expandedIndex = isExpanded ? -1 : index;
-                            });
+                    final faqs = snapshot.data ?? [];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: AppRawScrollbar(
+                        controller: _scrollController,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(28, 13, 18, 16),
+                          itemCount: faqs.length,
+                          itemBuilder: (context, index) {
+                            final item = faqs[index];
+                            return FaqItem(
+                              question: isEnglish
+                                  ? item.questionEn
+                                  : item.questionMs,
+                              answer: isEnglish ? item.answerEn : item.answerMs,
+                              isExpanded: _expandedIndex == index,
+                              isDark: isDark,
+                              onTap: () => setState(
+                                () => _expandedIndex = (_expandedIndex == index)
+                                    ? -1
+                                    : index,
+                              ),
+                            );
                           },
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -106,7 +168,7 @@ class FaqItem extends StatelessWidget {
     final Color questionBg = isDark ? const Color(0xFF3D3D3D) : Colors.white;
     final Color answerBg = isDark
         ? const Color.fromARGB(255, 111, 111, 111)
-        : const Color(0xFFFFD266);
+        : const Color.fromARGB(255, 255, 186, 74);
     final Color questionTextColor = isDark ? Colors.white : Colors.black;
     final Color answerTextColor = Theme.of(context).colorScheme.onSurface;
 

@@ -158,7 +158,7 @@ class _InfoPageState extends State<InfoPage> {
                       const SizedBox(height: 15),
 
                       // Privacy Policy Expandable Card
-                      buildExpandableCard(
+                      buildInfoCard(
                         icon: Icons.privacy_tip_outlined,
                         title: isEnglish ? "Privacy Policy" : "Dasar Privasi",
                         content: isEnglish
@@ -191,7 +191,7 @@ class _InfoPageState extends State<InfoPage> {
                         textColor: textColor,
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 20),
 
                       // Footer Logos
                       Row(
@@ -199,14 +199,14 @@ class _InfoPageState extends State<InfoPage> {
                         children: [
                           Image.asset(
                             'assets/images/Logo_Kedah.png',
-                            width: 80,
-                            height: 80,
+                            width: 70,
+                            height: 70,
                           ),
                           const SizedBox(width: 20),
                           Image.asset(
                             'assets/images/Logo_UUM.png',
-                            width: 80,
-                            height: 80,
+                            width: 150,
+                            height: 150,
                           ),
                         ],
                       ),
@@ -260,65 +260,6 @@ class _InfoPageState extends State<InfoPage> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildExpandableCard({
-    required IconData icon,
-    required String title,
-    required String content,
-    required Color textColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: appBoxShadow,
-      ),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () => setState(() => isPrivacyExpanded = !isPrivacyExpanded),
-            child: Row(
-              children: [
-                Icon(icon, color: const Color(0xFFFF9E00), size: 28),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
-                ),
-                AnimatedRotation(
-                  turns: isPrivacyExpanded ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(Icons.keyboard_arrow_down, color: textColor),
-                ),
-              ],
-            ),
-          ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                content,
-                textAlign: TextAlign.justify,
-                style: TextStyle(fontSize: 14, height: 1.5, color: textColor),
-              ),
-            ),
-            crossFadeState: isPrivacyExpanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 250),
           ),
         ],
       ),

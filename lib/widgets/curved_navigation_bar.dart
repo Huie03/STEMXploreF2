@@ -24,7 +24,7 @@ class AppCurvedNavBar extends StatelessWidget {
         : const Color(0xFFEB9000);
     final Color backgroundColor = isDark
         ? const Color.fromARGB(0, 18, 18, 18)
-        : const Color(0xFFF7F4F4);
+        : const Color.fromARGB(255, 255, 255, 255);
 
     return CurvedNavigationBar(
       index: currentIndex,

@@ -17,13 +17,13 @@ class GradientBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          stops: const [0.57, 1.0],
+          stops: const [0.50, 1.0],
           colors: isDark
               ? [
                   const Color.fromARGB(0, 18, 18, 18),
                   const Color.fromARGB(0, 18, 18, 18),
                 ]
-              : [const Color(0xFFFFD18A), const Color(0xFFFFFFFF)],
+              : [const Color(0xFFFFD38F), const Color(0xFFFFFFFF)],
         ),
       ),
       child: child,

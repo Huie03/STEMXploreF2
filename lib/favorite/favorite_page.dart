@@ -1,43 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:stemxploref2/navigation_provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
-import '../learning_materials/material_details_page.dart'; // Ensure this import is correct
 import '../widgets/gradient_background.dart';
 import '../widgets/language_toggle.dart';
 import 'favorite_provider.dart';
 import '../widgets/box_shadow.dart';
+import '../ipaddress.dart';
+import '../widgets/rawscrollbar.dart';
 
-class FavoritePage extends StatelessWidget {
+class FavoritePage extends StatefulWidget {
   static const String routeName = '/favorite';
-  final Function(Map<String, dynamic>) onChapterTap; // Add this
+  final Function(Map<String, dynamic>) onChapterTap;
 
   const FavoritePage({super.key, required this.onChapterTap});
 
-  String _translateSubject(String subject, bool isEnglish) {
-    if (isEnglish) return subject;
-    switch (subject) {
-      case "Science":
-        return "Sains";
-      case "Mathematics":
-        return "Matematik";
-      case "Computer Science (ASK)":
-        return "Asas Sains Komputer (ASK)";
-      case "Design and Technology (RBT)":
-        return "Reka Bentuk dan Teknologi (RBT)";
-      default:
-        return subject;
-    }
+  @override
+  State<FavoritePage> createState() => _FavoritePageState();
+}
+
+class _FavoritePageState extends State<FavoritePage> {
+  final Set<int> _selectedIndices = {};
+  bool _isAllSelected = false;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSelection(int index, int total) {
+    setState(() {
+      if (_selectedIndices.contains(index)) {
+        _selectedIndices.remove(index);
+      } else {
+        _selectedIndices.add(index);
+      }
+      _isAllSelected = _selectedIndices.length == total && total > 0;
+    });
+  }
+
+  void _toggleSelectAll(int total) {
+    setState(() {
+      _isAllSelected = !_isAllSelected;
+      if (_isAllSelected) {
+        _selectedIndices.addAll(List.generate(total, (index) => index));
+      } else {
+        _selectedIndices.clear();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final favProvider = context.watch<FavoriteProvider>();
+    final favorites = favProvider.bookmarks;
+
     final bool isDark = themeProvider.isDarkMode;
     final bool isEnglish = navProvider.locale.languageCode == 'en';
-    final favorites = context.watch<FavoriteProvider>().bookmarks;
     final Color titleColor = isDark ? Colors.white : Colors.black;
 
     return Scaffold(
@@ -46,25 +69,73 @@ class FavoritePage extends StatelessWidget {
           child: Column(
             children: [
               _buildCustomAppBar(
+                context,
                 isEnglish ? "Favorite" : "Kegemaran",
                 titleColor,
               ),
-              const SizedBox(height: 20),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    isEnglish ? "Last access:" : "Terakhir dicapai:",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: titleColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 25,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      isEnglish ? "Last access:" : "Terakhir dicapai:",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: titleColor,
+                      ),
                     ),
-                  ),
+                    const Spacer(),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Theme(
+                          data: Theme.of(context).copyWith(
+                            visualDensity: const VisualDensity(
+                              horizontal: -4,
+                              vertical: -4,
+                            ),
+                          ),
+                          child: Checkbox(
+                            activeColor: const Color(0xFFEB9000),
+
+                            checkColor: Colors.white,
+                            side: BorderSide(
+                              color: isDark ? Colors.white60 : Colors.black,
+                              width: 2.0,
+                            ),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            value: _isAllSelected,
+                            onChanged: favorites.isEmpty
+                                ? null
+                                : (_) => _toggleSelectAll(favorites.length),
+                          ),
+                        ),
+                        IconButton(
+                          constraints: const BoxConstraints(),
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.delete_sweep_rounded,
+                            color: Colors.redAccent,
+                            size: 30,
+                          ),
+                          tooltip: isEnglish
+                              ? "Delete selected"
+                              : "Padam pilihan",
+                          onPressed: _selectedIndices.isEmpty
+                              ? null
+                              : () =>
+                                    _confirmDeleteSelected(context, favorites),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 15),
               Expanded(
                 child: favorites.isEmpty
                     ? Center(
@@ -74,32 +145,51 @@ class FavoritePage extends StatelessWidget {
                           isDark,
                         ),
                       )
-                    : _buildFavoriteList(context, favorites, isEnglish, isDark),
+                    : LayoutBuilder(
+                        builder: (context, constraints) {
+                          // Calculate height: Each card is roughly 115px (100 height + 15 padding)
+                          double contentHeight = favorites.length * 125.0;
+
+                          // Only show scrollbar/arrows if content exceeds the screen height
+                          bool needsScroll =
+                              contentHeight > constraints.maxHeight;
+
+                          Widget listView = ListView.builder(
+                            controller: _scrollController,
+                            physics: const ClampingScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(30, 5, 22, 30),
+                            itemCount: favorites.length,
+                            itemBuilder: (context, index) {
+                              return _buildFavoriteCard(
+                                context,
+                                favorites[index],
+                                index,
+                                isEnglish,
+                                isDark,
+                                favorites.length,
+                              );
+                            },
+                          );
+                          if (needsScroll) {
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 0, 14, 15),
+                              child: AppRawScrollbar(
+                                controller: _scrollController,
+                                child: listView,
+                              ),
+                            );
+                          } else {
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 0, 14, 0),
+                              child: listView,
+                            );
+                          }
+                        },
+                      ),
               ),
-              const SizedBox(height: 70),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCustomAppBar(String title, Color titleColor) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: titleColor,
-            ),
-          ),
-          const LanguageToggle(),
-        ],
       ),
     );
   }
@@ -131,105 +221,149 @@ class FavoritePage extends StatelessWidget {
     );
   }
 
-  Widget _buildFavoriteList(
+  String _translateSubject(String subject, bool isEnglish) {
+    if (isEnglish) return subject;
+    switch (subject) {
+      case "Science":
+        return "Sains";
+      case "Mathematics":
+        return "Matematik";
+      case "Computer Science (ASK)":
+        return "Asas Sains Komputer (ASK)";
+      case "Design and Technology (RBT)":
+        return "Reka Bentuk dan Teknologi (RBT)";
+      default:
+        return subject;
+    }
+  }
+
+  Widget _buildFavoriteCard(
     BuildContext context,
-    List<Map<String, dynamic>> favorites, // Change to dynamic
+    Map<String, dynamic> item,
+    int index,
     bool isEnglish,
     bool isDark,
+    int total,
   ) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 25),
-      itemCount: favorites.length,
-      itemBuilder: (context, index) {
-        final colorScheme = Theme.of(context).colorScheme;
-        final item = favorites[index];
-        final String subject = _translateSubject(
-          item['title'] ?? '',
-          isEnglish,
-        );
-        final String label = isEnglish ? "Chapter" : "Bab";
-        final String title = isEnglish
-            ? (item['title_en'] ?? "")
-            : (item['title_ms'] ?? "");
-        final String chapterNum = item['chapter_num'] ?? "1";
-        final String fullSubtitle = "$label $chapterNum - $title";
+    final colorScheme = Theme.of(context).colorScheme;
+    final String rawSubject = item['title'] ?? '';
+    final String subject = _translateSubject(rawSubject, isEnglish);
+    final String title = isEnglish
+        ? (item['title_en'] ?? "")
+        : (item['title_ms'] ?? "");
+    final String fullImageUrl = '${ipadress.baseUrl}${item['image'] ?? ''}';
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 15),
-          child: Slidable(
-            key: ValueKey(item['chapter_num']),
-            endActionPane: ActionPane(
-              motion: const DrawerMotion(),
-              extentRatio: 0.25,
-              children: [
-                SlidableAction(
-                  onPressed: (context) => Provider.of<FavoriteProvider>(
-                    context,
-                    listen: false,
-                  ).toggleFavorite(item),
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  icon: Icons.delete,
-                  borderRadius: BorderRadius.circular(20),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: InkWell(
+        onTap: () => widget.onChapterTap(item),
+        borderRadius: BorderRadius.circular(25),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 100),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: isDark ? [] : appBoxShadow,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Checkbox(
+                activeColor: const Color(0xFFEB9000),
+                checkColor: Colors.white,
+                side: BorderSide(
+                  color: isDark ? Colors.white60 : Colors.black,
+                  width: 2.0,
                 ),
-              ],
-            ),
-            child: InkWell(
-              onTap: () {
-                // Map the data to include infographics
-                final Map<String, dynamic> chapterData = {
-                  'subject': item['title'],
-                  'chapter_number': item['chapter_num'],
-                  'title_en': item['title_en'],
-                  'title_ms': item['title_ms'],
-                  'image_url': item['image'],
-                  'infographic_en': item['infographic_en'],
-                  'infographic_ms': item['infographic_ms'],
-                };
-                onChapterTap(chapterData);
-              },
-              borderRadius: BorderRadius.circular(25),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.circular(25),
-                  border: Border.all(
-                    color: isDark ? Colors.white10 : colorScheme.outlineVariant,
-                  ),
-                  boxShadow: isDark ? [] : appBoxShadow,
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(15),
-                  title: Text(
-                    subject,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+                value: _selectedIndices.contains(index),
+                onChanged: (_) => _toggleSelection(index, total),
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subject,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    fullSubtitle,
-                    style: TextStyle(
-                      color: isDark ? Colors.white70 : Colors.black87,
+                    const SizedBox(
+                      height: 4,
+                    ), // Small gap between title and subtitle
+                    Text(
+                      "${isEnglish ? 'Chapter' : 'Bab'} ${item['chapter_num']} - $title",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.grey[300] : Colors.grey[700],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  trailing: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      item['image'] ?? '',
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stack) =>
-                          const Icon(Icons.book, size: 40, color: Colors.grey),
-                    ),
-                  ),
+                  ],
                 ),
               ),
+              const SizedBox(width: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  fullImageUrl,
+                  width: 55,
+                  height: 70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.book, size: 40),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _confirmDeleteSelected(
+    BuildContext context,
+    List<Map<String, dynamic>> favorites,
+  ) async {
+    final provider = Provider.of<FavoriteProvider>(context, listen: false);
+    final itemsToDelete = _selectedIndices.map((i) => favorites[i]).toList();
+
+    for (var item in itemsToDelete) {
+      await provider.toggleFavorite(item);
+    }
+    setState(() {
+      _selectedIndices.clear();
+      _isAllSelected = false;
+    });
+  }
+
+  Widget _buildCustomAppBar(
+    BuildContext context,
+    String title,
+    Color titleColor,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              color: titleColor,
             ),
           ),
-        );
-      },
+          const LanguageToggle(),
+        ],
+      ),
     );
   }
 }

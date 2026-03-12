@@ -177,7 +177,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
 
                         Widget listView = ListView.builder(
                           controller: _verticalScrollController,
-                          padding: const EdgeInsets.fromLTRB(28, 5, 22, 30),
+                          padding: const EdgeInsets.fromLTRB(30, 5, 22, 30),
                           itemCount: chapters.length,
                           itemBuilder: (context, index) {
                             return GestureDetector(
@@ -317,6 +317,8 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
         ? (data['title_en'] ?? "No Title")
         : (data['title_ms'] ?? "Tiada Tajuk");
 
+    final String fullImageUrl = '${ipadress.baseUrl}${data['image_url']}';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(12),
@@ -351,13 +353,15 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
           const SizedBox(width: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.asset(
-              data['image_url'] ?? 'assets/textbook/default.jpg',
+            child: Image.network(
+              Uri.encodeFull(fullImageUrl),
               height: 70,
               width: 55,
               fit: BoxFit.cover,
-              errorBuilder: (context, _, __) =>
-                  Icon(Icons.book, size: 40, color: subTextColor),
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint("Failed to load: $fullImageUrl");
+                return Icon(Icons.book, size: 40, color: subTextColor);
+              },
             ),
           ),
         ],

@@ -6,7 +6,7 @@ import 'package:stemxploref2/favorite/favorite_provider.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/navigation_provider.dart';
+import '../ipaddress.dart';
 
 class MaterialDetailPage extends StatefulWidget {
   final Map<String, dynamic> chapterData;
@@ -20,24 +20,27 @@ class MaterialDetailPage extends StatefulWidget {
 class _MaterialDetailPageState extends State<MaterialDetailPage> {
   @override
   Widget build(BuildContext context) {
-    final navProvider = context.watch<NavigationProvider>();
     final themeProvider = Provider.of<ThemeProvider>(context);
     final bool isDark = themeProvider.isDarkMode;
-
     final Color textColor = Theme.of(context).colorScheme.onSurface;
     final Color cardBg = Theme.of(context).colorScheme.surface;
-
     final FlutterLocalization localization = FlutterLocalization.instance;
 
     final bool isEnglish =
         localization.currentLocale?.languageCode == 'en' ||
         localization.currentLocale == null;
 
-    final String rawSubject = widget.chapterData['subject'] ?? "Science";
+    final String rawSubject =
+        widget.chapterData['subject'] ??
+        widget.chapterData['title'] ??
+        "Science";
+    final String chapterNum =
+        widget.chapterData['chapter_number']?.toString() ??
+        widget.chapterData['chapter_num']?.toString() ??
+        "1";
+
     final String titleEn = widget.chapterData['title_en'] ?? "";
     final String titleMs = widget.chapterData['title_ms'] ?? "";
-    final String chapterNum =
-        widget.chapterData['chapter_number']?.toString() ?? "1";
 
     final String infographicPath = isEnglish
         ? (widget.chapterData['infographic_en'] ??
@@ -50,8 +53,10 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     final String label = isEnglish ? "Chapter" : "Bab";
     final String fullChapterString = "$label $chapterNum - $chapterTitle";
 
+    // Watch the provider for changes
     final favoriteProvider = context.watch<FavoriteProvider>();
 
+    // This will now correctly trigger a rebuild when the list updates
     final bool isBookmarked = favoriteProvider.isFavorited(
       rawSubject,
       chapterNum,
@@ -112,7 +117,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
               title,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 22,
+                fontSize: 20,
                 color: textColor,
               ),
             ),
@@ -135,7 +140,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     bool isDark,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(25, 5, 20, 5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -151,35 +156,29 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
           ),
           IconButton(
             onPressed: () async {
-              // Make this async
-              final Map<String, String> dataToToggle = {
+              final Map<String, dynamic> dataToToggle = {
+                // These keys must be identical to what you use in FavoriteProvider
                 'title': rawSub,
                 'chapter_num': num,
                 'title_en': tEn,
                 'title_ms': tMs,
-                'infographic_en':
-                    widget.chapterData['infographic_en']?.toString() ?? '',
-                'infographic_ms':
-                    widget.chapterData['infographic_ms']?.toString() ?? '',
+                'infographic_en': widget.chapterData['infographic_en'] ?? '',
+                'infographic_ms': widget.chapterData['infographic_ms'] ?? '',
                 'image':
                     widget.chapterData['image_url'] ??
-                    '', // Ensure this key matches
+                    '', // Changed key from 'image_url' to 'image'
               };
 
-              // Store the state BEFORE toggling to know if we are adding or removing
-              final bool willBeAdded = !isBookmarked;
-
-              // Await the toggle so the UI waits for the server
               await Provider.of<FavoriteProvider>(
                 context,
                 listen: false,
               ).toggleFavorite(dataToToggle);
 
-              // Now show the popup
+              // No need to call setState manually if you use context.watch<FavoriteProvider>()
               if (mounted) {
                 _showCenterPopup(
                   isEnglish,
-                  isAdding: willBeAdded,
+                  isAdding: !isBookmarked,
                   isDark: isDark,
                 );
               }
@@ -207,7 +206,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
   }) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
@@ -275,31 +274,35 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
   }
 
   Widget _buildMainContent(String imagePath, Color cardBg, bool isDark) {
+    final String fullImageUrl = '${ipadress.baseUrl}$imagePath';
+
     return Align(
       alignment: Alignment.topCenter,
       child: Container(
+        // Keep your box properties
         width: MediaQuery.of(context).size.width * 0.9,
+        // If you want a fixed height for the box, add it here:
+        // height: MediaQuery.of(context).size.height * 0.6,
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(0),
+          borderRadius: BorderRadius.circular(
+            12,
+          ), // Added a small radius for look
         ),
+        // Use child directly, NOT SingleChildScrollView
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(0),
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.fitWidth,
-              alignment: Alignment.topCenter,
-              errorBuilder: (context, error, stack) => Padding(
-                padding: const EdgeInsets.all(40.0),
-                child: Icon(
-                  Icons.broken_image,
-                  size: 80,
-                  color: isDark ? Colors.white24 : Colors.grey,
-                ),
-              ),
-            ),
+          borderRadius: BorderRadius.circular(10),
+          child: Image.network(
+            Uri.encodeFull(fullImageUrl),
+            fit: BoxFit.contain,
+            alignment: Alignment.center,
+            errorBuilder: (context, error, stack) {
+              return const Icon(
+                Icons.broken_image,
+                size: 80,
+                color: Colors.grey,
+              );
+            },
           ),
         ),
       ),

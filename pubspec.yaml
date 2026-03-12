@@ -36,7 +36,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/Logo_F2.png
     - assets/images/Logo_F2_2.png
     - assets/icons/1.png
     - assets/icons/2.png
@@ -57,79 +56,18 @@ flutter:
     - assets/stem_highlights/h4.png
     - assets/stem_highlights/STEM-Girls-banner.jpeg
     - assets/stem_highlights/Trisha-Prabhu.jpg
-    - assets/flag/language us_flag.png
+    - assets/flag/language uk_flag.png
     - assets/flag/language ms_flag.png
-    - assets/images/STEM info.jpg
-    - assets/images/STEM 5.png
-    - assets/images/STEM 2.png
-    - assets/stem_info/Info2_en.png
-    - assets/stem_info/Info2_ms.png
-    - assets/stem_info/Info3_en.png
-    - assets/stem_info/Info3_ms.png
-    - assets/stem_info/Info4_en.png
-    - assets/stem_info/Info4_ms.png
-    - assets/stem_info/STEM_video1.png
-    - assets/stem_info/STEMvideo2.png
-    - assets/stem_info/info3.png
-    - assets/stem_info/info4.png
     - assets/textbook/ASK/BC_ASK.jpg
-    - assets/textbook/ASK/BC_ASK_C1.png
-    - assets/textbook/ASK/BC_ASK_C2.png
-    - assets/textbook/ASK/BC_ASK_C3.png
     - assets/textbook/RBT/BC_RBT.jpg
-    - assets/textbook/RBT/BC_RBT_C1.1.png
-    - assets/textbook/RBT/BC_RBT_C1.2.png
-    - assets/textbook/RBT/BC_RBT_C1.3.png
-    - assets/textbook/RBT/BC_RBT_C2.1.png
-    - assets/textbook/RBT/BC_RBT_C2.2.png
-    - assets/textbook/RBT/BC_RBT_C2.3.png
-    - assets/textbook/RBT/BC_RBT_C2.4.png
-    - assets/textbook/RBT/BC_RBT_C2.5.png
-    - assets/textbook/RBT/BC_RBT_C2.6.png
     - assets/textbook/Science/BC_Science.jpg
-    - assets/textbook/Science/BC_Science_C1.png
-    - assets/textbook/Science/BC_Science_C2.png
-    - assets/textbook/Science/BC_Science_C3.png
-    - assets/textbook/Science/BC_Science_C4.png
-    - assets/textbook/Science/BC_Science_C5.png
-    - assets/textbook/Science/BC_Science_C6.png
-    - assets/textbook/Science/BC_Science_C7.png
-    - assets/textbook/Science/BC_Science_C8.png
-    - assets/textbook/Science/BC_Science_C9.png
-    - assets/textbook/Science/BC_Science_C10.png
-    - assets/textbook/Science/BC_Science_C11.png
-    - assets/textbook/Science/BC_Science_C12.png
-    - assets/textbook/Science/BC_Science_C13.png
     - assets/textbook/Mathematics/BC_Mathematics.jpg
-    - assets/textbook/Mathematics/BC_Math_C1.png
-    - assets/textbook/Mathematics/MATH_C1_en.png
-    - assets/textbook/Mathematics/MATH_C1_ms.png
-    - assets/textbook/Mathematics/BC_Math_C2.png
-    - assets/textbook/Mathematics/BC_Math_C3.png
-    - assets/textbook/Mathematics/BC_Math_C4.png
-    - assets/textbook/Mathematics/BC_Math_C5.png
-    - assets/textbook/Mathematics/BC_Math_C6.png
-    - assets/textbook/Mathematics/BC_Math_C7.png
-    - assets/textbook/Mathematics/BC_Math_C8.png
-    - assets/textbook/Mathematics/BC_Math_C9.png
-    - assets/textbook/Mathematics/BC_Math_C10.png
-    - assets/textbook/Mathematics/BC_Math_C11.png
-    - assets/textbook/Mathematics/BC_Math_C12.png
-    - assets/textbook/Mathematics/BC_Math_C13.png
-    - assets/images/Science.png
-    - assets/images/food_pyramid_image.webp
-    - assets/images/quiz_stem.png
-    - assets/images/quiz_explanation.png
     - assets/images/STEMvideo1.png
     - assets/images/nutrition.png
     - assets/images/biodiversity.png
     - assets/images/ecosystem.png
-    - assets/images/info1.png
-    - assets/images/info2.png
-    - assets/images/info3.png
-    - assets/images/info4.png
     - assets/images/Logo_Kedah.png
     - assets/images/Logo_UUM.png
-    - assets/audio/quiz_background_music.mp3
+    - assets/audio/quiz_bm.music.mp3
 
 
