@@ -8,21 +8,25 @@ import '/widgets/language_toggle.dart';
 import '/stem_highlights/highlight.dart';
 import '/widgets/feature_button.dart';
 import '../widgets/box_shadow.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../ipaddress.dart';
 
 class HomePage extends StatefulWidget {
   static const routeName = '/home';
   final Function(Highlight) onHighlightTap;
-
   const HomePage({super.key, required this.onHighlightTap});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final List<Highlight> highlights = sampleHighlights;
-  final ScrollController _scrollController = ScrollController();
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+  List<Highlight> highlights = [];
+  bool isLoading = true;
+  late PageController _pageController;
+  bool _isUserScrolling = false;
   Timer? _autoScrollTimer;
+
   //final double _stepSize = 320.0;
 
   final List<Map<String, dynamic>> _features = [
@@ -33,50 +37,75 @@ class _HomePageState extends State<HomePage> {
     {'key': 'info', 'icon': 'assets/icons/5.png', 'index': 8},
     {'key': 'faq', 'icon': 'assets/icons/6.png', 'index': 9},
   ];
-
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
+    final double? savedPage = PageStorage.of(context).readState(
+      context,
+      identifier: const PageStorageKey('home_page_controller'),
+    );
+
+    _pageController = PageController(
+      viewportFraction: 0.9,
+      initialPage: savedPage?.round() ?? 0,
+    );
+
+    _fetchHighlights();
     WidgetsBinding.instance.addPostFrameCallback((_) => _startAutoScroll());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final navProvider = Provider.of<NavigationProvider>(context);
+    if (navProvider.currentIndex == 0) {
+      _startAutoScroll();
+    } else {
+      _autoScrollTimer?.cancel();
+    }
+  }
+
+  Future<void> _fetchHighlights() async {
+    try {
+      final response = await http.get(
+        Uri.parse("${ipadress.baseUrl}get_highlights.php"),
+      );
+      if (response.statusCode == 200) {
+        List<dynamic> body = jsonDecode(response.body);
+        setState(() {
+          highlights = body
+              .map((dynamic item) => Highlight.fromJson(item))
+              .toList();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching highlights: $e");
+      setState(() => isLoading = false);
+    }
   }
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (_scrollController.hasClients) {
-        final double screenWidth = MediaQuery.of(context).size.width;
-        final bool isTablet = screenWidth > 600;
-
-        double dynamicStepSize = (isTablet ? 320.0 : 280.0) + 15.0;
-
-        double maxExtent = _scrollController.position.maxScrollExtent;
-        double currentOffset = _scrollController.offset;
-
-        if (currentOffset >= maxExtent - 10) {
-          _scrollController.animateTo(
-            0,
-            duration: const Duration(milliseconds: 1500),
-            curve: Curves.easeOutExpo,
-          );
-        } else {
-          double nextTarget =
-              ((currentOffset / dynamicStepSize).round() + 1) * dynamicStepSize;
-
-          _scrollController.animateTo(
-            nextTarget.clamp(0.0, maxExtent),
-            duration: const Duration(milliseconds: 1000),
-            curve: Curves.easeInOutCubic,
-          );
-        }
-      }
+      if (!mounted || _isUserScrolling || !_pageController.hasClients) return;
+      int nextIndex = (_pageController.page!.round() + 1) % highlights.length;
+      _pageController.animateToPage(
+        nextIndex,
+        duration: const Duration(milliseconds: 1000),
+        curve: Curves.fastOutSlowIn,
+      );
     });
-  }
-
-  @override
-  void dispose() {
-    _autoScrollTimer?.cancel();
-    _scrollController.dispose();
-    super.dispose();
   }
 
   String translate(String key, bool isEnglish) {
@@ -97,11 +126,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context); // ADDED
-
     final bool isDark = themeProvider.isDarkMode;
     final bool isEnglish = navProvider.locale.languageCode == 'en';
     final Color textColor = Theme.of(context).colorScheme.onSurface;
-
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isTablet = screenWidth > 600;
 
@@ -148,12 +175,17 @@ class _HomePageState extends State<HomePage> {
                         height: 1,
                         color: isDark ? Colors.white : Colors.black12,
                       ),
-                      _buildHighlightsSection(
-                        isEnglish,
-                        isTablet,
-                        textColor,
-                        isDark,
-                      ),
+                      isLoading
+                          ? const Padding(
+                              padding: EdgeInsets.all(20),
+                              child: CircularProgressIndicator(),
+                            )
+                          : _buildHighlightsSection(
+                              isEnglish,
+                              isTablet,
+                              textColor,
+                              isDark,
+                            ),
                     ],
                   ),
                 ),
@@ -222,48 +254,58 @@ class _HomePageState extends State<HomePage> {
     Color textColor,
     bool isDark,
   ) {
+    if (highlights.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 8.0, top: 6.0, bottom: 4.0),
+          padding: const EdgeInsets.only(left: 20, top: 6, bottom: 4),
           child: Text(
             translate('highlights', isEnglish),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: isTablet ? 20 : 18,
+              fontSize: 18,
               color: textColor,
             ),
           ),
         ),
-        Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: isTablet ? 550 : double.infinity,
-            ),
-            child: SizedBox(
-              height: 190,
-              child: ListView.separated(
-                clipBehavior: Clip.hardEdge,
-                controller: _scrollController,
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20, //the space first card
-                  vertical: 10,
-                ),
-
-                itemCount: highlights.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 15),
-                itemBuilder: (context, index) => _buildHighlightCard(
+        SizedBox(
+          height: 190,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification is ScrollStartNotification)
+                _isUserScrolling = true;
+              if (notification is ScrollEndNotification)
+                _isUserScrolling = false;
+              return false;
+            },
+            child: PageView.builder(
+              key: const PageStorageKey('home_highlights_pageview'),
+              controller: _pageController,
+              onPageChanged: (index) {
+                // Save the page index whenever it changes
+                PageStorage.of(context).writeState(
                   context,
-                  highlights[index],
-                  isEnglish,
-                  isDark,
-                  isTablet,
-                ),
-              ),
+                  index.toDouble(),
+                  identifier: const PageStorageKey('home_page_controller'),
+                );
+              },
+              itemCount: highlights.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8.0,
+                    vertical: 10,
+                  ),
+                  child: _buildHighlightCard(
+                    context,
+                    highlights[index],
+                    isEnglish,
+                    isDark,
+                    isTablet,
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -279,7 +321,19 @@ class _HomePageState extends State<HomePage> {
     bool isTablet,
   ) {
     return GestureDetector(
-      onTap: () => widget.onHighlightTap(h),
+      onTap: () async {
+        // 1. Stop the timer so it doesn't try to scroll while the page is hidden
+        _autoScrollTimer?.cancel();
+
+        // 2. Trigger the navigation and WAIT for the user to come back
+        // (Assuming onHighlightTap performs a Navigator.push)
+        await widget.onHighlightTap(h);
+
+        // 3. This line will ONLY run once the user returns to the HomePage
+        if (mounted) {
+          _startAutoScroll();
+        }
+      },
       child: Container(
         width: isTablet ? 320 : 280,
         decoration: BoxDecoration(
@@ -295,11 +349,35 @@ class _HomePageState extends State<HomePage> {
               borderRadius: const BorderRadius.horizontal(
                 left: Radius.circular(16),
               ),
-              child: Image.asset(
-                h.image,
-                width: 105,
-                height: double.infinity,
-                fit: BoxFit.cover,
+              child: Builder(
+                builder: (context) {
+                  // 1. Your baseUrl is already http://192.168.1.112/stemxplore/
+                  final String base = ipadress.baseUrl;
+                  // 2. Concatenate directly.
+                  // If h.image1Url is "assets/stem_highlight/SH2.png",
+                  // you just need to ensure there isn't a double slash.
+                  final String imageUrl = base.endsWith('/')
+                      ? '$base${h.image1Url}'
+                      : '$base/${h.image1Url}';
+                  // 3. Remove accidental double-slashes if they exist
+                  final String finalUrl = imageUrl.replaceFirst(
+                    '//assets',
+                    '/assets',
+                  );
+                  debugPrint("DEBUG: Final Cleaned URL: $finalUrl");
+                  return Image.network(
+                    finalUrl,
+                    width: 130,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 130,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.broken_image),
+                      );
+                    },
+                  );
+                },
               ),
             ),
             Expanded(
@@ -321,12 +399,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      isEnglish ? h.subtitleEn : h.subtitleMs,
+                      isEnglish
+                          ? h.subtitleEn
+                          : h.subtitleMs, // <--- Add this ternary check
                       style: TextStyle(
                         color: isDark ? Colors.white60 : Colors.black54,
                         fontSize: 13,
                       ),
-                      maxLines: 2,
+                      maxLines: 4,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const Spacer(),

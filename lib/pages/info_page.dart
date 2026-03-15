@@ -132,34 +132,31 @@ class _InfoPageState extends State<InfoPage> {
 
                       const SizedBox(height: 15),
 
-                      // Mission/About Card
+                      // About Card
                       buildInfoCard(
-                        icon: Icons.info_outline,
+                        icon: Icons.info,
                         title: isEnglish
                             ? "About STEMXplore F2"
                             : "Tentang STEMXplore F2",
                         content: isEnglish
-                            ? "STEMXplore F2 is a mobile learning platform designed "
-                                  "for Form 2 students to explore STEM subjects in an "
-                                  "interactive and career-oriented way.\n\n"
-                                  "Our Mission:\n"
-                                  "To inspire and empower students to develop critical "
-                                  "thinking and problem-solving skills through engaging "
-                                  "STEM learning experiences."
-                            : "STEMXplore F2 ialah platform pembelajaran mudah alih "
-                                  "untuk pelajar Tingkatan 2 meneroka subjek STEM secara "
-                                  "interaktif dan berorientasikan kerjaya.\n\n"
-                                  "Misi Kami:\n"
-                                  "Memberi inspirasi dan memperkasa pelajar membangunkan "
-                                  "kemahiran berfikir secara kritis dan penyelesaian masalah.",
+                            ? "STEMXplore F2 is an interactive mobile platform "
+                                  "for Form 2 students to master STEM "
+                                  "through engaging content and real-world applications, "
+                                  "supporting Quality Education (SDG 4) "
+                                  "by making learning fun, accessible, and effective."
+                            : "STEMXplore F2 ialah platform mudah alih interaktif "
+                                  "untuk pelajar Tingkatan 2 menguasai STEM "
+                                  "melalui kandungan menarik dan aplikasi dunia sebenar, "
+                                  "menyokong Pendidikan Berkualiti (SDG 4) "
+                                  "dengan menjadikan pembelajaran lebih menyeronokkan, mudah diakses, dan berkesan.",
                         textColor: textColor,
                       ),
 
                       const SizedBox(height: 15),
 
-                      // Privacy Policy Expandable Card
+                      // Privacy Policy Card
                       buildInfoCard(
-                        icon: Icons.privacy_tip_outlined,
+                        icon: Icons.privacy_tip,
                         title: isEnglish ? "Privacy Policy" : "Dasar Privasi",
                         content: isEnglish
                             ? "STEMXplore F2 respects your privacy. "
@@ -176,7 +173,7 @@ class _InfoPageState extends State<InfoPage> {
 
                       // Terms Card
                       buildInfoCard(
-                        icon: Icons.description_outlined,
+                        icon: Icons.description,
                         title: isEnglish
                             ? "Terms of Service"
                             : "Terma Perkhidmatan",

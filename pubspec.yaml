@@ -18,7 +18,8 @@ dependencies:
   provider: ^6.1.1
   curved_navigation_bar: ^1.0.6
   flutter_localization: ^0.3.3
-  youtube_player_flutter: ^9.1.1
+  video_player: ^2.8.1
+  chewie: ^1.8.1
   http: ^1.2.0
   confetti: ^0.7.0
   audioplayers: ^5.2.1
@@ -43,19 +44,6 @@ flutter:
     - assets/icons/4.png
     - assets/icons/5.png
     - assets/icons/6.png
-    - assets/images/highlight1.webp
-    - assets/images/highlight2.png
-    - assets/stem_highlights/rafal.jpg
-    - assets/stem_highlights/brooke.jpg
-    - assets/stem_highlights/Gitanjali.jpg
-    - assets/stem_highlights/Alison.png
-    - assets/stem_highlights/Anya.jpg
-    - assets/stem_highlights/Deepika.jpg
-    - assets/stem_highlights/h1.png
-    - assets/stem_highlights/h4.1.png
-    - assets/stem_highlights/h4.png
-    - assets/stem_highlights/STEM-Girls-banner.jpeg
-    - assets/stem_highlights/Trisha-Prabhu.jpg
     - assets/flag/language uk_flag.png
     - assets/flag/language ms_flag.png
     - assets/textbook/ASK/BC_ASK.jpg
@@ -69,5 +57,7 @@ flutter:
     - assets/images/Logo_Kedah.png
     - assets/images/Logo_UUM.png
     - assets/audio/quiz_bm.music.mp3
+    - assets/stem_info/images/
+    - assets/stem_info/videos/
 
 

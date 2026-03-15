@@ -18,6 +18,7 @@ import '/stem_highlights/highlight_detail_page.dart';
 import 'package:stemxploref2/learning_materials/subject_chapters_page.dart';
 import 'package:stemxploref2/learning_materials/material_details_page.dart'; // Add this
 import '/stem_info/stem_detail_page.dart';
+import '../stem_highlights/highlight.dart';
 
 class MainScreen extends StatefulWidget {
   static const routeName = '/main';
@@ -84,7 +85,20 @@ class _MainScreenState extends State<MainScreen> {
         : navProvider.currentIndex;
 
     final List<Widget> pages = [
-      HomePage(onHighlightTap: onHighlightSelected), // 0
+      // Inside pages/main_screen.dart
+      // Change this block in your MainScreen:
+      HomePage(
+        onHighlightTap: (Highlight h) {
+          // 1. Update the state so the IndexedStack builds the Detail page
+          setState(() => selectedHighlight = h);
+
+          // 2. Switch to the index that holds the detail page
+          Provider.of<NavigationProvider>(context, listen: false).setIndex(10);
+
+          // 3. Return a dummy Future so your existing 'await' in HomePage doesn't crash
+          return Future.value();
+        },
+      ), // 0
       FavoritePage(
         onChapterTap: (chapterData) {
           setState(() {

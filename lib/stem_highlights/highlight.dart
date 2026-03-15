@@ -1,12 +1,20 @@
 class Highlight {
-  final String id;
+  final int id;
   final String titleEn;
   final String titleMs;
   final String subtitleEn;
   final String subtitleMs;
-  final String image;
-  final List<String> detailsEn;
-  final List<String> detailsMs;
+  final String image1Url;
+  final String image2Url;
+  final String desc1En;
+  final String desc1Ms;
+  final String desc2En;
+  final String desc2Ms;
+  final String skillsImageEn;
+  final String skillsImageMs;
+  final String citationEn;
+  final String citationMs;
+  final String sourceUrl;
 
   Highlight({
     required this.id,
@@ -14,148 +22,50 @@ class Highlight {
     required this.titleMs,
     required this.subtitleEn,
     required this.subtitleMs,
-    required this.image,
-    required this.detailsEn,
-    required this.detailsMs,
+    required this.image1Url,
+    required this.image2Url,
+    required this.desc1En,
+    required this.desc1Ms,
+    required this.desc2En,
+    required this.desc2Ms,
+    required this.skillsImageEn,
+    required this.skillsImageMs,
+    required this.citationEn,
+    required this.citationMs,
+    required this.sourceUrl,
   });
+
+  factory Highlight.fromJson(Map<String, dynamic> json) {
+    // Helper to extract nested map data safely
+    Map<String, dynamic> getMap(dynamic data) =>
+        data is Map ? Map<String, dynamic>.from(data) : {};
+
+    final titleData = getMap(json['title']);
+    final subtitleData = getMap(json['subtitle']);
+    final descData = getMap(json['descriptions']);
+    final desc1Data = getMap(descData['desc1']);
+    final desc2Data = getMap(descData['desc2']);
+    final skillsData = getMap(json['skills']);
+    final sourceData = getMap(json['source']);
+    final citationData = getMap(sourceData['citation']);
+
+    return Highlight(
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      titleEn: titleData['en']?.toString() ?? '',
+      titleMs: titleData['ms']?.toString() ?? '',
+      subtitleEn: subtitleData['en']?.toString() ?? '',
+      subtitleMs: subtitleData['ms']?.toString() ?? '',
+      image1Url: json['images']?['image1']?.toString() ?? '',
+      image2Url: json['images']?['image2']?.toString() ?? '',
+      desc1En: desc1Data['en']?.toString() ?? '',
+      desc1Ms: desc1Data['ms']?.toString() ?? '',
+      desc2En: desc2Data['en']?.toString() ?? '',
+      desc2Ms: desc2Data['ms']?.toString() ?? '',
+      skillsImageEn: skillsData['en']?.toString() ?? '',
+      skillsImageMs: skillsData['ms']?.toString() ?? '',
+      citationEn: citationData['en']?.toString() ?? '',
+      citationMs: citationData['ms']?.toString() ?? '',
+      sourceUrl: sourceData['url']?.toString() ?? '',
+    );
+  }
 }
-
-final List<Highlight> sampleHighlights = [
-  Highlight(
-    id: 'h1',
-    titleEn: 'Scientist Becomes Coloring Book Superhero!',
-    titleMs: 'Saintis Menjadi Superhero Buku Mewarna!',
-    subtitleEn: 'Meet a real scientist turned comic hero!',
-    subtitleMs: 'Kenali saintis sebenar yang menjadi wira komik!',
-    image: 'assets/images/highlight1.webp',
-    detailsEn: [
-      'assets/stem_highlights/Alison.png',
-      'Alison Banwell',
-      'A real scientist at University of Colorado Boulder.',
-      'She was transformed into a coloring book character to make STEM visible.',
-      'This project proves that imagination and curiosity are essential tools for every scientist.',
-      'assets/stem_highlights/h1.png',
-      'Be the Change STEM coloring books help students (especially girls) see themselves in high-impact roles.',
-      'Source: Byars, M. (2025b, December 15). \nCU scientist becomes STEM superhero for kids. Axios; Axios Boulder. \nhttps://www.axios.com/local/boulder/2025/12/15/cu-scientist-featured-in-stem-coloring-book',
-    ],
-    detailsMs: [
-      'assets/stem_highlights/Alison.png',
-      'Alison Banwell',
-      'Seorang saintis sebenar di University of Colorado Boulder.',
-      'Beliau telah diubah menjadi watak buku mewarna untuk menjadikan STEM lebih kelihatan.',
-      'Projek ini membuktikan bahawa imaginasi dan rasa ingin tahu ialah alat penting bagi setiap saintis.',
-      'assets/stem_highlights/h1.png',
-      'Buku mewarna STEM Be the Change membantu pelajar (terutamanya kanak-kanak perempuan) melihat diri mereka dalam peranan berimpak tinggi.',
-      'Sumber: Byars, M. (2025b, Disember 15). \nSaintis CU menjadi superhero STEM untuk kanak-kanak. Axios; Axios Boulder. \nhttps://www.axios.com/local/boulder/2025/12/15/cu-scientist-featured-in-stem-coloring-book',
-    ],
-  ),
-
-  Highlight(
-    id: 'h2',
-    titleEn: 'Can YOU Break a STEM World Record?',
-    titleMs: 'Bolehkah ANDA Memecahkan Rekod Dunia STEM?',
-    subtitleEn: 'Fun challenges you can try!',
-    subtitleMs: 'Cabaran menyeronokkan yang boleh anda cuba!',
-    image: 'assets/images/highlight2.png',
-    detailsEn: [
-      'National STEM Day is an annual observance on 8th November which celebrates and promotes the fields of science, technology, engineering and mathematics.',
-      'STEM Heroes and Achievements:\n',
-      'Brooke Cressey',
-      'assets/stem_highlights/brooke.jpg',
-      'Only 8 years old, set the record for the highest Times Tables Rock Stars score which is 210 in one minute.',
-      'Brooke beat a maths game record showing speed and accuracy',
-      'Rafał',
-      'assets/stem_highlights/rafal.jpg',
-      'Youngest person to discover a comet at 12 years old with more discoveries since.',
-      'Rafał discovered a real comet, showing curiosity and exploration',
-      'Gitanjali',
-      'assets/stem_highlights/Gitanjali.jpg',
-      'Created a device to detect lead in water at age 10.',
-      'Gitanjali’s device helps solve a real health problem',
-      'Try This Record:',
-      'Trying to stack up the 20 LEGO bricks to a right-angle tower (under 16 category) as fast as possible.',
-      'A fun challenge you can practice and time yourself on!',
-      'Source: Vassiliki Bakogianni. (2024b, November 7). \nSTEM day: 5 epic science and technology records and how YOU can break one! Guinness World Records. \nhttps://kids.guinnessworldrecords.com/news/2024/11/stem-day-5-epic-science-and-technology-records-and-how-you-can-break-one-773304',
-    ],
-    detailsMs: [
-      'Hari STEM Kebangsaan ialah sambutan tahunan pada 8 November yang meraikan serta mempromosikan bidang sains, teknologi, kejuruteraan dan matematik.',
-      'Wira dan Pencapaian STEM:\n',
-      'Brooke Cressey',
-      'assets/stem_highlights/brooke.jpg',
-      'Pada usia hanya 8 tahun, mencipta rekod skor tertinggi Times Tables Rock Stars iaitu 210 dalam satu minit.',
-      'Brooke memecahkan rekod permainan matematik dengan menunjukkan kepantasan dan ketepatan',
-      'Rafał',
-      'assets/stem_highlights/rafal.jpg',
-      'Individu termuda yang menemui sebuah komet pada usia 12 tahun, dengan lebih banyak penemuan selepas itu.',
-      'Rafał menemui komet sebenar, menunjukkan rasa ingin tahu dan semangat penerokaan',
-      'Gitanjali',
-      'assets/stem_highlights/Gitanjali.jpg',
-      'Mencipta sebuah peranti untuk mengesan plumbum dalam air pada usia 10 tahun.',
-      'Peranti Gitanjali membantu menyelesaikan masalah kesihatan sebenar',
-      'Cuba Rekod Ini:',
-      'Cuba susun 20 bata LEGO membentuk menara bersudut tepat (kategori bawah 16 tahun) secepat mungkin.',
-      'Cabaran menyeronokkan yang boleh anda latih dan ukur masa sendiri!',
-      'Sumber: Vassiliki Bakogianni. (2024b, 7 November). \nHari STEM: 5 rekod sains dan teknologi epik dan bagaimana ANDA boleh memecahkannya! Guinness World Records. \nhttps://kids.guinnessworldrecords.com/news/2024/11/stem-day-5-epic-science-and-technology-records-and-how-you-can-break-one-773304',
-    ],
-  ),
-
-  Highlight(
-    id: 'h3',
-    titleEn: 'Girls Changing the World with STEM',
-    titleMs: 'Kanak‑Kanak Perempuan Mengubah Dunia dengan STEM',
-    subtitleEn: 'Real young innovators solving big world problems!',
-    subtitleMs: 'Inovator muda sebenar menyelesaikan masalah besar dunia!',
-    image: 'assets/stem_highlights/STEM-Girls-banner.jpeg',
-    detailsEn: [
-      'assets/stem_highlights/Trisha-Prabhu.jpg',
-      'Trisha Prabhu, age 14',
-      'Created the “Rethink” app that helps stop hurtful online posts by prompting users to rethink before posting. In trials, it prevented 93% of cyberbullying posts.',
-      'assets/stem_highlights/Deepika.jpg',
-      'Deepika Kurup, age 14',
-      'Invented a solar‑powered water purifier that makes contaminated water safe to drink, winning a major science challenge prize.',
-      'assets/stem_highlights/Anya.jpg',
-      'Anya Pogharian, age 17',
-      'Spent over 300 hours developing a \$500 dialysis machine — much cheaper and more accessible than traditional machines.',
-      'These girls show how STEM creativity, empathy, and problem‑solving can make a real impact in tech, health, and social wellbeing.',
-      'Source: STEM Girls - Girl Museum. (2024, February 12). Girl Museum. \nhttps://www.girlmuseum.org/project/stem-girls/',
-    ],
-    detailsMs: [
-      'assets/stem_highlights/Trisha-Prabhu.jpg',
-      'Trisha Prabhu, 14',
-      'Mencipta aplikasi “Rethink” yang membantu menghentikan hantaran dalam talian yang menyakitkan dengan mengingatkan pengguna berfikir semula sebelum menghantar. Dalam ujian, ia menghalang 93% kes buli siber.',
-      'assets/stem_highlights/Deepika.jpg',
-      'Deepika Kurup, 14',
-      'Mencipta penapis air bertenaga suria yang menjadikan air tercemar selamat untuk diminum, memenangi hadiah utama cabaran sains.',
-      'assets/stem_highlights/Anya.jpg',
-      'Anya Pogharian, 17',
-      'Menghabiskan lebih 300 jam membangunkan mesin dialisis yang berharga \$500 — jauh lebih murah dan boleh diakses daripada mesin tradisional.',
-      'Kanak‑kanak perempuan ini menunjukkan bagaimana kreativiti, empati, dan penyelesaian masalah dalam STEM boleh memberi impak nyata dalam teknologi, kesihatan dan kesejahteraan sosial.',
-      'Sumber: STEM Girls - Girl Museum. (2024, 7 Februari). Girl Museum. \nhttps://www.girlmuseum.org/project/stem-girls/',
-    ],
-  ),
-
-  Highlight(
-    id: 'h4',
-    titleEn: 'Perak School Wins National STEM Gold',
-    titleMs: 'Sekolah Perak Menang Emas STEM Peringkat Kebangsaan',
-    subtitleEn: 'Student-led innovation tackling global challenges!',
-    subtitleMs: 'Inovasi diketuai pelajar menyelesaikan cabaran global!',
-    image: 'assets/stem_highlights/h4.png',
-    detailsEn: [
-      'Sekolah Menengah (SM) Sains Bagan Datoh took the gold at a national STEM competition, emerging victorious from a pool of 320 students nationwide.',
-      'The winning project, "Fish Catappa," is a student-led innovation designed to address environmental and health-related Sustainable Development Goals.',
-      'assets/stem_highlights/h4.1.png',
-      'This achievement empowers the next generation and supports Malaysia in reaching a 60:40 science-to-arts student ratio.',
-      'The project highlights how young innovators can combine STEM knowledge, teamwork, and creativity to solve real-world problems.',
-      'Source: BERNAMA. (2024). \nSM Sains Bagan Datoh Are KPS Berhad Celik Initiative 2024 Champions. BERNAMA. \nhttps://www.bernama.com/en/news.php?id=2335172',
-    ],
-    detailsMs: [
-      'Sekolah Menengah (SM) Sains Bagan Datoh meraih emas dalam pertandingan STEM peringkat kebangsaan, menang daripada 320 pelajar yang menyertai seluruh negara.',
-      'Projek menang, "Fish Catappa," ialah inovasi diketuai pelajar yang direka untuk menangani Matlamat Pembangunan Lestari berkaitan alam sekitar dan kesihatan.',
-      'assets/stem_highlights/h4.1.png',
-      'Pencapaian ini memberi kuasa kepada generasi muda dan menyokong Malaysia mencapai nisbah pelajar sains-ke-seni 60:40.',
-      'Projek ini menunjukkan bagaimana inovator muda boleh menggabungkan pengetahuan STEM, kerja berpasukan, dan kreativiti untuk menyelesaikan masalah dunia sebenar.',
-      'Sumber: BERNAMA. (2024). \nSM Sains Bagan Datoh Juara Inisiatif Celik KPS Berhad 2024. BERNAMA. \nhttps://www.bernama.com/en/news.php?id=2335172',
-    ],
-  ),
-];
