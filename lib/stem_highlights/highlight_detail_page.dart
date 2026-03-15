@@ -66,7 +66,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
         : 'Kemahiran Dibangunkan';
     final String sourceHeader = isEnglish ? 'Source:' : 'Sumber:';
 
-    // Add this right before return Scaffold(...)
     debugPrint("DEBUG: Language is: $currentLang");
     debugPrint("DEBUG: skillsImageEn: '${widget.highlight.skillsImageEn}'");
     debugPrint("DEBUG: skillsImageMs: '${widget.highlight.skillsImageMs}'");
@@ -76,7 +75,7 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // Custom Top Bar
+              //App Bar
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
                 child: Row(
@@ -131,9 +130,9 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              // ... inside your Column children:
+
                               children: [
-                                // 1. Subtitle (Note: Assuming this is the title or subtitle text)
+                                // 1. Subtitle
                                 _buildBodyText(
                                   displaySubtitle,
                                   textColor,
@@ -148,12 +147,12 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                 const SizedBox(height: 12),
                                 _buildBodyText(displayDesc1, subTextColor),
 
-                                // 4. Divider (only show if Image 2 or Desc 2 exists)
+                                // 4. Divider
                                 if (widget.highlight.image2Url.isNotEmpty ||
                                     displayDesc2.isNotEmpty) ...[
                                   const Divider(height: 20),
 
-                                  // 5. Image 2 (Conditional)
+                                  // 5. Image 2
                                   if (widget
                                       .highlight
                                       .image2Url
@@ -164,7 +163,7 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                     const SizedBox(height: 12),
                                   ],
 
-                                  // 6. Desc 2 (Conditional)
+                                  // 6. Desc 2
                                   if (displayDesc2.isNotEmpty) ...[
                                     _buildBodyText(displayDesc2, subTextColor),
                                   ],
@@ -228,7 +227,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
   }
 
   Widget _buildNetworkImage(String imageName) {
-    // If no URL exists, don't return anything
     if (imageName.isEmpty) return const SizedBox.shrink();
 
     String cleanPath = imageName.startsWith('/')
@@ -241,13 +239,11 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
       child: Image.network(
         fullImageUrl,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            const SizedBox.shrink(), // Hide if load fails
+        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
       ),
     );
   }
 
-  //Text styling
   Widget _buildBodyText(String text, Color color, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),

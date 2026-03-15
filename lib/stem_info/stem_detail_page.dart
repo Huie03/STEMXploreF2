@@ -92,7 +92,6 @@ class _StemDetailPageState extends State<StemDetailPage> {
       _videoController!.setVolume(isSoundEnabled ? 1.0 : 0.0);
     }
 
-    // Build the UI
     return _buildScaffold(
       context,
       isDark,
@@ -148,17 +147,13 @@ class _StemDetailPageState extends State<StemDetailPage> {
                   builder: (context, constraints) {
                     return SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                      // This ensures the scroll view takes at least the full height
-                      // so that the internal Column can center itself within it.
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           minHeight: constraints.maxHeight,
                         ),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment
-                              .center, // This centers it vertically
-                          crossAxisAlignment: CrossAxisAlignment
-                              .center, // This centers it horizontally
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               title,

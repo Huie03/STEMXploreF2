@@ -9,8 +9,7 @@ import 'package:provider/provider.dart';
 
 class StemInfoPage extends StatefulWidget {
   static const routeName = '/stem-info';
-  final Function(Map<String, dynamic>)
-  onSelect; // Changed to dynamic for the list
+  final Function(Map<String, dynamic>) onSelect;
 
   const StemInfoPage({super.key, required this.onSelect});
 
@@ -21,7 +20,6 @@ class StemInfoPage extends StatefulWidget {
 class _StemInfoPageState extends State<StemInfoPage> {
   final ScrollController _scrollController = ScrollController();
 
-  // Your Hardcoded List
   final List<Map<String, dynamic>> stemInfoList = [
     {
       "id": 1,
@@ -126,7 +124,6 @@ class _StemInfoPageState extends State<StemInfoPage> {
     final bool isDark = themeProvider.isDarkMode;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
     final Color cardBg = Theme.of(context).colorScheme.surface;
-    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
     final Color actionColor = Colors.redAccent;
 
     final String lang =
@@ -227,7 +224,6 @@ class _StemInfoPageState extends State<StemInfoPage> {
                                 ),
                                 const SizedBox(height: 10),
 
-                                // Content Area: Nested Purple Card
                                 Expanded(
                                   child: Container(
                                     width: double.infinity,
@@ -248,11 +244,9 @@ class _StemInfoPageState extends State<StemInfoPage> {
                                             ),
                                           )
                                         : Center(
-                                            // Center the text within the purple box
                                             child: Text(
                                               previewText ?? '',
-                                              textAlign: TextAlign
-                                                  .center, // Center text horizontally
+                                              textAlign: TextAlign.center,
                                               maxLines: 4,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(

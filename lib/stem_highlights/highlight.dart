@@ -36,7 +36,6 @@ class Highlight {
   });
 
   factory Highlight.fromJson(Map<String, dynamic> json) {
-    // Helper to extract nested map data safely
     Map<String, dynamic> getMap(dynamic data) =>
         data is Map ? Map<String, dynamic>.from(data) : {};
 
