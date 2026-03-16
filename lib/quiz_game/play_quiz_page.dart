@@ -85,7 +85,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   Future<void> _startBackgroundMusic() async {
     try {
       // This must match the filename in your pubspec.yaml exactly
-      await _audioPlayer.play(AssetSource('audio/quiz_background_music.mp3'));
+      await _audioPlayer.play(AssetSource('audio/quiz_bm.music.mp3'));
       debugPrint("Music started successfully");
     } catch (e) {
       debugPrint("Error playing audio: $e");
@@ -208,40 +208,73 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
         ),
         const SizedBox(height: 5),
         Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(25, 0, 25, 30),
-            child: QuizUi.buildQuestionCard(
-              boxShadow: appBoxShadow,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildQuestionBody(questionText),
-                  const Divider(height: 1, thickness: 1, color: Colors.black12),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 15, 20, 20),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Center(
+                child: SingleChildScrollView(
+                  // This ensures the card stays within the bounds
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: Column(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center, // This centers the card
                       children: [
-                        ...List.generate(
-                          options.length,
-                          (i) => QuizUi.buildOptionTile(
-                            index: i,
-                            text: options[i].toString(),
-                            correctIndex: correctIndex,
-                            selectedIndex: activeSelection,
-                            showFeedback: showFeedback,
-                            onTap: () => _handleAnswer(i, correctIndex),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(25, 0, 25, 30),
+                          child: QuizUi.buildQuestionCard(
+                            boxShadow: appBoxShadow,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildQuestionBody(questionText),
+                                const Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: Colors.black12,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    15,
+                                    20,
+                                    20,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      ...List.generate(
+                                        options.length,
+                                        (i) => QuizUi.buildOptionTile(
+                                          index: i,
+                                          text: options[i].toString(),
+                                          correctIndex: correctIndex,
+                                          selectedIndex: activeSelection,
+                                          showFeedback: showFeedback,
+                                          onTap: () =>
+                                              _handleAnswer(i, correctIndex),
+                                        ),
+                                      ),
+                                      if (showFeedback)
+                                        _buildExplanation(
+                                          isEnglish,
+                                          explanationText,
+                                        ),
+                                      const SizedBox(height: 15),
+                                      _buildNavButtons(isEnglish),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                        if (showFeedback)
-                          _buildExplanation(isEnglish, explanationText),
-                        const SizedBox(height: 15),
-                        _buildNavButtons(isEnglish),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ],

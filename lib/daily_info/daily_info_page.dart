@@ -125,31 +125,26 @@ class _DailyChallengePageState extends State<DailyInfoPage> {
                         color: titleColor,
                       ),
                     ),
-
                     const LanguageToggle(),
                   ],
                 ),
               ),
-              //CONTENT
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                          child: Column(
-                            children: [
-                              const SizedBox(height: 25),
-                              _buildChallengeCard(
-                                currentChallenge,
-                                isEnglish,
-                                isDark,
-                              ),
-                              const SizedBox(height: 28),
-                              if (_isCompleted)
-                                _buildSuccessMessage(isEnglish, isDark),
-                              const SizedBox(height: 20),
-                            ],
+                    : Center(
+                        // This centers the card vertically
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 25.0,
+                            ),
+                            child: _buildChallengeCard(
+                              currentChallenge,
+                              isEnglish,
+                              isDark,
+                            ),
                           ),
                         ),
                       ),
@@ -165,16 +160,22 @@ class _DailyChallengePageState extends State<DailyInfoPage> {
     final Color cardBg = Theme.of(context).colorScheme.surface;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
     final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
+    const Color successGreen = Color(0xFF5DF162);
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 500),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(24),
         boxShadow: isDark ? [] : appBoxShadow,
-        border: isDark ? Border.all(color: Colors.white10) : null,
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.transparent,
+          width: 1,
+        ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // Ensures card doesn't take full height
         children: [
           Text(
             isEnglish
@@ -187,99 +188,70 @@ class _DailyChallengePageState extends State<DailyInfoPage> {
               color: textColor,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 15),
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Image.asset(
               info.imagePath,
-              height: 160,
+              height: 200,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
           ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              isEnglish ? 'Do you know' : 'Tahukah anda',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: textColor,
-              ),
-            ),
-          ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 20),
           Text(
             isEnglish ? info.factEn : info.factMs,
             textAlign: TextAlign.justify,
-            style: TextStyle(fontSize: 15, height: 1.4, color: subTextColor),
+            style: TextStyle(fontSize: 15, height: 1.5, color: subTextColor),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 30),
           ElevatedButton(
             onPressed: _isCompleted ? null : _handleComplete,
             style: ElevatedButton.styleFrom(
-              backgroundColor: isDark ? const Color(0xFFEFA638) : Colors.black,
-              foregroundColor: isDark ? Colors.black : Colors.white,
+              backgroundColor: _isCompleted
+                  ? successGreen.withOpacity(0.1)
+                  : (isDark ? const Color(0xFFEFA638) : Colors.black),
+              foregroundColor: _isCompleted
+                  ? successGreen
+                  : (isDark ? Colors.black : Colors.white),
               disabledBackgroundColor: isDark
-                  ? Colors.white10
-                  : Colors.grey.shade300,
-              disabledForegroundColor: isDark
-                  ? Colors.white38
-                  : Colors.grey.shade600,
-              minimumSize: const Size(double.infinity, 50),
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.grey.shade100,
+              disabledForegroundColor: _isCompleted
+                  ? (isDark ? successGreen : Colors.green.shade700)
+                  : Colors.grey,
+              minimumSize: const Size(double.infinity, 56),
+              elevation: _isCompleted ? 0 : 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
-            child: Text(
-              _isCompleted
-                  ? (isEnglish ? 'Challenge Finished' : 'Cabaran Selesai')
-                  : (isEnglish ? 'Complete Challenge' : 'Selesaikan Cabaran'),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSuccessMessage(bool isEnglish, bool isDark) {
-    final Color cardBg = Theme.of(context).colorScheme.surface;
-
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: isDark ? [] : appBoxShadow,
-        border: isDark ? Border.all(color: Colors.white12) : null,
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.check_circle,
-            color: isDark ? const Color(0xFF5DF162) : const Color(0xFF5DF162),
-            size: 40,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            isEnglish ? 'Well done!' : 'Syabas!',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: isDark ? Colors.white : Colors.black,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            isEnglish
-                ? 'You completed today\'s challenge.'
-                : 'Anda telah menyelesaikan cabaran hari ini.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white70 : Colors.black87,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _isCompleted
+                  ? Row(
+                      key: const ValueKey('completed'),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check_circle_outline, size: 22),
+                        const SizedBox(width: 10),
+                        Text(
+                          isEnglish ? 'Great Job!' : 'Syabas!',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      key: const ValueKey('active'),
+                      isEnglish ? 'Mark as Read' : 'Tanda sebagai Dibaca',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ],

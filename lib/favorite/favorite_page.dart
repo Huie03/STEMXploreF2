@@ -70,7 +70,7 @@ class _FavoritePageState extends State<FavoritePage> {
             children: [
               _buildCustomAppBar(
                 context,
-                isEnglish ? "Favorite" : "Kegemaran",
+                isEnglish ? "Bookmarks" : "Penanda buku",
                 titleColor,
               ),
               Padding(
@@ -79,16 +79,8 @@ class _FavoritePageState extends State<FavoritePage> {
                   vertical: 10,
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Text(
-                      isEnglish ? "Last access:" : "Terakhir dicapai:",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: titleColor,
-                      ),
-                    ),
-                    const Spacer(),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

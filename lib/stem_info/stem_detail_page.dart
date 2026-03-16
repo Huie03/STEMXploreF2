@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 import '../widgets/gradient_background.dart';
 import '/navigation_provider.dart';
@@ -59,6 +60,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
 
   @override
   void dispose() {
+    _videoController?.pause();
     _videoController?.dispose();
     _chewieController?.dispose();
     super.dispose();
@@ -92,15 +94,27 @@ class _StemDetailPageState extends State<StemDetailPage> {
       _videoController!.setVolume(isSoundEnabled ? 1.0 : 0.0);
     }
 
-    return _buildScaffold(
-      context,
-      isDark,
-      appBarTitle,
-      title,
-      description,
-      detailImage,
-      sourceText,
-      isEnglish,
+    return VisibilityDetector(
+      key: const Key('stem-detail-page-key'),
+      onVisibilityChanged: (visibilityInfo) {
+        var visiblePercentage = visibilityInfo.visibleFraction * 100;
+
+        // If the page is less than 1% visible, pause the video
+        if (visiblePercentage < 1) {
+          _videoController?.pause();
+          debugPrint("Video paused because page is hidden");
+        }
+      },
+      child: _buildScaffold(
+        context,
+        isDark,
+        appBarTitle,
+        title,
+        description,
+        detailImage,
+        sourceText,
+        isEnglish,
+      ),
     );
   }
 
@@ -287,10 +301,15 @@ class _StemDetailPageState extends State<StemDetailPage> {
       ),
       bottomNavigationBar: AppCurvedNavBar(
         currentIndex: 0,
-        onTap: (index) => Provider.of<NavigationProvider>(
-          context,
-          listen: false,
-        ).setIndex(index),
+        onTap: (index) {
+          // Manually pause before switching tabs
+          _videoController?.pause();
+
+          Provider.of<NavigationProvider>(
+            context,
+            listen: false,
+          ).setIndex(index);
+        },
       ),
     );
   }

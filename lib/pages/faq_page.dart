@@ -168,7 +168,7 @@ class FaqItem extends StatelessWidget {
     final Color questionBg = isDark ? const Color(0xFF3D3D3D) : Colors.white;
     final Color answerBg = isDark
         ? const Color.fromARGB(255, 111, 111, 111)
-        : const Color.fromARGB(255, 255, 186, 74);
+        : const Color.fromARGB(255, 235, 145, 0);
     final Color questionTextColor = isDark ? Colors.white : Colors.black;
     final Color answerTextColor = Theme.of(context).colorScheme.onSurface;
 

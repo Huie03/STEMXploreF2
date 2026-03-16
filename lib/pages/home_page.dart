@@ -102,7 +102,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       int nextIndex = (_pageController.page!.round() + 1) % highlights.length;
       _pageController.animateToPage(
         nextIndex,
-        duration: const Duration(milliseconds: 1000),
+        duration: const Duration(milliseconds: 900),
         curve: Curves.fastOutSlowIn,
       );
     });
@@ -351,11 +351,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               ),
               child: Builder(
                 builder: (context) {
-                  // 1. Your baseUrl is already http://192.168.1.112/stemxplore/
                   final String base = ipadress.baseUrl;
-                  // 2. Concatenate directly.
-                  // If h.image1Url is "assets/stem_highlight/SH2.png",
-                  // you just need to ensure there isn't a double slash.
                   final String imageUrl = base.endsWith('/')
                       ? '$base${h.image1Url}'
                       : '$base/${h.image1Url}';

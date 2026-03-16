@@ -46,14 +46,14 @@ class ThemeProvider with ChangeNotifier {
     brightness: Brightness.dark,
 
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFEFA638),
+      seedColor: const Color(0xA2333333),
       brightness: Brightness.dark,
-      primary: const Color(0xFFEFA638), //
+      primary: const Color(0xA2333333), //
       surface: const Color(0xFF535252), // dark card color
       onSurface: Colors.white, // Default text color on surface
     ),
 
-    scaffoldBackgroundColor: const Color(0xFF121212),
+    scaffoldBackgroundColor: const Color(0xA2333333),
 
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: const Color(0xFF1E1E1E),
