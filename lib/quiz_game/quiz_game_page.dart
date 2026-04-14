@@ -14,7 +14,6 @@ class QuizGamePage extends StatefulWidget {
   final Function(String, String) onQuizStart;
   final String initialSubject; // Add this line
 
-  // Add initialSubject to the constructor with a default value
   const QuizGamePage({
     super.key,
     required this.onQuizStart,
@@ -43,11 +42,9 @@ class _QuizGamePageState extends State<QuizGamePage> {
   @override
   void initState() {
     super.initState();
-    // 1. Set the starting category
     selectedCategory = widget.initialSubject;
     fetchQuizzes(selectedCategory);
 
-    // 2. Auto-scroll to the correct tab after the frame renders
     WidgetsBinding.instance.addPostFrameCallback((_) {
       int index = subjectsEn.indexOf(selectedCategory);
       if (index != -1) {
@@ -56,7 +53,6 @@ class _QuizGamePageState extends State<QuizGamePage> {
     });
   }
 
-  // 3. Handle updates if the parent changes the subject (like SubjectChaptersPage)
   @override
   void didUpdateWidget(covariant QuizGamePage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -94,7 +90,6 @@ class _QuizGamePageState extends State<QuizGamePage> {
   Future<void> fetchQuizzes(String subject) async {
     setState(() => isLoading = true);
     try {
-      // Logic to handle "Science" vs "Sains" depends on your PHP flexible search
       final response = await http.get(
         Uri.parse('${ipaddress.baseUrl}get_quiz_subject.php?subject=$subject'),
       );
@@ -117,7 +112,6 @@ class _QuizGamePageState extends State<QuizGamePage> {
   @override
   Widget build(BuildContext context) {
     final FlutterLocalization localization = FlutterLocalization.instance;
-    // FIX: Using localization instead of 'nav'
     final bool isEnglish = localization.currentLocale?.languageCode == 'en';
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -183,14 +177,13 @@ class _QuizGamePageState extends State<QuizGamePage> {
           ];
 
     return SizedBox(
-      height: 60, // Increased height to match SubjectChaptersPage
+      height: 60,
       child: ListView.builder(
         controller: _filterScrollController,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 15),
         itemCount: displaySubjects.length,
         itemBuilder: (context, index) {
-          // Compare using English list for logic consistency
           bool isSelected = selectedCategory == subjectsEn[index];
 
           return GestureDetector(
@@ -237,16 +230,15 @@ class _QuizGamePageState extends State<QuizGamePage> {
 
   Widget _buildQuizList(bool isEnglish) {
     return AppRawScrollbar(
-      controller: _quizListController, // Pass the controller to the scrollbar
+      controller: _quizListController,
       child: ListView.builder(
-        controller: _quizListController, // MUST match the controller above
+        controller: _quizListController,
         padding: const EdgeInsets.all(20),
         itemCount: quizzes.length,
         itemBuilder: (context, index) {
           final quiz = quizzes[index];
           return GestureDetector(
             onTap: () {
-              // ... your existing onTap logic ...
               Map<String, String> subjectToId = {
                 "Science": "1",
                 "Mathematics": "2",

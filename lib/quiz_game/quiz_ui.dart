@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
+import '../widgets/box_shadow.dart';
 
 class QuizUi {
-  /// Standard App Bar for Quiz
   static Widget buildAppBar({
     required BuildContext context,
     required String title,
@@ -14,10 +14,8 @@ class QuizUi {
       padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment
-            .center, // Keeps flag centered with the first line or middle
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. Wrap the title in Expanded so it wraps text instead of pushing the flag
           Expanded(
             child: Text(
               title,
@@ -26,21 +24,16 @@ class QuizUi {
                 fontSize: 20,
                 color: colorScheme.onSurface,
               ),
-              softWrap: true, // Allows wrapping
-              overflow:
-                  TextOverflow.visible, // Ensures text isn't cut off with "..."
+              softWrap: true,
+              overflow: TextOverflow.visible,
             ),
           ),
-
-          //const SizedBox(width: 3), // Add a small gap between text and flag
-          // 2. The flag/toggle stays on the right
           languageToggle,
         ],
       ),
     );
   }
 
-  /// Updated Option Tile: White box, Green/Red solid feedback, colored icons for images
   static Widget buildOptionTile({
     required BuildContext context,
     required int index,
@@ -54,31 +47,27 @@ class QuizUi {
     final bool isCorrect = index == correctIndex;
     final bool isWrong = index == selectedIndex && index != correctIndex;
 
-    // 1. Get the surface color from the current theme (white in light, dark grey in dark)
     final Color themeSurface = Theme.of(context).colorScheme.surface;
-
-    // 2. Default to theme surface, then apply feedback colors
     Color backgroundColor = themeSurface;
 
     if (showFeedback) {
       if (isCorrect) {
-        backgroundColor = const Color.fromARGB(243, 12, 206, 18); // Solid Green
+        backgroundColor = const Color.fromARGB(243, 12, 206, 18);
       } else if (isWrong) {
-        backgroundColor = const Color.fromARGB(255, 255, 0, 0); // Solid Red
+        backgroundColor = const Color.fromARGB(255, 255, 0, 0);
       }
     }
 
-    // If feedback is shown, text is white. Otherwise, use theme's onSurface.
+    // If feedback is shown, text is white.
     Color contentColor = (showFeedback && (isCorrect || isWrong))
         ? Colors.white
         : Theme.of(context).colorScheme.onSurface;
 
-    // Icon logic with specific colors
+    // Icon colors
     Widget? feedbackIcon;
     if (showFeedback && (isCorrect || isWrong)) {
       feedbackIcon = Icon(
         isCorrect ? Icons.check_circle : Icons.cancel,
-        // Using distinct colors for the icon itself
         color: isCorrect
             ? Color.fromARGB(243, 12, 206, 18)
             : Color.fromARGB(255, 255, 0, 0),
@@ -94,13 +83,7 @@ class QuizUi {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: appBoxShadow,
       ),
       child: InkWell(
         onTap: showFeedback ? null : onTap,
@@ -114,18 +97,15 @@ class QuizUi {
                   : _buildTextLayout(text, feedbackIcon, contentColor),
             ),
 
-            // For Image Options: Feedback icon with a white circular background for visibility
             if (imageUrl != null && feedbackIcon != null)
               Positioned(
                 top: 12,
                 right: 12,
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: Colors.black26, blurRadius: 4),
-                    ],
+                    boxShadow: appBoxShadow,
                   ),
                   child: feedbackIcon,
                 ),
@@ -146,8 +126,7 @@ class QuizUi {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color:
-                  textColor, // Switches to white when background is green/red
+              color: textColor,
             ),
           ),
         ),
@@ -156,17 +135,14 @@ class QuizUi {
     );
   }
 
-  // Updated Image Layout to accept the dynamic text color
   static Widget _buildImageLayout(String url, String text, Color textColor) {
-    // Check if there is valid text to display
     final bool hasText = text.trim().isNotEmpty;
 
     Widget imageWidget = Image.network(
       url,
-      // CHANGE: Use BoxFit.contain to see the full image without cropping
       fit: BoxFit.contain,
       width: double.infinity,
-      height: double.infinity, // Ensures it tries to fill the available space
+      height: double.infinity,
       errorBuilder: (_, __, ___) =>
           const Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
       loadingBuilder: (context, child, loadingProgress) {
@@ -175,7 +151,6 @@ class QuizUi {
       },
     );
 
-    // If there is no text, let the image take 100% of the space
     if (!hasText) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(10),
@@ -183,7 +158,6 @@ class QuizUi {
       );
     }
 
-    // If there is text, use the split layout (75% image, 25% text)
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -193,8 +167,7 @@ class QuizUi {
             borderRadius: BorderRadius.circular(10),
             child: Container(
               width: double.infinity,
-              color: Colors
-                  .grey[50], // Light background helps 'contain' look cleaner
+              color: Colors.grey[50],
               child: imageWidget,
             ),
           ),
@@ -209,7 +182,7 @@ class QuizUi {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 16, // Slightly smaller to ensure fit
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: textColor,
               ),
@@ -233,7 +206,6 @@ class QuizUi {
     final bool shouldCelebrate = score >= 7;
 
     return Container(
-      // CHANGE THIS LINE: Set color to transparent
       color: Colors.transparent,
       width: double.infinity,
       child: Stack(
@@ -247,13 +219,7 @@ class QuizUi {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+                  boxShadow: appBoxShadow,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -330,7 +296,6 @@ class QuizUi {
     );
   }
 
-  /// Private helper for dialog buttons
   static Widget _buildDialogBtn({
     required String label,
     required IconData icon,

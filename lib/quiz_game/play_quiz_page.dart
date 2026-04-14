@@ -285,8 +285,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Center(
               child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center, // Vertically center children
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   //QUESTION CARD
                   Container(
@@ -447,8 +446,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
                                 "${ipaddress.baseUrl}${optionData[correctIndex]['image']}",
-                                height:
-                                    80, // Smaller height for the feedback area
+                                height: 80,
                                 fit: BoxFit.contain,
                                 errorBuilder: (context, error, stackTrace) =>
                                     const Icon(Icons.broken_image),
@@ -514,7 +512,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
         ),
 
         SizedBox(
-          width: 100, // Reduced width
+          width: 100,
           child: ElevatedButton(
             onPressed: (_isLocked || _isReviewMode)
                 ? () {
