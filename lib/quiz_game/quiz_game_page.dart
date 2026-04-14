@@ -1,113 +1,146 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
+import 'package:http/http.dart' as http;
+//import 'package:provider/provider.dart';
+import '../ipaddress.dart';
+//import 'package:stemxploref2/theme_provider.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/theme_provider.dart';
-import 'package:provider/provider.dart';
+import '../widgets/rawscrollbar.dart';
 
 class QuizGamePage extends StatefulWidget {
-  final Function(String) selected;
-  final VoidCallback? onBackOverride;
+  final Function(String, String) onQuizStart;
+  final String initialSubject; // Add this line
 
-  const QuizGamePage({super.key, required this.selected, this.onBackOverride});
+  // Add initialSubject to the constructor with a default value
+  const QuizGamePage({
+    super.key,
+    required this.onQuizStart,
+    required this.initialSubject,
+  });
 
   @override
   State<QuizGamePage> createState() => _QuizGamePageState();
 }
 
 class _QuizGamePageState extends State<QuizGamePage> {
-  String? _expandedSubject;
+  late String selectedCategory;
+  List quizzes = [];
+  bool isLoading = true;
 
-  final List<Map<String, String>> materials = const [
-    {"title": "Science", "image": 'assets/textbook/Science/BC_Science.jpg'},
-    {
-      "title": "Mathematics",
-      "image": 'assets/textbook/Mathematics/BC_Mathematics.jpg',
-    },
-    {
-      "title": "Computer Science (ASK)",
-      "image": 'assets/textbook/ASK/BC_ASK.jpg',
-    },
-    {
-      "title": "Design and Technology (RBT)",
-      "image": 'assets/textbook/RBT/BC_RBT.jpg',
-    },
+  final ScrollController _filterScrollController = ScrollController();
+  final ScrollController _quizListController = ScrollController();
+
+  final List<String> subjectsEn = [
+    "Science",
+    "Mathematics",
+    "Computer Science",
+    "Design And Technology",
   ];
 
-  void _toggleExpand(String title) {
-    setState(() {
-      _expandedSubject = (_expandedSubject == title) ? null : title;
+  @override
+  void initState() {
+    super.initState();
+    // 1. Set the starting category
+    selectedCategory = widget.initialSubject;
+    fetchQuizzes(selectedCategory);
+
+    // 2. Auto-scroll to the correct tab after the frame renders
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      int index = subjectsEn.indexOf(selectedCategory);
+      if (index != -1) {
+        _scrollToIndex(index);
+      }
     });
   }
 
-  String _translateTitle(String title, bool isEnglish) {
-    if (isEnglish) return title;
-    switch (title) {
-      case "Science":
-        return "Sains";
-      case "Mathematics":
-        return "Matematik";
-      case "Computer Science (ASK)":
-        return "Asas Sains Komputer (ASK)";
-      case "Design and Technology (RBT)":
-        return "Reka Bentuk dan Teknologi (RBT)";
-      default:
-        return title;
+  // 3. Handle updates if the parent changes the subject (like SubjectChaptersPage)
+  @override
+  void didUpdateWidget(covariant QuizGamePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSubject != widget.initialSubject) {
+      setState(() {
+        selectedCategory = widget.initialSubject;
+      });
+      fetchQuizzes(selectedCategory);
+      int index = subjectsEn.indexOf(selectedCategory);
+      if (index != -1) _scrollToIndex(index);
+    }
+  }
+
+  void _scrollToIndex(int index) {
+    if (!_filterScrollController.hasClients) return;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double itemWidth = 180.0;
+    double scrollTarget =
+        (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+
+    _filterScrollController.animateTo(
+      scrollTarget.clamp(0.0, _filterScrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 700),
+      curve: Curves.easeOutBack,
+    );
+  }
+
+  @override
+  void dispose() {
+    _filterScrollController.dispose();
+    _quizListController.dispose();
+    super.dispose();
+  }
+
+  Future<void> fetchQuizzes(String subject) async {
+    setState(() => isLoading = true);
+    try {
+      // Logic to handle "Science" vs "Sains" depends on your PHP flexible search
+      final response = await http.get(
+        Uri.parse('${ipaddress.baseUrl}get_quiz_subject.php?subject=$subject'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          quizzes = data;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load quizzes');
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+      print("Error: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final bool isDark = themeProvider.isDarkMode;
-
-    final Color textColor = isDark ? Colors.black87 : Colors.black87;
-
-    // FORCE WHITE BACKGROUND FOR CARDS
-    final Color cardBg = Colors.white;
-
     final FlutterLocalization localization = FlutterLocalization.instance;
-    final bool isEnglish =
-        localization.currentLocale?.languageCode == 'en' ||
-        localization.currentLocale == null;
+    // FIX: Using localization instead of 'nav'
+    final bool isEnglish = localization.currentLocale?.languageCode == 'en';
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final String pageTitle = isEnglish ? 'Quiz Game' : 'Permainan Kuiz';
+    final Color cardBg = Theme.of(context).colorScheme.surface;
+    final Color textColor = Theme.of(context).colorScheme.onSurface;
 
     return Scaffold(
       body: GradientBackground(
         child: SafeArea(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Use white text for the App Bar if the background is dark
-              _buildCustomAppBar(
-                pageTitle,
-                isDark ? Colors.white : Colors.black,
-              ),
+              _buildAppBar(isEnglish, isDark),
+              const SizedBox(height: 10),
+              _buildCategoryTabs(isEnglish, isDark, cardBg, textColor),
               const SizedBox(height: 10),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                  itemCount: materials.length,
-                  itemBuilder: (context, index) {
-                    final item = materials[index];
-                    final String rawTitle = item['title']!;
-                    final bool isExpanded = _expandedSubject == rawTitle;
-
-                    return _buildExpandableMaterialCard(
-                      context,
-                      isDark: isDark,
-                      cardBg: cardBg, // Now passed as Colors.white
-                      textColor: textColor,
-                      title: _translateTitle(rawTitle, isEnglish),
-                      rawTitle: rawTitle,
-                      imagePath: item['image']!,
-                      isExpanded: isExpanded,
-                      isEnglish: isEnglish,
-                    );
-                  },
-                ),
+                child: isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
+                    : quizzes.isEmpty
+                    ? _buildEmptyState(isEnglish)
+                    : _buildQuizList(isEnglish),
               ),
             ],
           ),
@@ -116,167 +149,211 @@ class _QuizGamePageState extends State<QuizGamePage> {
     );
   }
 
-  Widget _buildCustomAppBar(String title, Color textColor) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: textColor,
-            ),
+  Widget _buildAppBar(bool isEnglish, bool isDark) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          isEnglish ? 'Quiz Game' : 'Permainan Kuiz',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
+            color: isDark ? Colors.white : Colors.black,
           ),
-          LanguageToggle(onLanguageChanged: () => setState(() {})),
-        ],
+        ),
+        const LanguageToggle(),
+      ],
+    ),
+  );
+
+  Widget _buildCategoryTabs(
+    bool isEnglish,
+    bool isDark,
+    Color cardBg,
+    Color textColor,
+  ) {
+    final List<String> displaySubjects = isEnglish
+        ? subjectsEn
+        : [
+            "Sains",
+            "Matematik",
+            "Asas Sains Komputer",
+            "Reka Bentuk Dan Teknologi",
+          ];
+
+    return SizedBox(
+      height: 60, // Increased height to match SubjectChaptersPage
+      child: ListView.builder(
+        controller: _filterScrollController,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 15),
+        itemCount: displaySubjects.length,
+        itemBuilder: (context, index) {
+          // Compare using English list for logic consistency
+          bool isSelected = selectedCategory == subjectsEn[index];
+
+          return GestureDetector(
+            onTap: () {
+              setState(() => selectedCategory = subjectsEn[index]);
+              fetchQuizzes(subjectsEn[index]);
+              _scrollToIndex(index);
+            },
+            child: AnimatedScale(
+              scale: isSelected ? 1.05 : 0.95,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 400),
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                decoration: BoxDecoration(
+                  // Use your signature orange for selected
+                  color: isSelected ? const Color(0xFFEB9000) : cardBg,
+                  borderRadius: BorderRadius.circular(18),
+                  border: isDark && !isSelected
+                      ? Border.all(color: Colors.white10)
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    displaySubjects[index],
+                    style: TextStyle(
+                      color: isSelected ? Colors.black : textColor,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildExpandableMaterialCard(
-    BuildContext context, {
-    required bool isDark,
-    required Color cardBg,
-    required Color textColor,
+  Widget _buildQuizList(bool isEnglish) {
+    return AppRawScrollbar(
+      controller: _quizListController, // Pass the controller to the scrollbar
+      child: ListView.builder(
+        controller: _quizListController, // MUST match the controller above
+        padding: const EdgeInsets.all(20),
+        itemCount: quizzes.length,
+        itemBuilder: (context, index) {
+          final quiz = quizzes[index];
+          return GestureDetector(
+            onTap: () {
+              // ... your existing onTap logic ...
+              Map<String, String> subjectToId = {
+                "Science": "1",
+                "Mathematics": "2",
+                "Computer Science": "3",
+                "Design And Technology": "4",
+              };
+              String subjectId = subjectToId[selectedCategory] ?? "1";
+              String tEn = quiz['title_en'] ?? "Quiz";
+              String tMs = quiz['title_ms'] ?? "Kuiz";
+              widget.onQuizStart("$subjectId | $tEn | $tMs", "start");
+            },
+            child: _quizCard(
+              title: isEnglish ? quiz['title_en'] : quiz['title_ms'],
+              sub:
+                  "${quiz['total_questions']} ${isEnglish ? "Questions" : "Soalan"}",
+              imgPath: quiz['image_url'] ?? "",
+              isEnglish: isEnglish,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _quizCard({
     required String title,
-    required String rawTitle,
-    required String imagePath,
-    required bool isExpanded,
+    required String sub,
+    required String imgPath,
     required bool isEnglish,
   }) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: () => _toggleExpand(rawTitle),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: isExpanded
-                  ? const BorderRadius.vertical(top: Radius.circular(20))
-                  : BorderRadius.circular(20),
-              border: isDark
-                  ? Border.all(color: Colors.white10, width: 0.5)
-                  : null,
-              boxShadow: isExpanded || isDark ? [] : appBoxShadow,
-            ),
-            child: Row(
+    final Color cardBg = Theme.of(context).colorScheme.surface;
+    final Color textColor = Theme.of(context).colorScheme.onSurface;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: appBoxShadow,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                      color: textColor,
-                    ),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: textColor,
                   ),
                 ),
-                const SizedBox(width: 15),
-                SizedBox(
-                  height: 85,
-                  width: 65,
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.contain,
-                    errorBuilder: (c, e, s) => Icon(
-                      Icons.book,
-                      size: 50,
-                      color: isDark ? Colors.white54 : Colors.grey,
+                const SizedBox(height: 5),
+                Text(
+                  sub,
+                  style: TextStyle(
+                    color: textColor.withValues(alpha: 0.7),
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEB9000),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    isEnglish ? "Start Quiz" : "Mula Kuiz",
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
-
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          height: isExpanded ? 220 : 0,
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(20),
-            ),
-            border: isDark
-                ? const Border(
-                    left: BorderSide(color: Colors.white10, width: 0.5),
-                    right: BorderSide(color: Colors.white10, width: 0.5),
-                    bottom: BorderSide(color: Colors.white10, width: 0.5),
-                  )
-                : null,
-            boxShadow: isExpanded && !isDark ? appBoxShadow : [],
-          ),
-          child: SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Column(
-                children: [
-                  _buildModeButton(
-                    label: isEnglish ? "EASY MODE" : "MOD MUDAH",
-                    dbValue: "Easy",
-                    color: const Color(0xFF2ECC71),
-                    subject: rawTitle,
-                    isDark: isDark,
-                  ),
-                  _buildModeButton(
-                    label: isEnglish ? "MEDIUM MODE" : "MOD SEDERHANA",
-                    dbValue: "Medium",
-                    color: const Color(0xFFF1C40F),
-                    subject: rawTitle,
-                    isDark: isDark,
-                  ),
-                  _buildModeButton(
-                    label: isEnglish ? "HARD MODE" : "MOD SUKAR",
-                    dbValue: "Hard",
-                    color: const Color(0xFFE74C3C),
-                    subject: rawTitle,
-                    isDark: isDark,
-                  ),
-                ],
-              ),
+          const SizedBox(width: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              "${ipaddress.baseUrl}$imgPath",
+              width: 70,
+              height: 85,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.broken_image, size: 80, color: Colors.grey),
             ),
           ),
-        ),
-        const SizedBox(height: 15),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildModeButton({
-    required String label,
-    required String dbValue,
-    required Color color,
-    required String subject,
-    required bool isDark,
-  }) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(top: 12),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.black,
-          elevation: isDark ? 0 : 4,
-          shadowColor: Colors.black.withValues(alpha: 0.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        onPressed: () {
-          widget.selected("$subject|$dbValue");
-        },
-        child: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
+  Widget _buildEmptyState(bool isEnglish) {
+    return Center(
+      child: Text(
+        isEnglish ? "No quizzes found." : "Tiada kuiz dijumpai.",
+        style: const TextStyle(color: Colors.white),
       ),
     );
   }

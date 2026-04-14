@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
+import 'package:visibility_detector/visibility_detector.dart'; // Added for stop handling
 import 'highlight.dart';
 import '../widgets/gradient_background.dart';
 import 'package:flutter_localization/flutter_localization.dart';
@@ -7,10 +10,11 @@ import '../widgets/rawscrollbar.dart';
 import '../widgets/box_shadow.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import 'package:provider/provider.dart';
-import '../ipaddress.dart';
+import 'package:photo_view/photo_view.dart';
 
 class HighlightDetailPage extends StatefulWidget {
   static const routeName = '/highlight-detail';
+
   final Highlight highlight;
   const HighlightDetailPage({super.key, required this.highlight});
 
@@ -20,6 +24,21 @@ class HighlightDetailPage extends StatefulWidget {
 
 class _HighlightDetailPageState extends State<HighlightDetailPage> {
   final ScrollController _scrollController = ScrollController();
+  bool _needsScrollReset = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Logic: Every time this page is built/pushed, reset the scroll to 0
+    if (_needsScrollReset) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+          _needsScrollReset = false;
+        }
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -31,84 +50,58 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final bool isDark = themeProvider.isDarkMode;
-
-    final FlutterLocalization localization = FlutterLocalization.instance;
-    final String currentLang = localization.currentLocale?.languageCode ?? 'en';
-    final bool isEnglish = currentLang == 'en';
+    final bool isEnglish =
+        FlutterLocalization.instance.currentLocale?.languageCode == 'en';
 
     final Color textColor = Theme.of(context).colorScheme.onSurface;
     final Color cardBg = Theme.of(context).colorScheme.surface;
-    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
-
-    // Bilingual Data Logic
-    final String displayTitle = isEnglish
-        ? widget.highlight.titleEn
-        : widget.highlight.titleMs;
-    final String displaySubtitle = isEnglish
-        ? widget.highlight.subtitleEn
-        : widget.highlight.subtitleMs;
-    final String displayDesc1 = isEnglish
-        ? widget.highlight.desc1En
-        : widget.highlight.desc1Ms;
-    final String displayDesc2 = isEnglish
-        ? widget.highlight.desc2En
-        : widget.highlight.desc2Ms;
-    final String displaySkillsImage = isEnglish
-        ? widget.highlight.skillsImageEn
-        : widget.highlight.skillsImageMs;
-    final String displayCitation = isEnglish
-        ? widget.highlight.citationEn
-        : widget.highlight.citationMs;
-
-    final String appBarTitle = isEnglish ? 'STEM Highlights' : 'Sorotan STEM';
-    final String skillsHeader = isEnglish
-        ? 'Skills Developed'
-        : 'Kemahiran Dibangunkan';
-    final String sourceHeader = isEnglish ? 'Source:' : 'Sumber:';
-
-    debugPrint("DEBUG: Language is: $currentLang");
-    debugPrint("DEBUG: skillsImageEn: '${widget.highlight.skillsImageEn}'");
-    debugPrint("DEBUG: skillsImageMs: '${widget.highlight.skillsImageMs}'");
+    final Color subTextColor = isDark ? Colors.white : Colors.black;
 
     return Scaffold(
       body: GradientBackground(
         child: SafeArea(
+          bottom: false, // Match SubjectChaptersPage
           child: Column(
             children: [
-              //App Bar
+              // Header
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+                padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Text(
-                        appBarTitle,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 22,
-                          color: textColor,
-                        ),
+                    Text(
+                      isEnglish ? 'STEM Highlights' : 'Sorotan STEM',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        color: textColor,
                       ),
                     ),
                     const LanguageToggle(),
                   ],
                 ),
               ),
+              const SizedBox(height: 6),
 
+              // THE CONTENT AREA - Updated to match SubjectChaptersPage layout
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  // 14 on right matches the scrollbar gutter in SubjectChaptersPage
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 60),
                   child: AppRawScrollbar(
                     controller: _scrollController,
                     child: SingleChildScrollView(
+                      key: UniqueKey(),
                       controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(28, 13, 18, 18),
+                      // Padding applied inside scroll view (30 left matches SubjectChaptersPage)
+                      padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            displayTitle,
+                            isEnglish
+                                ? widget.highlight.titleEn
+                                : widget.highlight.titleMs,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -116,87 +109,107 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                             ),
                           ),
                           const SizedBox(height: 10),
-
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
                               color: cardBg,
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: isDark ? [] : appBoxShadow,
+                              borderRadius: BorderRadius.circular(20),
                               border: isDark
-                                  ? Border.all(color: Colors.white10)
+                                  ? Border.all(
+                                      color: Colors.white10,
+                                      width: 0.5,
+                                    )
                                   : null,
+                              boxShadow: isDark ? [] : appBoxShadow,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-
                               children: [
-                                // 1. Subtitle
                                 _buildBodyText(
-                                  displaySubtitle,
+                                  isEnglish
+                                      ? widget.highlight.subtitleEn
+                                      : widget.highlight.subtitleMs,
                                   textColor,
                                   isBold: true,
                                 ),
+                                const Divider(height: 15),
 
-                                // 2. Divider
-                                const Divider(height: 20),
-
-                                // 3. Image 1 and Description 1
-                                _buildNetworkImage(widget.highlight.image1Url),
+                                // Section 1: Image and Desc
+                                _buildLocalImage(widget.highlight.image1Url),
                                 const SizedBox(height: 12),
-                                _buildBodyText(displayDesc1, subTextColor),
+                                _buildBodyText(
+                                  isEnglish
+                                      ? widget.highlight.desc1En
+                                      : widget.highlight.desc1Ms,
+                                  subTextColor,
+                                ),
 
-                                // 4. Divider
+                                // Section 2: Optional
                                 if (widget.highlight.image2Url.isNotEmpty ||
-                                    displayDesc2.isNotEmpty) ...[
+                                    widget.highlight.desc2En.isNotEmpty) ...[
                                   const Divider(height: 20),
-
-                                  // 5. Image 2
-                                  if (widget
-                                      .highlight
-                                      .image2Url
-                                      .isNotEmpty) ...[
-                                    _buildNetworkImage(
+                                  if (widget.highlight.image2Url.isNotEmpty)
+                                    _buildLocalImage(
                                       widget.highlight.image2Url,
                                     ),
-                                    const SizedBox(height: 12),
-                                  ],
-
-                                  // 6. Desc 2
-                                  if (displayDesc2.isNotEmpty) ...[
-                                    _buildBodyText(displayDesc2, subTextColor),
-                                  ],
+                                  const SizedBox(height: 12),
+                                  if (widget.highlight.desc2En.isNotEmpty)
+                                    _buildBodyText(
+                                      isEnglish
+                                          ? widget.highlight.desc2En
+                                          : widget.highlight.desc2Ms,
+                                      subTextColor,
+                                    ),
                                 ],
 
-                                // 7. Divider
-                                const Divider(height: 30),
+                                const Divider(height: 15),
 
-                                // 8. Skills Developed
+                                // Section 3: Skills
                                 _buildBodyText(
-                                  skillsHeader,
+                                  isEnglish
+                                      ? 'Skills Developed:'
+                                      : 'Kemahiran Dibangunkan:',
                                   textColor,
                                   isBold: true,
                                 ),
-                                if (displaySkillsImage.isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  _buildNetworkImage(displaySkillsImage),
-                                  const SizedBox(height: 20),
+                                _buildLocalImage(
+                                  isEnglish
+                                      ? widget.highlight.skillsImageEn
+                                      : widget.highlight.skillsImageMs,
+                                ),
+                                const Divider(height: 15),
+
+                                // Section: Video
+                                if (widget.highlight.videoUrl != null &&
+                                    widget.highlight.videoUrl!.isNotEmpty) ...[
+                                  // Added the Video Label here
+                                  _buildBodyText(
+                                    isEnglish ? 'Video:' : 'Video:',
+                                    textColor,
+                                    isBold: true,
+                                  ),
+                                  VideoPlayerWidget(
+                                    assetPath: widget.highlight.videoUrl!,
+                                  ),
+                                  const Divider(height: 15),
                                 ],
 
-                                // 9. Source Section
+                                // Section 4: Sources
                                 Text(
-                                  sourceHeader,
+                                  isEnglish ? 'Source:' : 'Sumber:',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: subTextColor,
                                   ),
                                 ),
                                 Text(
-                                  displayCitation,
+                                  isEnglish
+                                      ? widget.highlight.citationEn
+                                      : widget.highlight.citationMs,
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: subTextColor,
                                     height: 1.4,
                                   ),
@@ -204,8 +217,8 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                 const SizedBox(height: 4),
                                 Text(
                                   widget.highlight.sourceUrl,
-                                  style: TextStyle(
-                                    fontSize: 12,
+                                  style: const TextStyle(
+                                    fontSize: 11,
                                     color: Colors.blueAccent,
                                   ),
                                 ),
@@ -226,20 +239,63 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
     );
   }
 
-  Widget _buildNetworkImage(String imageName) {
-    if (imageName.isEmpty) return const SizedBox.shrink();
+  void _showFullScreenImage(BuildContext context, String assetPath) {
+    showDialog(
+      context: context,
+      useRootNavigator: true,
+      builder: (context) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: Stack(
+            children: [
+              PhotoView(
+                imageProvider: AssetImage(assetPath),
+                loadingBuilder: (context, event) =>
+                    const Center(child: CircularProgressIndicator()),
+                initialScale: PhotoViewComputedScale.contained,
+                minScale: PhotoViewComputedScale.contained * 0.8,
+                maxScale: PhotoViewComputedScale.covered * 2.0,
+              ),
 
-    String cleanPath = imageName.startsWith('/')
-        ? imageName.substring(1)
-        : imageName;
-    final String fullImageUrl = "${ipadress.baseUrl}$cleanPath";
+              // Close Cross Button
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black54,
+                      child: IconButton(
+                        // Changed from return/back icon to cross icon
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: Image.network(
-        fullImageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+  Widget _buildLocalImage(String path) {
+    if (path.isEmpty) return const SizedBox.shrink();
+
+    // Prepare the correct path
+    final String assetPath = path.startsWith('/') ? path.substring(1) : path;
+
+    return GestureDetector(
+      onTap: () =>
+          _showFullScreenImage(context, assetPath), // Trigger zoom view
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: Hero(
+          tag: assetPath, // Smooth transition animation
+          child: Image.asset(assetPath, fit: BoxFit.cover),
+        ),
       ),
     );
   }
@@ -257,6 +313,112 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
           color: color,
         ),
       ),
+    );
+  }
+}
+
+// Sub-widget for Video Playback with STOP logic
+class VideoPlayerWidget extends StatefulWidget {
+  final String assetPath;
+  const VideoPlayerWidget({super.key, required this.assetPath});
+
+  @override
+  State<VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
+    with WidgetsBindingObserver {
+  VideoPlayerController? _videoPlayerController; // Made nullable for safety
+  ChewieController? _chewieController;
+  bool _isDisposed = false; // Flag to prevent async leaks
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initializePlayer();
+  }
+
+  Future<void> _initializePlayer() async {
+    _videoPlayerController = VideoPlayerController.asset(widget.assetPath);
+
+    try {
+      await _videoPlayerController!.initialize();
+
+      // CRITICAL: If the user left the page while we were initializing,
+      // kill the controller immediately.
+      if (_isDisposed || !mounted) {
+        _videoPlayerController?.dispose();
+        return;
+      }
+
+      _chewieController = ChewieController(
+        videoPlayerController: _videoPlayerController!,
+        aspectRatio: _videoPlayerController!.value.aspectRatio,
+        autoPlay: false,
+        looping: false,
+        materialProgressColors: ChewieProgressColors(
+          playedColor: Colors.redAccent,
+          handleColor: Colors.orange,
+        ),
+      );
+
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint("Video Error: $e");
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _videoPlayerController?.pause();
+    }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true; // Mark as disposed immediately
+    WidgetsBinding.instance.removeObserver(this);
+
+    // IMPORTANT: Dispose Chewie FIRST, then the VideoPlayerController
+    _chewieController?.dispose();
+    _videoPlayerController?.pause(); // Force stop audio stream
+    _videoPlayerController?.dispose();
+
+    debugPrint("CLEANUP: Video resources released for ${widget.assetPath}");
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: Key(widget.assetPath),
+      onVisibilityChanged: (visibilityInfo) {
+        // If less than 10% visible, stop the audio/video
+        if (visibilityInfo.visibleFraction < 0.1 && mounted) {
+          _videoPlayerController?.pause();
+        }
+      },
+      child:
+          _chewieController != null &&
+              _chewieController!.videoPlayerController.value.isInitialized
+          ? Container(
+              height: 220,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.black,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(15),
+                child: Chewie(controller: _chewieController!),
+              ),
+            )
+          : const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            ),
     );
   }
 }

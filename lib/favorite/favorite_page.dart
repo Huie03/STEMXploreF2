@@ -23,11 +23,26 @@ class _FavoritePageState extends State<FavoritePage> {
   final Set<int> _selectedIndices = {};
   bool _isAllSelected = false;
   final ScrollController _scrollController = ScrollController();
+  bool _needsScrollReset = true;
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Logic: Every time the user tabs into this page, reset scroll to top
+    if (_needsScrollReset) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+          _needsScrollReset = false;
+        }
+      });
+    }
   }
 
   void _toggleSelection(int index, int total) {
@@ -147,9 +162,10 @@ class _FavoritePageState extends State<FavoritePage> {
                               contentHeight > constraints.maxHeight;
 
                           Widget listView = ListView.builder(
+                            key: UniqueKey(),
                             controller: _scrollController,
                             physics: const ClampingScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(30, 5, 22, 30),
+                            padding: const EdgeInsets.fromLTRB(30, 0, 30, 20),
                             itemCount: favorites.length,
                             itemBuilder: (context, index) {
                               return _buildFavoriteCard(
@@ -164,7 +180,7 @@ class _FavoritePageState extends State<FavoritePage> {
                           );
                           if (needsScroll) {
                             return Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 0, 14, 15),
+                              padding: const EdgeInsets.fromLTRB(0, 0, 0, 15),
                               child: AppRawScrollbar(
                                 controller: _scrollController,
                                 child: listView,
@@ -172,7 +188,7 @@ class _FavoritePageState extends State<FavoritePage> {
                             );
                           } else {
                             return Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 0, 14, 0),
+                              padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
                               child: listView,
                             );
                           }
@@ -243,7 +259,7 @@ class _FavoritePageState extends State<FavoritePage> {
     final String title = isEnglish
         ? (item['title_en'] ?? "")
         : (item['title_ms'] ?? "");
-    final String fullImageUrl = '${ipadress.baseUrl}${item['image'] ?? ''}';
+    final String fullImageUrl = '${ipaddress.baseUrl}${item['image'] ?? ''}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
@@ -341,7 +357,7 @@ class _FavoritePageState extends State<FavoritePage> {
     Color titleColor,
   ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

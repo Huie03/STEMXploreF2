@@ -1,154 +1,131 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:photo_view/photo_view.dart';
+
 import 'package:stemxploref2/widgets/gradient_background.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart';
-import 'package:provider/provider.dart';
 import 'package:stemxploref2/navigation_provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import '../widgets/box_shadow.dart';
-
-class Info {
-  final String titleEn;
-  final String titleMs;
-  final String factEn;
-  final String factMs;
-  final String imagePath;
-
-  Info({
-    required this.titleEn,
-    required this.titleMs,
-    required this.factEn,
-    required this.factMs,
-    required this.imagePath,
-  });
-}
+import '../ipaddress.dart';
 
 class DailyInfoPage extends StatefulWidget {
   static const routeName = '/daily-info';
   const DailyInfoPage({super.key});
 
   @override
-  State<DailyInfoPage> createState() => _DailyChallengePageState();
+  State<DailyInfoPage> createState() => _DailyInfoPageState();
 }
 
-class _DailyChallengePageState extends State<DailyInfoPage> {
+class _DailyInfoPageState extends State<DailyInfoPage> {
   bool _isCompleted = false;
   bool _isLoading = true;
+  List<Map<String, dynamic>> _challenges = [];
+  String _errorMessage = '';
 
-  final List<Info> _challenges = [
-    Info(
-      titleEn: 'Nutrition',
-      titleMs: 'Nutrisi',
-      factEn:
-          'Carbohydrates are the main source of energy for our body and help us stay active. Foods like rice, bread, and fruits contain carbohydrates. Eating a balanced diet helps our body grow strong and stay healthy.',
-      factMs:
-          'Karbohidrat adalah sumber tenaga utama bagi tubuh kita dan membantu kita kekal aktif. Makanan seperti nasi, roti dan buah-buahan mengandungi karbohidrat. Pengambilan makanan seimbang membantu tubuh kita membesar dengan sihat dan kuat.',
-      imagePath: 'assets/images/nutrition.png',
-    ),
-    Info(
-      titleEn: 'Biodiversity',
-      titleMs: 'Kepelbagaian Biologi',
-      factEn:
-          'Biodiversity refers to the variety of living organisms, such as plants and animals, in a habitat and helps keep ecosystems stable. Forests with many different species are usually healthier.',
-      factMs:
-          'Kepelbagaian biologi merujuk kepada kepelbagaian organisma hidup seperti tumbuhan dan haiwan dalam sesuatu habitat dan membantu mengekalkan kestabilan ekosistem. Hutan yang mempunyai pelbagai spesies biasanya lebih sihat.',
-      imagePath: 'assets/images/biodiversity.png',
-    ),
-    Info(
-      titleEn: 'Ecosystem',
-      titleMs: 'Ekosistem',
-      factEn:
-          'An ecosystem is a community of living organisms interacting with each other and with non-living components like water, air, and soil. Examples of ecosystems include forests, rivers, and oceans.',
-      factMs:
-          'Ekosistem ialah komuniti organisma hidup yang berinteraksi antara satu sama lain dan dengan komponen bukan hidup seperti air, udara dan tanah. Contoh ekosistem termasuk hutan, sungai dan lautan.',
-      imagePath: 'assets/images/ecosystem.png',
-    ),
-  ];
+  late final String _baseServerUrl;
+  late final Uri _apiUri;
 
   @override
   void initState() {
     super.initState();
-    _checkTodayStatus();
+    _baseServerUrl = ipaddress.baseUrl;
+    _apiUri = Uri.parse('${_baseServerUrl}get_daily_info.php');
+    _loadInitialData();
   }
 
-  String _getTodayKey() {
-    final now = DateTime.now();
-    return "challenge_${now.year}_${now.month}_${now.day}";
+  Future<void> _loadInitialData() async {
+    try {
+      final response = await http.get(_apiUri);
+      if (response.statusCode == 200) {
+        List jsonResponse = json.decode(response.body);
+        if (mounted) {
+          setState(() {
+            _challenges = List<Map<String, dynamic>>.from(jsonResponse);
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+    _checkTodayStatus();
   }
 
   Future<void> _checkTodayStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _isCompleted = prefs.getBool(_getTodayKey()) ?? false;
-      _isLoading = false;
-    });
+    final now = DateTime.now();
+    final key = "challenge_${now.year}_${now.month}_${now.day}";
+    if (mounted) setState(() => _isCompleted = prefs.getBool(key) ?? false);
   }
 
   Future<void> _handleComplete() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_getTodayKey(), true);
-    if (!mounted) return;
-    setState(() {
-      _isCompleted = true;
-    });
+    final now = DateTime.now();
+    await prefs.setBool("challenge_${now.year}_${now.month}_${now.day}", true);
+    if (mounted) setState(() => _isCompleted = true);
+  }
+
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      useRootNavigator: true,
+      builder: (context) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: Stack(
+            children: [
+              // 1. Zoomable Image (Network version)
+              PhotoView(
+                imageProvider: NetworkImage(imageUrl),
+                loadingBuilder: (context, event) =>
+                    const Center(child: CircularProgressIndicator()),
+                initialScale: PhotoViewComputedScale.contained,
+                minScale: PhotoViewComputedScale.contained * 0.8,
+                maxScale: PhotoViewComputedScale.covered * 2.0,
+              ),
+
+              // 2. Close Button
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black54,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-
     final bool isDark = themeProvider.isDarkMode;
     final bool isEnglish = navProvider.locale.languageCode == 'en';
-
-    final int dayIndex = DateTime.now().day % _challenges.length;
-    final currentChallenge = _challenges[dayIndex];
     final String title = isEnglish ? 'Daily Info' : 'Maklumat Harian';
-    final Color titleColor = isDark ? Colors.white : Colors.black;
 
     return Scaffold(
       body: GradientBackground(
         child: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                        color: titleColor,
-                      ),
-                    ),
-                    const LanguageToggle(),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : Center(
-                        // This centers the card vertically
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 25.0,
-                            ),
-                            child: _buildChallengeCard(
-                              currentChallenge,
-                              isEnglish,
-                              isDark,
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
+              _buildHeader(title, isDark),
+              Expanded(child: _buildBody(isEnglish, isDark)),
             ],
           ),
         ),
@@ -156,11 +133,94 @@ class _DailyChallengePageState extends State<DailyInfoPage> {
     );
   }
 
-  Widget _buildChallengeCard(Info info, bool isEnglish, bool isDark) {
+  Widget _buildHeader(String title, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+          ),
+          const LanguageToggle(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody(bool isEnglish, bool isDark) {
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_errorMessage.isNotEmpty) return Center(child: Text(_errorMessage));
+    if (_challenges.isEmpty)
+      return const Center(child: Text("No data available"));
+
+    final now = DateTime.now();
+
+    // 1. Map weekday to category (1=Mon, 7=Sun)
+    final categories = [
+      "Science",
+      "Mathematics",
+      "ASK",
+      "RBT",
+      "Science",
+      "Mathematics",
+      "Mixed",
+    ];
+    final target = categories[now.weekday - 1];
+
+    // 2. Filter list
+    final items = _challenges.where((i) {
+      final cat = (i['category'] ?? '').toString().toLowerCase();
+      return target == "Mixed"
+          ? (cat == "ask" || cat == "rbt")
+          : cat == target.toLowerCase();
+    }).toList();
+
+    if (items.isEmpty) return const Center(child: Text("No items available"));
+
+    // 3. Optimized Occurrence Logic
+    final start = DateTime(now.year, 1, 1);
+    int occurrences = 0;
+
+    // Count how many times this category's scheduled days have passed since Jan 1st
+    for (int i = 0; i <= now.difference(start).inDays; i++) {
+      int wd = start.add(Duration(days: i)).weekday;
+      bool isMatch =
+          (target == "Science" && (wd == 1 || wd == 5)) ||
+          (target == "Mathematics" && (wd == 2 || wd == 6)) ||
+          (target == "Mixed" && wd == 7) ||
+          (wd == now.weekday &&
+              !["Science", "Mathematics", "Mixed"].contains(target));
+      if (isMatch) occurrences++;
+    }
+
+    final current =
+        items[(occurrences > 0 ? occurrences - 1 : 0) % items.length];
+
+    return Center(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 40.0),
+        child: Column(
+          children: [_buildChallengeCard(current, isEnglish, isDark)],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChallengeCard(
+    Map<String, dynamic> info,
+    bool isEnglish,
+    bool isDark,
+  ) {
     final Color cardBg = Theme.of(context).colorScheme.surface;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
-    final Color subTextColor = isDark ? Colors.white70 : Colors.black87;
-    const Color successGreen = Color(0xFF5DF162);
+    final String fullImageUrl = "$_baseServerUrl${info['image_path']}";
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
@@ -169,18 +229,13 @@ class _DailyChallengePageState extends State<DailyInfoPage> {
         color: cardBg,
         borderRadius: BorderRadius.circular(24),
         boxShadow: isDark ? [] : appBoxShadow,
-        border: Border.all(
-          color: isDark ? Colors.white10 : Colors.transparent,
-          width: 1,
-        ),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // Ensures card doesn't take full height
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            isEnglish
-                ? 'STEM Fact of the Day – ${info.titleEn}'
-                : 'Fakta STEM Hari Ini – ${info.titleMs}',
+            isEnglish ? (info['title_en'] ?? '') : (info['title_ms'] ?? ''),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -189,70 +244,79 @@ class _DailyChallengePageState extends State<DailyInfoPage> {
             ),
           ),
           const SizedBox(height: 15),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.asset(
-              info.imagePath,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            isEnglish ? info.factEn : info.factMs,
-            textAlign: TextAlign.justify,
-            style: TextStyle(fontSize: 15, height: 1.5, color: subTextColor),
-          ),
-          const SizedBox(height: 30),
-          ElevatedButton(
-            onPressed: _isCompleted ? null : _handleComplete,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isCompleted
-                  ? successGreen.withOpacity(0.1)
-                  : (isDark ? const Color(0xFFEFA638) : Colors.black),
-              foregroundColor: _isCompleted
-                  ? successGreen
-                  : (isDark ? Colors.black : Colors.white),
-              disabledBackgroundColor: isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.grey.shade100,
-              disabledForegroundColor: _isCompleted
-                  ? (isDark ? successGreen : Colors.green.shade700)
-                  : Colors.grey,
-              minimumSize: const Size(double.infinity, 56),
-              elevation: _isCompleted ? 0 : 4,
-              shape: RoundedRectangleBorder(
+          GestureDetector(
+            onTap: () => _showFullScreenImage(context, fullImageUrl),
+            child: Hero(
+              tag: 'daily_info_image_${info['id']}',
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 450,
+                    maxWidth: double.infinity,
+                  ),
+                  child: Image.network(
+                    fullImageUrl,
+                    width: double.infinity,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 200,
+                      width: double.infinity,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.broken_image, size: 50),
+                    ),
+                  ),
+                ),
               ),
             ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _isCompleted
-                  ? Row(
-                      key: const ValueKey('completed'),
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.check_circle_outline, size: 22),
-                        const SizedBox(width: 10),
-                        Text(
-                          isEnglish ? 'Great Job!' : 'Syabas!',
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      key: const ValueKey('active'),
-                      isEnglish ? 'Mark as Read' : 'Tanda sebagai Dibaca',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            isEnglish ? (info['desc_en'] ?? '') : (info['desc_ms'] ?? ''),
+            textAlign: TextAlign.justify,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.5,
+              color: isDark ? Colors.white : Colors.black,
             ),
+          ),
+          const SizedBox(height: 25),
+          _buildCompleteButton(isEnglish, isDark),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompleteButton(bool isEnglish, bool isDark) {
+    const Color successGreen = Color.fromARGB(255, 39, 190, 44);
+    const Color completedBg = Color.fromARGB(255, 230, 230, 230);
+    return ElevatedButton(
+      onPressed: _isCompleted ? null : _handleComplete,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _isCompleted
+            ? completedBg
+            : (isDark ? const Color(0xFFEFA638) : const Color(0xFFEB9000)),
+        disabledBackgroundColor: completedBg,
+        foregroundColor: _isCompleted
+            ? successGreen
+            : (isDark ? Colors.black : Colors.black),
+        disabledForegroundColor: successGreen,
+        minimumSize: const Size(double.infinity, 56),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: _isCompleted ? 0 : 2,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (_isCompleted) ...[
+            const Icon(Icons.check_circle_outline, size: 22),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            _isCompleted
+                ? (isEnglish ? 'Great Job!' : 'Syabas!')
+                : (isEnglish ? 'Mark as Read' : 'Tanda sebagai Dibaca'),
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
           ),
         ],
       ),

@@ -86,15 +86,15 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
                   scale: _pulseAnimation,
                   child: Image.asset(
                     assetPath,
-                    width: 350,
-                    height: 350,
+                    width: 330,
+                    height: 330,
                     fit: BoxFit.contain,
                   ),
                 ),
                 Transform.translate(
                   offset: const Offset(0, -30),
                   child: Text(
-                    'Inspiring young minds through STEM exploration',
+                    'Developing STEM Skills Through Exploration',
                     style: GoogleFonts.alice(
                       textStyle: const TextStyle(
                         fontSize: 15.5,

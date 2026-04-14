@@ -8,14 +8,12 @@ import '/widgets/language_toggle.dart';
 import '/stem_highlights/highlight.dart';
 import '/widgets/feature_button.dart';
 import '../widgets/box_shadow.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../ipaddress.dart';
 
 class HomePage extends StatefulWidget {
   static const routeName = '/home';
   final Function(Highlight) onHighlightTap;
   const HomePage({super.key, required this.onHighlightTap});
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -27,8 +25,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isUserScrolling = false;
   Timer? _autoScrollTimer;
 
-  //final double _stepSize = 320.0;
-
   final List<Map<String, dynamic>> _features = [
     {'key': 'stemInfo', 'icon': 'assets/icons/1.png', 'index': 4},
     {'key': 'learning', 'icon': 'assets/icons/2.png', 'index': 5},
@@ -37,6 +33,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     {'key': 'info', 'icon': 'assets/icons/5.png', 'index': 8},
     {'key': 'faq', 'icon': 'assets/icons/6.png', 'index': 9},
   ];
+
   @override
   void initState() {
     super.initState();
@@ -52,7 +49,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       initialPage: savedPage?.round() ?? 0,
     );
 
-    _fetchHighlights();
+    _loadHardcodedHighlights(); // Changed from _fetchHighlights
     WidgetsBinding.instance.addPostFrameCallback((_) => _startAutoScroll());
   }
 
@@ -64,41 +61,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final navProvider = Provider.of<NavigationProvider>(context);
-    if (navProvider.currentIndex == 0) {
-      _startAutoScroll();
-    } else {
-      _autoScrollTimer?.cancel();
-    }
-  }
-
-  Future<void> _fetchHighlights() async {
-    try {
-      final response = await http.get(
-        Uri.parse("${ipadress.baseUrl}get_highlights.php"),
-      );
-      if (response.statusCode == 200) {
-        List<dynamic> body = jsonDecode(response.body);
-        setState(() {
-          highlights = body
-              .map((dynamic item) => Highlight.fromJson(item))
-              .toList();
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint("Error fetching highlights: $e");
-      setState(() => isLoading = false);
-    }
+  // REPLACED: Fetching from hardcoded data instead of API
+  void _loadHardcodedHighlights() {
+    setState(() {
+      highlights = Highlight.getHardcodedHighlights();
+      isLoading = false;
+    });
   }
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (!mounted || _isUserScrolling || !_pageController.hasClients) return;
+      if (!mounted ||
+          _isUserScrolling ||
+          !_pageController.hasClients ||
+          highlights.isEmpty)
+        return;
       int nextIndex = (_pageController.page!.round() + 1) % highlights.length;
       _pageController.animateToPage(
         nextIndex,
@@ -125,12 +103,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
-    final themeProvider = Provider.of<ThemeProvider>(context); // ADDED
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final bool isDark = themeProvider.isDarkMode;
     final bool isEnglish = navProvider.locale.languageCode == 'en';
     final Color textColor = Theme.of(context).colorScheme.onSurface;
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isTablet = screenWidth > 600;
+    final bool isTablet = MediaQuery.of(context).size.shortestSide > 600;
 
     return GradientBackground(
       child: SafeArea(
@@ -143,50 +120,74 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   constraints: BoxConstraints(
                     maxWidth: isTablet ? 550 : double.infinity,
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 12,
-                  ),
-                  child: Column(
-                    children: [
-                      Flexible(
-                        flex: 3,
-                        child: GridView.count(
-                          padding: EdgeInsets.zero,
-                          shrinkWrap: true,
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 15,
-                          crossAxisSpacing: 15,
-                          childAspectRatio: 1.2,
-                          physics: const NeverScrollableScrollPhysics(),
-                          children: _features.map((feature) {
-                            return FeatureButton(
-                              label: translate(feature['key'], isEnglish),
-                              imageAsset: feature['icon'],
-                              onTap: () =>
-                                  navProvider.setIndex(feature['index']),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 25),
-                      Divider(
-                        thickness: 2,
-                        height: 1,
-                        color: isDark ? Colors.white : Colors.black12,
-                      ),
-                      isLoading
-                          ? const Padding(
-                              padding: EdgeInsets.all(20),
-                              child: CircularProgressIndicator(),
-                            )
-                          : _buildHighlightsSection(
-                              isEnglish,
-                              isTablet,
-                              textColor,
-                              isDark,
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      //60% for buttons, 40% for highlights
+                      double totalHeight = constraints.maxHeight;
+                      bool isSmallPhone = totalHeight < 650;
+
+                      double gridMultiplier = isSmallPhone ? 0.62 : 0.65;
+                      double highlightMultiplier = isSmallPhone ? 0.33 : 0.34;
+
+                      double gridHeight = totalHeight * gridMultiplier;
+                      double highlightHeight =
+                          totalHeight * highlightMultiplier;
+
+                      return Column(
+                        children: [
+                          //Feature Buttons Grid
+                          SizedBox(
+                            height: gridHeight,
+                            child: GridView.count(
+                              padding: const EdgeInsets.only(top: 10),
+                              crossAxisCount: 2,
+                              mainAxisSpacing: isSmallPhone ? 12 : 12,
+                              crossAxisSpacing: 12,
+                              //Ratio calculate based on available grid height
+                              childAspectRatio:
+                                  (constraints.maxWidth / 2) /
+                                  (gridHeight / (isSmallPhone ? 3.3 : 3.20)),
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: _features.map((feature) {
+                                return FeatureButton(
+                                  label: translate(feature['key'], isEnglish),
+                                  imageAsset: feature['icon'],
+                                  onTap: () =>
+                                      navProvider.setIndex(feature['index']),
+                                );
+                              }).toList(),
                             ),
-                    ],
+                          ),
+
+                          const SizedBox(height: 5),
+
+                          Divider(
+                            thickness: 2,
+                            height: 1,
+                            color: isDark ? Colors.white24 : Colors.black12,
+                          ),
+
+                          //Highlights Section
+                          SizedBox(
+                            height: highlightHeight,
+                            child: isLoading
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : _buildHighlightsSection(
+                                    isEnglish,
+                                    isTablet,
+                                    textColor,
+                                    isDark,
+                                    highlightHeight *
+                                        0.71, // Pass dynamic height
+                                  ),
+                          ),
+                          const SizedBox(height: 0),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -199,7 +200,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Widget _buildTopBar(Color textColor) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [_buildLogo(textColor), const LanguageToggle()],
@@ -217,7 +218,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               fontSize: 22,
               color: textColor,
             ),
-            children: [
+            children: const [
               TextSpan(text: "STEM"),
               TextSpan(text: "X", style: TextStyle(fontSize: 30)),
               TextSpan(text: "plore "),
@@ -253,13 +254,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     bool isTablet,
     Color textColor,
     bool isDark,
+    double cardHeight, // Add this parameter
   ) {
     if (highlights.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 20, top: 6, bottom: 4),
+          padding: const EdgeInsets.only(left: 10, bottom: 3, top: 8),
           child: Text(
             translate('highlights', isEnglish),
             style: TextStyle(
@@ -270,43 +273,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         ),
         SizedBox(
-          height: 190,
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (notification) {
-              if (notification is ScrollStartNotification)
-                _isUserScrolling = true;
-              if (notification is ScrollEndNotification)
-                _isUserScrolling = false;
-              return false;
-            },
-            child: PageView.builder(
-              key: const PageStorageKey('home_highlights_pageview'),
-              controller: _pageController,
-              onPageChanged: (index) {
-                // Save the page index whenever it changes
-                PageStorage.of(context).writeState(
+          height: cardHeight,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: highlights.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 5,
+                ),
+                child: _buildHighlightCard(
                   context,
-                  index.toDouble(),
-                  identifier: const PageStorageKey('home_page_controller'),
-                );
-              },
-              itemCount: highlights.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8.0,
-                    vertical: 10,
-                  ),
-                  child: _buildHighlightCard(
-                    context,
-                    highlights[index],
-                    isEnglish,
-                    isDark,
-                    isTablet,
-                  ),
-                );
-              },
-            ),
+                  highlights[index],
+                  isEnglish,
+                  isDark,
+                  isTablet,
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -322,17 +307,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   ) {
     return GestureDetector(
       onTap: () async {
-        // 1. Stop the timer so it doesn't try to scroll while the page is hidden
         _autoScrollTimer?.cancel();
-
-        // 2. Trigger the navigation and WAIT for the user to come back
-        // (Assuming onHighlightTap performs a Navigator.push)
         await widget.onHighlightTap(h);
-
-        // 3. This line will ONLY run once the user returns to the HomePage
-        if (mounted) {
-          _startAutoScroll();
-        }
+        if (mounted) _startAutoScroll();
       },
       child: Container(
         width: isTablet ? 320 : 280,
@@ -349,36 +326,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               borderRadius: const BorderRadius.horizontal(
                 left: Radius.circular(16),
               ),
-              child: Builder(
-                builder: (context) {
-                  final String base = ipadress.baseUrl;
-                  final String imageUrl = base.endsWith('/')
-                      ? '$base${h.image1Url}'
-                      : '$base/${h.image1Url}';
-                  // 3. Remove accidental double-slashes if they exist
-                  final String finalUrl = imageUrl.replaceFirst(
-                    '//assets',
-                    '/assets',
-                  );
-                  debugPrint("DEBUG: Final Cleaned URL: $finalUrl");
-                  return Image.network(
-                    finalUrl,
-                    width: 130,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 130,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.broken_image),
-                      );
-                    },
-                  );
-                },
+              child: Image.asset(
+                h.image1Url.startsWith('/')
+                    ? h.image1Url.substring(1)
+                    : h.image1Url,
+                width: isTablet ? 130 : 110,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 110,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.broken_image),
+                ),
               ),
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -386,34 +349,33 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       isEnglish ? h.titleEn : h.titleMs,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        height: 1.2,
+                        fontSize: isTablet ? 17 : 15,
+                        height: 1.1,
                         color: isDark ? Colors.white : Colors.black,
                       ),
-                      maxLines: 3,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isEnglish
-                          ? h.subtitleEn
-                          : h.subtitleMs, // <--- Add this ternary check
-                      style: TextStyle(
-                        color: isDark ? Colors.white60 : Colors.black54,
-                        fontSize: 13,
+                    const SizedBox(height: 5),
+                    Expanded(
+                      child: Text(
+                        isEnglish ? h.subtitleEn : h.subtitleMs,
+                        style: TextStyle(
+                          color: isDark ? Colors.white60 : Colors.black54,
+                          fontSize: isTablet ? 14 : 13,
+                        ),
+                        maxLines: isTablet ? 4 : 2, //small phones
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
                     Align(
                       alignment: Alignment.bottomRight,
                       child: Text(
                         translate('readMore', isEnglish),
-                        style: TextStyle(
-                          color: isDark ? Colors.red : Colors.red,
+                        style: const TextStyle(
+                          color: Colors.red,
                           fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                          fontSize: 12,
                         ),
                       ),
                     ),

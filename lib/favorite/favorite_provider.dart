@@ -15,7 +15,7 @@ class FavoriteProvider with ChangeNotifier {
   // Fetch list from MySQL
   Future<void> fetchBookmarksFromServer() async {
     final url = Uri.parse(
-      '${ipadress.baseUrl}get_bookmarks.php?user_id=$_currentUserId',
+      '${ipaddress.baseUrl}get_bookmarks.php?user_id=$_currentUserId',
     );
 
     try {
@@ -44,7 +44,7 @@ class FavoriteProvider with ChangeNotifier {
   // Toggle bookmark in MySQL
   // Inside FavoriteProvider
   Future<void> toggleFavorite(Map<String, dynamic> material) async {
-    final url = Uri.parse('${ipadress.baseUrl}toggle_bookmark.php');
+    final url = Uri.parse('${ipaddress.baseUrl}toggle_bookmark.php');
     try {
       final response = await http.post(
         url,

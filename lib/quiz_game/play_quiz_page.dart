@@ -11,6 +11,9 @@ import '../navigation_provider.dart';
 import '../quiz_game/quiz_ui.dart';
 import 'package:confetti/confetti.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import '../widgets/rawscrollbar.dart';
+import 'package:photo_view/photo_view.dart';
 
 class PlayQuizPage extends StatefulWidget {
   final String subjectAndMode;
@@ -28,6 +31,8 @@ class PlayQuizPage extends StatefulWidget {
 
 class _PlayQuizPageState extends State<PlayQuizPage> {
   late ConfettiController _confettiController;
+  final ScrollController _quizScrollController = ScrollController();
+
   List<dynamic> _questions = [];
   bool _isLoading = true;
   String? _errorMessage;
@@ -35,7 +40,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   int _currentQuestionIndex = 0;
   int _score = 0;
   late String _subject;
-  late String _difficulty;
+  late String _chapterId;
 
   int? _selectedOptionIndex;
   bool _isLocked = false;
@@ -58,11 +63,13 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   void dispose() {
     _confettiController.dispose();
     _audioPlayer.dispose();
+    _quizScrollController.dispose();
     super.dispose();
   }
 
   void _resetAndStartQuiz() {
     setState(() {
+      _showResults = false;
       _questions = [];
       _isLoading = true;
       _currentQuestionIndex = 0;
@@ -76,17 +83,42 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     _fetchQuestions();
   }
 
+  late String _titleEn;
+  late String _titleMs;
+
   void _parseParams() {
     final parts = widget.subjectAndMode.split('|');
+
     _subject = parts[0].trim();
-    _difficulty = parts.length > 1 ? parts[1].trim() : "Easy";
+    Map<String, String> subjectMap = {
+      "1": "Science",
+      "2": "Mathematics",
+      "3": "ASK",
+      "4": "RBT",
+    };
+    _subject = subjectMap[_subject] ?? _subject;
+
+    if (parts.length >= 3) {
+      _titleEn = parts[1].trim();
+      _titleMs = parts[2].trim();
+
+      _chapterId = _titleEn.split('-')[0].replaceAll(RegExp(r'[^0-9]'), '');
+    } else {
+      _titleEn = "Quiz Game";
+      _titleMs = "Permainan Kuiz";
+      _chapterId = "1";
+    }
   }
 
   Future<void> _startBackgroundMusic() async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    if (!themeProvider.isSoundEnabled) return;
+    if (_audioPlayer.state == PlayerState.playing) return;
+
     try {
-      // This must match the filename in your pubspec.yaml exactly
-      await _audioPlayer.play(AssetSource('audio/quiz_bm.music.mp3'));
-      debugPrint("Music started successfully");
+      await _audioPlayer.setSource(AssetSource('audio/quiz_bm.music.mp3'));
+      await _audioPlayer.resume();
     } catch (e) {
       debugPrint("Error playing audio: $e");
     }
@@ -95,7 +127,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   Future<void> _fetchQuestions() async {
     try {
       final url = Uri.parse(
-        '${ipadress.baseUrl}get_quiz.php?subject=$_subject&difficulty=$_difficulty',
+        '${ipaddress.baseUrl}get_quiz_questions.php?subject=$_subject&chapter_id=$_chapterId',
       );
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
@@ -105,12 +137,13 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
           setState(() {
             _questions = decodedData;
             _isLoading = false;
-            if (_questions.isNotEmpty) {
-              _startBackgroundMusic();
-            } else {
-              _errorMessage = "No questions found.";
-            }
           });
+
+          if (_questions.isNotEmpty) {
+            _startBackgroundMusic();
+          } else {
+            setState(() => _errorMessage = "No questions found.");
+          }
         }
       }
     } catch (e) {
@@ -141,12 +174,21 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
     final bool isEnglish = navProvider.locale.languageCode == 'en';
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+    if (!themeProvider.isSoundEnabled) {
+      _stopMusic();
+    } else if (_questions.isNotEmpty &&
+        _audioPlayer.state != PlayerState.playing &&
+        !_isLoading) {
+      _startBackgroundMusic();
+    }
 
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
-          _stopMusic(); //Music stop when exit
+          _stopMusic();
           widget.onFinish();
         }
       },
@@ -156,7 +198,8 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
             child: Column(
               children: [
                 QuizUi.buildAppBar(
-                  title: isEnglish ? 'Quiz Game' : 'Permainan Kuiz',
+                  context: context,
+                  title: isEnglish ? _titleEn : _titleMs,
                   languageToggle: const LanguageToggle(),
                 ),
                 Expanded(
@@ -164,9 +207,22 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                       ? const Center(
                           child: CircularProgressIndicator(color: Colors.white),
                         )
+                      : _showResults
+                      ? QuizUi.buildResultsView(
+                          context: context,
+                          score: _score,
+                          total: _questions.length,
+                          isEnglish: isEnglish,
+                          confettiController: _confettiController,
+                          onReplay: _resetAndStartQuiz,
+                          onReview: _viewReview,
+                        )
                       : (_errorMessage != null
                             ? _buildError()
-                            : _buildQuizContent(isEnglish)),
+                            : AppRawScrollbar(
+                                controller: _quizScrollController,
+                                child: _buildQuizContent(isEnglish),
+                              )),
                 ),
               ],
             ),
@@ -177,196 +233,288 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   }
 
   Widget _buildQuizContent(bool isEnglish) {
+    final Color cardBg = Theme.of(context).colorScheme.surface;
+    final Color textColor = Theme.of(context).colorScheme.onSurface;
+
     final q = _questions[_currentQuestionIndex];
-    String rawLetter =
-        q['correct_option']?.toString().trim().toUpperCase() ?? "";
-    int correctIndex = "ABCD".indexOf(rawLetter);
-    if (correctIndex == -1) correctIndex = 0;
 
-    final List<dynamic> options = isEnglish
-        ? (q['options_en'] ?? [])
-        : (q['options_ms'] ?? q['options_en'] ?? []);
-    final String questionText = isEnglish
-        ? (q['q_en'] ?? "")
-        : (q['q_ms'] ?? q['q_en'] ?? "");
-    final String explanationText = isEnglish
-        ? (q['explanation_en'] ?? "")
-        : (q['explanation_ms'] ?? "");
+    final List<Map<String, String>> optionData = [
+      {
+        'text': isEnglish
+            ? (q['opt_a_en'] ?? "")
+            : (q['opt_a_ms'] ?? q['opt_a_en'] ?? ""),
+        'image': q['opt_a_image']?.toString() ?? "",
+      },
+      {
+        'text': isEnglish
+            ? (q['opt_b_en'] ?? "")
+            : (q['opt_b_ms'] ?? q['opt_b_en'] ?? ""),
+        'image': q['opt_b_image']?.toString() ?? "",
+      },
+      {
+        'text': isEnglish
+            ? (q['opt_c_en'] ?? "")
+            : (q['opt_c_ms'] ?? q['opt_c_en'] ?? ""),
+        'image': q['opt_c_image']?.toString() ?? "",
+      },
+      {
+        'text': isEnglish
+            ? (q['opt_d_en'] ?? "")
+            : (q['opt_d_ms'] ?? q['opt_d_en'] ?? ""),
+        'image': q['opt_d_image']?.toString() ?? "",
+      },
+    ];
 
+    bool usesImageOptions = optionData.any((opt) => opt['image']!.isNotEmpty);
     final int? activeSelection = _isReviewMode
         ? q['user_choice']
         : _selectedOptionIndex;
     final bool showFeedback = _isLocked || _isReviewMode;
 
-    return Column(
-      children: [
-        QuizUi.buildProgressHeader(
-          subject: _subject,
-          difficulty: _difficulty,
-          progress: (_currentQuestionIndex + 1) / _questions.length,
-          counterText: "${_currentQuestionIndex + 1}/${_questions.length}",
-        ),
-        const SizedBox(height: 5),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Center(
-                child: SingleChildScrollView(
-                  // This ensures the card stays within the bounds
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
+    String rawLetter =
+        q['correct_option']?.toString().trim().toUpperCase() ?? "";
+    int correctIndex = "ABCD".indexOf(rawLetter);
+    if (correctIndex == -1) correctIndex = 0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          controller: _quizScrollController,
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center, // Vertically center children
+                children: [
+                  //QUESTION CARD
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: appBoxShadow,
                     ),
                     child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center, // This centers the card
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(25, 0, 25, 30),
-                          child: QuizUi.buildQuestionCard(
-                            boxShadow: appBoxShadow,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildQuestionBody(questionText),
-                                const Divider(
-                                  height: 1,
-                                  thickness: 1,
-                                  color: Colors.black12,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    20,
-                                    15,
-                                    20,
-                                    20,
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      ...List.generate(
-                                        options.length,
-                                        (i) => QuizUi.buildOptionTile(
-                                          index: i,
-                                          text: options[i].toString(),
-                                          correctIndex: correctIndex,
-                                          selectedIndex: activeSelection,
-                                          showFeedback: showFeedback,
-                                          onTap: () =>
-                                              _handleAnswer(i, correctIndex),
-                                        ),
-                                      ),
-                                      if (showFeedback)
-                                        _buildExplanation(
-                                          isEnglish,
-                                          explanationText,
-                                        ),
-                                      const SizedBox(height: 15),
-                                      _buildNavButtons(isEnglish),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "${isEnglish ? "Question" : "Soalan"} ${_currentQuestionIndex + 1}",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
                             ),
+                            Text(
+                              "${_currentQuestionIndex + 1} / ${_questions.length}",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          isEnglish
+                              ? (q['question_text_en'] ?? "")
+                              : (q['question_text_ms'] ?? ""),
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                            height: 1.4,
                           ),
                         ),
+                        if (q['question_image'] != null &&
+                            q['question_image'].isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          GestureDetector(
+                            onTap: () => _showFullScreenImage(
+                              context,
+                              q['question_image'],
+                            ),
+                            child: Center(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  "${ipaddress.baseUrl}${q['question_image']}",
+                                  height: 150,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildQuestionBody(String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(25, 20, 25, 12),
-      child: Text(
-        text,
-        textAlign: TextAlign.justify,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.black,
-          height: 1.4,
-        ),
-      ),
-    );
-  }
+                  const SizedBox(height: 20),
 
-  Widget _buildExplanation(bool isEnglish, String text) {
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blueGrey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isEnglish ? "Explanation:" : "Penjelasan:",
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color.fromRGBO(0, 0, 0, 1),
-              fontSize: 13.5,
+                  // OPTIONS
+                  if (usesImageOptions)
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            mainAxisExtent: 180,
+                          ),
+                      itemCount: 4,
+                      itemBuilder: (context, i) => QuizUi.buildOptionTile(
+                        context: context,
+                        index: i,
+                        text: optionData[i]['text']!,
+                        imageUrl:
+                            "${ipaddress.baseUrl}${optionData[i]['image']}",
+                        correctIndex: correctIndex,
+                        selectedIndex: activeSelection,
+                        showFeedback: showFeedback,
+                        onTap: () => _handleAnswer(i, correctIndex),
+                      ),
+                    )
+                  else
+                    ...List.generate(
+                      4,
+                      (i) => QuizUi.buildOptionTile(
+                        context: context,
+                        index: i,
+                        text: optionData[i]['text']!,
+                        correctIndex: correctIndex,
+                        selectedIndex: activeSelection,
+                        showFeedback: showFeedback,
+                        onTap: () => _handleAnswer(i, correctIndex),
+                      ),
+                    ),
+
+                  const SizedBox(height: 25),
+
+                  _buildNavButtons(isEnglish),
+
+                  // CORRECT ANSWER FEEDBACK
+                  if (showFeedback) ...[
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        borderRadius: BorderRadius.circular(15),
+                        border: Border.all(
+                          color: const Color(0xFFEB9000),
+                          width: 2.0,
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            "${isEnglish ? "Correct Answer" : "Jawapan Betul"}:",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: textColor.withValues(alpha: 0.8),
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          // If text is not empty, show the text
+                          if (optionData[correctIndex]['text']!.isNotEmpty)
+                            Text(
+                              optionData[correctIndex]['text']!,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: textColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          // If there is an image, show a small preview of the correct image
+                          if (optionData[correctIndex]['image']!
+                              .isNotEmpty) ...[
+                            const SizedBox(height: 5),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                "${ipaddress.baseUrl}${optionData[correctIndex]['image']}",
+                                height:
+                                    80, // Smaller height for the feedback area
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.broken_image),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            text.isEmpty
-                ? (isEnglish
-                      ? "No explanation available."
-                      : "Tiada penjelasan.")
-                : text,
-            style: const TextStyle(fontSize: 13.5, color: Colors.black),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildNavButtons(bool isEng) {
-    bool isBackEnabled = _currentQuestionIndex > 0;
+    bool isFirstQuestion = _currentQuestionIndex == 0;
+
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
+        SizedBox(
+          width: 100,
           child: ElevatedButton(
-            onPressed: isBackEnabled
-                ? () => setState(() {
-                    _currentQuestionIndex--;
-                    _selectedOptionIndex =
-                        _questions[_currentQuestionIndex]['user_choice'];
-                    _isLocked = _selectedOptionIndex != null;
-                  })
-                : null,
+            onPressed: () {
+              if (isFirstQuestion) {
+                if (_isReviewMode) {
+                  setState(() => _showResults = true); // Go back to results
+                } else {
+                  _stopMusic();
+                  widget.onFinish();
+                  if (Navigator.canPop(context)) Navigator.pop(context);
+                }
+              } else {
+                setState(() {
+                  _currentQuestionIndex--;
+                  _selectedOptionIndex =
+                      _questions[_currentQuestionIndex]['user_choice'];
+                  _isLocked = _selectedOptionIndex != null;
+                });
+                _quizScrollController.jumpTo(0);
+              }
+            },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.orange,
-              disabledBackgroundColor: Colors.grey.shade300,
-              disabledForegroundColor: Colors.grey.shade500,
+              backgroundColor: Colors.black.withValues(alpha: 0.8),
+              foregroundColor: Colors.white,
               elevation: 0,
-              side: BorderSide(
-                color: isBackEnabled ? Colors.orange : Colors.transparent,
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              side: const BorderSide(color: Colors.white70, width: 1.5),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
               ),
             ),
             child: Text(
               isEng ? "Back" : "Kembali",
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
+
+        SizedBox(
+          width: 100, // Reduced width
           child: ElevatedButton(
             onPressed: (_isLocked || _isReviewMode)
                 ? () {
@@ -377,32 +525,35 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                             _questions[_currentQuestionIndex]['user_choice'];
                         _isLocked = _selectedOptionIndex != null;
                       });
+                      _quizScrollController.jumpTo(0);
                     } else {
                       if (_isReviewMode) {
                         _stopMusic();
                         widget.onFinish();
+                        if (Navigator.canPop(context)) Navigator.pop(context);
                       } else {
-                        _showResultDialog(isEng);
+                        _triggerResults();
                       }
                     }
                   }
                 : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              disabledBackgroundColor: Colors.grey.shade300,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              backgroundColor: const Color(0xFFEB9000),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: const Color(
+                0xFFEB9000,
+              ).withValues(alpha: 0.6),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
               ),
             ),
             child: Text(
               _currentQuestionIndex < _questions.length - 1
                   ? (isEng ? "Next" : "Seterusnya")
                   : (isEng ? "Finish" : "Selesai"),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
         ),
@@ -410,31 +561,66 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     );
   }
 
-  void _showResultDialog(bool isEnglish) {
-    if (_score >= 8) {
-      _confettiController.play();
-    }
+  bool _showResults = false;
+  void _triggerResults() {
+    _stopMusic();
+    setState(() {
+      _showResults = true;
+    });
+    _confettiController.play();
+  }
+
+  void _viewReview() {
+    setState(() {
+      _showResults = false;
+      _isReviewMode = true;
+      _currentQuestionIndex = 0;
+      _selectedOptionIndex = _questions[0]['user_choice'];
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_quizScrollController.hasClients) {
+        _quizScrollController.jumpTo(0);
+      }
+    });
+  }
+
+  void _showFullScreenImage(BuildContext context, String imagePath) {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => QuizUi.buildResultsDialog(
-        context: context,
-        score: _score,
-        total: _questions.length,
-        isEnglish: isEnglish,
-        confettiController: _confettiController,
-        onReplay: () {
-          Navigator.pop(ctx);
-          _resetAndStartQuiz();
-        },
-        onReview: () {
-          Navigator.pop(ctx);
-          setState(() {
-            _isReviewMode = true;
-            _currentQuestionIndex = 0;
-          });
-        },
-      ),
+      useRootNavigator: true,
+      builder: (context) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: Stack(
+            children: [
+              PhotoView(
+                imageProvider: NetworkImage('${ipaddress.baseUrl}$imagePath'),
+                loadingBuilder: (context, event) =>
+                    const Center(child: CircularProgressIndicator()),
+                initialScale: PhotoViewComputedScale.contained,
+                minScale: PhotoViewComputedScale.contained * 0.8,
+                maxScale: PhotoViewComputedScale.covered * 2.0,
+              ),
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black54,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -442,12 +628,23 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.error_outline, size: 40, color: Colors.white),
-        const SizedBox(height: 10),
-        Text(_errorMessage!, style: const TextStyle(color: Colors.white)),
+        const Icon(Icons.wifi_off_rounded, size: 60, color: Colors.white70),
         const SizedBox(height: 15),
+        Text(
+          _errorMessage!,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 25),
         ElevatedButton(
           onPressed: _resetAndStartQuiz,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFF2C458),
+            foregroundColor: Colors.black,
+          ),
           child: const Text("Try Again"),
         ),
       ],

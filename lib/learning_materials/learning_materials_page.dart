@@ -5,6 +5,7 @@ import '../widgets/language_toggle.dart';
 import '../widgets/box_shadow.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import 'package:provider/provider.dart';
+import '../widgets/rawscrollbar.dart';
 
 class LearningMaterialPage extends StatefulWidget {
   final Function(String) onSubjectTap;
@@ -21,6 +22,9 @@ class LearningMaterialPage extends StatefulWidget {
 }
 
 class _LearningMaterialPageState extends State<LearningMaterialPage> {
+  final ScrollController _scrollController = ScrollController();
+  bool _needsScrollReset = true;
+
   final List<Map<String, String>> materials = const [
     {"title": "Science", "image": 'assets/textbook/Science/BC_Science.jpg'},
     {
@@ -36,6 +40,30 @@ class _LearningMaterialPageState extends State<LearningMaterialPage> {
       "image": 'assets/textbook/RBT/BC_RBT.jpg',
     },
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Logic: Every time this page is built/pushed, reset the scroll to 0
+
+    if (_needsScrollReset) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+
+          _needsScrollReset = false;
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+
+    super.dispose();
+  }
 
   String _translateTitle(String title, bool isEnglish) {
     if (isEnglish) return title;
@@ -78,34 +106,58 @@ class _LearningMaterialPageState extends State<LearningMaterialPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildCustomAppBar(pageTitle, textColor),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.only(left: 20, top: 10, bottom: 10),
-                child: Text(
-                  subjectHeader,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                ),
-              ),
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(20, 5, 20, 20),
-                  itemCount: materials.length,
-                  itemBuilder: (context, index) {
-                    final item = materials[index];
-                    return _buildMaterialCard(
-                      context,
-                      isDark: isDark,
-                      cardBg: cardBg,
-                      textColor: textColor,
-                      title: _translateTitle(item['title']!, isEnglish),
-                      imagePath: item['image']!,
-                      onTap: () => widget.onSubjectTap(item['title']!),
-                    );
-                  },
+                // 3. Wrap with AppRawScrollbar
+                child: AppRawScrollbar(
+                  key: UniqueKey(),
+                  controller: _scrollController,
+                  child: SingleChildScrollView(
+                    // 4. Assign the controller here
+                    controller: _scrollController,
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 20,
+                            top: 10,
+                            bottom: 10,
+                          ),
+                          child: Text(
+                            subjectHeader,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: materials.length,
+                          itemBuilder: (context, index) {
+                            final item = materials[index];
+                            return _buildMaterialCard(
+                              context,
+                              isDark: isDark,
+                              cardBg: cardBg,
+                              textColor: textColor,
+                              title: _translateTitle(item['title']!, isEnglish),
+                              imagePath: item['image']!,
+                              onTap: () => widget.onSubjectTap(item['title']!),
+                            );
+                          },
+                        ),
+                        const SizedBox(
+                          height: 100,
+                        ), // Bottom padding for better scroll feel
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -117,7 +169,7 @@ class _LearningMaterialPageState extends State<LearningMaterialPage> {
 
   Widget _buildCustomAppBar(String title, Color textColor) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

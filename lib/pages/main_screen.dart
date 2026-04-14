@@ -32,6 +32,7 @@ class _MainScreenState extends State<MainScreen> {
   dynamic selectedHighlight;
   dynamic selectedStemInfo;
   String? selectedSubjectName;
+  String selectedQuizCategory = "Science";
   Map<String, dynamic>? selectedChapterData;
   String? selectedQuizData;
   int _lastIndexBeforeDetail = 12;
@@ -115,16 +116,38 @@ class _MainScreenState extends State<MainScreen> {
         onSubjectTap: onSubjectSelected,
         onBackOverride: () => navProvider.setIndex(0),
       ), // 5
+      // Index 6: Updated QuizGamePage
       QuizGamePage(
         key: navProvider.currentIndex == 6
             ? const ValueKey('quiz_menu')
             : UniqueKey(),
-        selected: onQuizSubjectSelected,
-        onBackOverride: () => navProvider.setIndex(0),
-      ), // 6
+        initialSubject: selectedQuizCategory, // Pass the tracked variable
+        onQuizStart: (quizData, mode) {
+          // Update the tracked variable whenever a user starts a quiz
+          // This ensures if they come back, it's set to the one they just played
+          final String subjectId = quizData.split('|')[0].trim();
+          setState(() {
+            if (subjectId == "1") selectedQuizCategory = "Science";
+            if (subjectId == "2") selectedQuizCategory = "Mathematics";
+            if (subjectId == "3") selectedQuizCategory = "Computer Science";
+            if (subjectId == "4")
+              selectedQuizCategory = "Design And Technology";
+          });
+
+          onQuizSubjectSelected(quizData);
+        },
+      ),
       const StemCareersPage(), // 7
       const DailyInfoPage(), // 8
-      const FaqPage(), // 9
+      // 9
+      FaqPage(
+        // The key changes ONLY when the index is 9.
+        // This forces the FAQ page to REBUILD (resetting _expandedIndex)
+        // ONLY when the user navigates TO this page from another tab.
+        key: navProvider.currentIndex == 9
+            ? const ValueKey('faq_active')
+            : UniqueKey(),
+      ),
 
       selectedHighlight != null
           ? HighlightDetailPage(highlight: selectedHighlight)
@@ -179,6 +202,10 @@ class _MainScreenState extends State<MainScreen> {
         } else if (navProvider.currentIndex == 10 ||
             navProvider.currentIndex == 11) {
           navProvider.setIndex(navProvider.currentIndex == 10 ? 0 : 4);
+        } else if (navProvider.currentIndex == 6) {
+          // If user is on the Quiz List and goes back to Home
+          setState(() => selectedQuizCategory = "Science");
+          navProvider.setIndex(0);
         } else {
           navProvider.setIndex(0);
         }
@@ -188,6 +215,11 @@ class _MainScreenState extends State<MainScreen> {
         bottomNavigationBar: AppCurvedNavBar(
           currentIndex: activeNavIconIndex,
           onTap: (index) {
+            // If the user clicks the Quiz Game tab (index 6)
+            if (index == 6) {
+              selectedQuizCategory = "Science";
+            }
+
             // RESTART LOGIC: If user clicks Home (0), Bookmark (1), etc.
             // we clear the quiz data so it's fresh for next time.
             if (selectedQuizData != null) {

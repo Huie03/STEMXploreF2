@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import 'package:provider/provider.dart'; // <--- THIS WAS MISSING
+import 'package:provider/provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import 'package:stemxploref2/widgets/gradient_background.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart';
@@ -45,7 +45,6 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildCustomAppBar(title, isEnglish, textColor),
               const SizedBox(height: 20),
 
-              // --- THEME CARD ---
               _buildSettingsCard(
                 cardBg: cardBg,
                 icon: isDark ? Icons.dark_mode : Icons.light_mode,
@@ -64,17 +63,15 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
 
               const SizedBox(height: 20), // Spacing between cards
-              // --- SOUND CARD ---
+
               _buildSettingsCard(
                 cardBg: cardBg,
-                // 1. Icon automatically follows the Provider (Default: volume_up)
                 icon: themeProvider.isSoundEnabled
                     ? Icons.volume_up
                     : Icons.volume_off,
                 iconColor: allIconColor,
                 title: isEnglish ? "Sound" : "Suara",
 
-                // 2. Text automatically follows the Provider (Default: On / Buka)
                 subtitle: isEnglish
                     ? (themeProvider.isSoundEnabled ? "On" : "Off")
                     : (themeProvider.isSoundEnabled ? "Buka" : "Tutup"),
@@ -82,7 +79,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 textColor: textColor,
                 isDark: isDark,
                 trailing: Switch(
-                  //Switch starts 'ON' because isSoundEnabled is true
                   value: themeProvider.isSoundEnabled,
                   activeColor: allIconColor,
                   onChanged: (value) {
@@ -97,7 +93,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Refactored Helper Method to keep the UI clean
   Widget _buildSettingsCard({
     required Color cardBg,
     required IconData icon,
@@ -132,7 +127,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildCustomAppBar(String title, bool isEnglish, Color textColor) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

@@ -2,169 +2,225 @@ import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
 
 class QuizUi {
+  /// Standard App Bar for Quiz
   static Widget buildAppBar({
+    required BuildContext context,
     required String title,
     required Widget languageToggle,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment
+            .center, // Keeps flag centered with the first line or middle
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-              color: Colors.black,
+          // 1. Wrap the title in Expanded so it wraps text instead of pushing the flag
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: colorScheme.onSurface,
+              ),
+              softWrap: true, // Allows wrapping
+              overflow:
+                  TextOverflow.visible, // Ensures text isn't cut off with "..."
             ),
           ),
+
+          //const SizedBox(width: 3), // Add a small gap between text and flag
+          // 2. The flag/toggle stays on the right
           languageToggle,
         ],
       ),
     );
   }
 
-  static Widget buildProgressHeader({
-    required String subject,
-    required String difficulty,
-    required double progress,
-    required String counterText,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 8),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "$subject • $difficulty",
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: LinearProgressIndicator(
-                  value: progress,
-                  backgroundColor: Colors.black12,
-                  color: Colors.green,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                counterText,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget buildQuestionCard({
-    required List<BoxShadow> boxShadow,
-    required Widget child,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: boxShadow,
-      ),
-      child: child,
-    );
-  }
-
+  /// Updated Option Tile: White box, Green/Red solid feedback, colored icons for images
   static Widget buildOptionTile({
+    required BuildContext context,
     required int index,
     required String text,
+    String? imageUrl,
     required int correctIndex,
-    required int? selectedIndex,
+    int? selectedIndex,
     required bool showFeedback,
     required VoidCallback onTap,
   }) {
-    Color borderColor = Colors.black.withValues(alpha: 0.08);
-    Color bgColor = Colors.transparent;
+    final bool isCorrect = index == correctIndex;
+    final bool isWrong = index == selectedIndex && index != correctIndex;
+
+    // 1. Get the surface color from the current theme (white in light, dark grey in dark)
+    final Color themeSurface = Theme.of(context).colorScheme.surface;
+
+    // 2. Default to theme surface, then apply feedback colors
+    Color backgroundColor = themeSurface;
 
     if (showFeedback) {
-      if (index == correctIndex) {
-        borderColor = Colors.green;
-        bgColor = Colors.green.withValues(alpha: 0.1);
-      } else if (index == selectedIndex) {
-        borderColor = Colors.red;
-        bgColor = Colors.red.withValues(alpha: 0.1);
+      if (isCorrect) {
+        backgroundColor = const Color.fromARGB(243, 12, 206, 18); // Solid Green
+      } else if (isWrong) {
+        backgroundColor = const Color.fromARGB(255, 255, 0, 0); // Solid Red
       }
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: borderColor, width: 2),
-        ),
-        child: InkWell(
-          onTap: showFeedback ? null : onTap,
-          borderRadius: BorderRadius.circular(15),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.orange.withValues(alpha: 0.15),
-                  child: Text(
-                    String.fromCharCode(65 + index),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.orange,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    text,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-                if (showFeedback && index == correctIndex)
-                  const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                if (showFeedback &&
-                    index == selectedIndex &&
-                    index != correctIndex)
-                  const Icon(Icons.cancel, color: Colors.red, size: 20),
-              ],
-            ),
+    // If feedback is shown, text is white. Otherwise, use theme's onSurface.
+    Color contentColor = (showFeedback && (isCorrect || isWrong))
+        ? Colors.white
+        : Theme.of(context).colorScheme.onSurface;
+
+    // Icon logic with specific colors
+    Widget? feedbackIcon;
+    if (showFeedback && (isCorrect || isWrong)) {
+      feedbackIcon = Icon(
+        isCorrect ? Icons.check_circle : Icons.cancel,
+        // Using distinct colors for the icon itself
+        color: isCorrect
+            ? Color.fromARGB(243, 12, 206, 18)
+            : Color.fromARGB(255, 255, 0, 0),
+        size: imageUrl != null ? 30 : 24,
+      );
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      margin: imageUrl == null
+          ? const EdgeInsets.symmetric(vertical: 6)
+          : EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
+        ],
+      ),
+      child: InkWell(
+        onTap: showFeedback ? null : onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Stack(
+          children: [
+            Padding(
+              padding: EdgeInsets.all(imageUrl != null ? 8.0 : 16.0),
+              child: imageUrl != null
+                  ? _buildImageLayout(imageUrl, text, contentColor)
+                  : _buildTextLayout(text, feedbackIcon, contentColor),
+            ),
+
+            // For Image Options: Feedback icon with a white circular background for visibility
+            if (imageUrl != null && feedbackIcon != null)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
+                    ],
+                  ),
+                  child: feedbackIcon,
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  static Widget buildResultsDialog({
+  static Widget _buildTextLayout(String text, Widget? icon, Color textColor) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color:
+                  textColor, // Switches to white when background is green/red
+            ),
+          ),
+        ),
+        if (icon != null) icon,
+      ],
+    );
+  }
+
+  // Updated Image Layout to accept the dynamic text color
+  static Widget _buildImageLayout(String url, String text, Color textColor) {
+    // Check if there is valid text to display
+    final bool hasText = text.trim().isNotEmpty;
+
+    Widget imageWidget = Image.network(
+      url,
+      // CHANGE: Use BoxFit.contain to see the full image without cropping
+      fit: BoxFit.contain,
+      width: double.infinity,
+      height: double.infinity, // Ensures it tries to fill the available space
+      errorBuilder: (_, __, ___) =>
+          const Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+      },
+    );
+
+    // If there is no text, let the image take 100% of the space
+    if (!hasText) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: imageWidget,
+      );
+    }
+
+    // If there is text, use the split layout (75% image, 25% text)
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          flex: 3,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: double.infinity,
+              color: Colors
+                  .grey[50], // Light background helps 'contain' look cleaner
+              child: imageWidget,
+            ),
+          ),
+        ),
+
+        Expanded(
+          flex: 1,
+          child: Center(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 16, // Slightly smaller to ensure fit
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Widget buildResultsView({
     required BuildContext context,
     required int score,
     required int total,
@@ -174,112 +230,119 @@ class QuizUi {
     required VoidCallback onReview,
   }) {
     final bool isPerfect = score == total;
+    final bool shouldCelebrate = score >= 7;
 
-    return Stack(
-      alignment: Alignment.topCenter,
-      children: [
-        AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          title: Column(
-            children: [
-              Icon(
-                isPerfect ? Icons.stars : Icons.emoji_events,
-                color: Colors.orange,
-                size: 50,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                isPerfect
-                    ? (isEnglish ? "Outstanding!" : "Luar Biasa!")
-                    : (isEnglish ? "Quiz Finished!" : "Kuiz Selesai!"),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 22,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                isEnglish ? "Your Score" : "Markah Anda",
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "$score / $total",
-                style: const TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.green,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
+    return Container(
+      // CHANGE THIS LINE: Set color to transparent
+      color: Colors.transparent,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 30),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isPerfect ? Icons.stars : Icons.emoji_events,
+                      color: const Color(0xFFEB9000),
+                      size: 80,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      isPerfect
+                          ? (isEnglish ? "Outstanding!" : "Luar Biasa!")
+                          : (isEnglish ? "Quiz Finished!" : "Kuiz Selesai!"),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 26,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      isEnglish ? "Your Score" : "Markah Anda",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 18),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "$score / $total",
+                      style: const TextStyle(
+                        fontSize: 50,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    _buildDialogBtn(
+                      label: isEnglish ? "REPLAY" : "MAIN SEMULA",
+                      icon: Icons.replay,
+                      color: const Color(0xFFEB9000),
+                      pressed: onReplay,
+                      outlined: false,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildDialogBtn(
+                      label: isEnglish ? "REVIEW ANSWERS" : "SEMAK JAWAPAN",
+                      icon: Icons.visibility,
+                      color: const Color(0xFFEB9000),
+                      pressed: onReview,
+                      outlined: true,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 30),
-              _buildDialogBtn(
-                isEnglish ? "REPLAY" : "MAIN SEMULA",
-                Icons.replay,
-                Colors.blue,
-                onReplay,
-                false,
-              ),
-              const SizedBox(height: 12),
-              _buildDialogBtn(
-                isEnglish ? "REVIEW ANSWERS" : "SEMAK JAWAPAN",
-                Icons.visibility,
-                Colors.orange,
-                onReview,
-                true,
-              ),
-            ],
+            ),
           ),
-        ),
-        ConfettiWidget(
-          confettiController: confettiController,
-          blastDirectionality: BlastDirectionality.explosive,
-          shouldLoop: false,
-          colors: const [
-            Colors.green,
-            Colors.blue,
-            Colors.pink,
-            Colors.orange,
-            Colors.purple,
-            Colors.yellow,
-          ],
-          gravity: 0.2,
-          numberOfParticles: 20,
-        ),
-      ],
+          if (shouldCelebrate)
+            ConfettiWidget(
+              confettiController: confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.orange,
+                Colors.pink,
+                Colors.purple,
+              ],
+              gravity: 0.25,
+              numberOfParticles: 20,
+            ),
+        ],
+      ),
     );
   }
 
-  static Widget _buildDialogBtn(
-    String label,
-    IconData icon,
-    Color color,
-    VoidCallback pressed,
-    bool outlined,
-  ) {
+  /// Private helper for dialog buttons
+  static Widget _buildDialogBtn({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback pressed,
+    required bool outlined,
+  }) {
     return SizedBox(
       width: double.infinity,
       child: outlined
           ? OutlinedButton.icon(
-              icon: Icon(icon, color: color),
+              icon: Icon(icon, color: color, size: 20),
               label: Text(
                 label,
                 style: TextStyle(color: color, fontWeight: FontWeight.bold),
@@ -294,7 +357,7 @@ class QuizUi {
               onPressed: pressed,
             )
           : ElevatedButton.icon(
-              icon: Icon(icon, color: Colors.white),
+              icon: Icon(icon, color: Colors.white, size: 20),
               label: Text(
                 label,
                 style: const TextStyle(
@@ -304,6 +367,7 @@ class QuizUi {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
+                elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -311,6 +375,22 @@ class QuizUi {
               ),
               onPressed: pressed,
             ),
+    );
+  }
+
+  static Widget buildQuestionCard({
+    required BuildContext context,
+    required Widget child,
+    List<BoxShadow>? boxShadow,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: boxShadow,
+      ),
+      child: child,
     );
   }
 }

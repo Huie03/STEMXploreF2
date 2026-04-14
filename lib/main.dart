@@ -1,5 +1,6 @@
 // main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; //App in portrait, no rotate to landscape
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'l10n/languages.dart';
@@ -23,6 +24,13 @@ import 'package:stemxploref2/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  //Lock the orientation to portrait only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   final FlutterLocalization localization = FlutterLocalization.instance;
   await localization.ensureInitialized();
 

@@ -19,49 +19,23 @@ class StemInfoPage extends StatefulWidget {
 
 class _StemInfoPageState extends State<StemInfoPage> {
   final ScrollController _scrollController = ScrollController();
+  bool _needsScrollReset = true;
 
   final List<Map<String, dynamic>> stemInfoList = [
     {
       "id": 1,
-      "type": "video",
-      "title_en": "STEM Meaning",
-      "title_ms": "Maksud STEM",
-      "desc_en":
-          "STEM stands for Science, Technology, Engineering and Mathematics. It explains how these four subjects work together to solve real-world problems.",
-      "desc_ms":
-          "STEM bermaksud Sains, Teknologi, Kejuruteraan dan Matematik. Ia menerangkan bagaimana empat bidang ini bekerjasama untuk menyelesaikan masalah dunia sebenar.",
-      "preview_image": "assets/stem_info/images/SI1.png",
-      "video": "assets/stem_info/videos/v1.mp4",
-      "source_en":
-          "Fun And Learn Education (2015, September 2). What is STEM? YouTube.",
-      "source_ms":
-          "Fun And Learn Education (2015, 2 September). Apakah STEM? YouTube.",
-      "video_url": "https://www.youtube.com/watch?v=Q0oNyfwL-Ig",
-    },
-    {
-      "id": 2,
-      "type": "infographic",
-      "title_en": "Importance of STEM",
-      "title_ms": "Kepentingan STEM",
-      "preview_en":
-          "STEM education encourages creativity, teamwork, critical thinking and prepares students for future careers while supporting national development.",
-      "preview_ms":
-          "Pendidikan STEM menggalakkan kreativiti, kerja berpasukan, pemikiran kritikal serta menyediakan pelajar untuk kerjaya masa depan dan pembangunan negara.",
-      "detailImage_en": "assets/stem_info/images/Info2_en.png",
-      "detailImage_ms": "assets/stem_info/images/Info2_ms.png",
-    },
-    {
-      "id": 3,
       "type": "video_special",
       "title_en": "STEM Education Overview",
       "title_ms": "Gambaran Keseluruhan Pendidikan STEM",
       "desc_en":
-          "This video explains how STEM education teaches skills such as problem solving, teamwork and creativity.",
+          "This video explains how STEM education teaches skills"
+          " such as problem solving, teamwork and creativity.",
       "desc_ms":
-          "Video ini menerangkan bagaimana pendidikan STEM mengajar kemahiran seperti penyelesaian masalah, kerja berpasukan dan kreativiti.",
+          "Video ini menerangkan bagaimana pendidikan STEM mengajar kemahiran"
+          " seperti penyelesaian masalah, kerja berpasukan dan kreativiti.",
       "preview_image": "assets/stem_info/images/SI3.png",
-      "detailImage_en": "assets/stem_info/images/SI3.1_en.png",
-      "detailImage_ms": "assets/stem_info/images/SI3.1_ms.png",
+      "detailImage_en": "assets/stem_info/images/Info1_en.png",
+      "detailImage_ms": "assets/stem_info/images/Info1_ms.png",
       "video": "assets/stem_info/videos/v3.mp4",
       "source_en":
           "BBHCSD Media (2014, April 16). STEM Education Overview. YouTube.",
@@ -70,15 +44,45 @@ class _StemInfoPageState extends State<StemInfoPage> {
       "video_url": "https://www.youtube.com/watch?v=5GWhwUN9iaY",
     },
     {
+      "id": 2,
+      "type": "infographic",
+      "title_en": "STEM Subjects Working Together",
+      "title_ms": "Bidang STEM Bekerjasama",
+      "preview_en":
+          "STEM subjects work together to solve problems. For example,"
+          " building a robot involves science, technology, engineering, and mathematics.",
+      "preview_ms":
+          "Bidang STEM bekerjasama untuk menyelesaikan masalah. Contohnya,"
+          " membina robot melibatkan sains, teknologi, kejuruteraan dan matematik.",
+      "detailImage_en": "assets/stem_info/images/Info2_en.png",
+      "detailImage_ms": "assets/stem_info/images/Info2_ms.png",
+    },
+    {
+      "id": 3,
+      "type": "infographic",
+      "title_en": "Developing STEM Skills",
+      "title_ms": "Membangunkan Kemahiran STEM",
+      "preview_en":
+          "STEM skills are developed through a process of asking questions, planning ideas, creating solutions,"
+          " testing them, and improving designs to solve real-world problems.",
+      "preview_ms":
+          "Kemahiran STEM dibangunkan melalui proses bertanya soalan, merancang idea, membina penyelesaian,"
+          " menguji dan menambah baik reka bentuk untuk menyelesaikan masalah dunia sebenar.",
+      "detailImage_en": "assets/stem_info/images/Info3_en.png",
+      "detailImage_ms": "assets/stem_info/images/Info3_ms.png",
+    },
+    {
       "id": 4,
-      "type": "video",
+      "type": "video_special",
       "title_en": "STEM Skills Matter",
-      "title_ms": "Kemahiran STEM Sangat Penting",
+      "title_ms": "Perkara Kemahiran STEM",
       "desc_en":
           "STEM skills help students develop logical thinking, collaboration and innovation.",
       "desc_ms":
           "Kemahiran STEM membantu pelajar membangunkan pemikiran logik, kerjasama dan inovasi.",
       "preview_image": "assets/stem_info/images/SI4.png",
+      "detailImage_en": "assets/stem_info/images/Info4_en.png",
+      "detailImage_ms": "assets/stem_info/images/Info4_ms.png",
       "video": "assets/stem_info/videos/v4.mp4",
       "source_en":
           "Department of Education WA (2018, June 12). STEM Skills Matter. YouTube.",
@@ -89,26 +93,33 @@ class _StemInfoPageState extends State<StemInfoPage> {
     {
       "id": 5,
       "type": "infographic",
-      "title_en": "STEM in Real Life",
-      "title_ms": "STEM dalam Kehidupan Seharian",
+      "title_en": "Skills in STEM",
+      "title_ms": "Kemahiran dalam STEM",
       "preview_en":
-          "STEM is applied in daily life through technology, transportation, healthcare and environmental solutions.",
+          "STEM develops essential skills such as scientific investigation,"
+          " engineering design, coding logic, and data analysis"
+          " to solve real-world problems.",
       "preview_ms":
-          "STEM digunakan dalam kehidupan seharian melalui teknologi, pengangkutan, penjagaan kesihatan dan penyelesaian alam sekitar.",
-
+          "STEM membangunkan kemahiran penting seperti penyiasatan saintifik,"
+          " reka bentuk kejuruteraan, logik pengaturcaraan dan analisis data"
+          " untuk menyelesaikan masalah dunia sebenar.",
       "detailImage_en": "assets/stem_info/images/Info5_en.png",
       "detailImage_ms": "assets/stem_info/images/Info5_ms.png",
     },
     {
       "id": 6,
-      "type": "video",
+      "type": "video_special",
       "title_en": "STEM Solves Real-World Problems",
       "title_ms": "STEM Menyelesaikan Masalah Dunia Sebenar",
       "preview_en":
-          "Students work in teams during STEM camps to solve real-world problems using science and engineering.",
+          "Students work in teams to design solutions for a community in Nigeria"
+          " facing unreliable electricity, using engineering and robotics.",
       "preview_ms":
-          "Pelajar bekerjasama dalam kem STEM untuk menyelesaikan masalah dunia sebenar menggunakan sains dan kejuruteraan.",
+          "Pelajar bekerjasama untuk mereka penyelesaian bagi komuniti di Nigeria"
+          " yang menghadapi masalah bekalan elektrik tidak stabil menggunakan kejuruteraan dan robotik.",
       "preview_image": "assets/stem_info/images/SI6.png",
+      "detailImage_en": "assets/stem_info/images/Info6_en.png",
+      "detailImage_ms": "assets/stem_info/images/Info6_ms.png",
       "video": "assets/stem_info/videos/v6.mp4",
       "source_en":
           "Virginia Tech (2025, August 12). STEM Camp Challenges Students to Solve Real-World Problems. YouTube.",
@@ -117,6 +128,26 @@ class _StemInfoPageState extends State<StemInfoPage> {
       "video_url": "https://www.youtube.com/watch?v=qMgH3BdNSy8",
     },
   ];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // This runs whenever the page is navigated to or dependencies change
+    if (_needsScrollReset) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+          _needsScrollReset = false; // Prevent infinite looping
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +168,7 @@ class _StemInfoPageState extends State<StemInfoPage> {
             children: [
               // Header
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+                padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -156,12 +187,13 @@ class _StemInfoPageState extends State<StemInfoPage> {
               // List Content
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.only(right: 0),
                   child: AppRawScrollbar(
                     controller: _scrollController,
                     child: ListView.builder(
+                      key: UniqueKey(),
                       controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(28, 13, 18, 16),
+                      padding: const EdgeInsets.fromLTRB(30, 13, 30, 16),
                       itemCount: stemInfoList.length,
                       itemBuilder: (context, index) {
                         final item = stemInfoList[index];

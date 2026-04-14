@@ -5,12 +5,14 @@ import 'package:flutter_localization/flutter_localization.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:photo_view/photo_view.dart';
 
 import '../widgets/gradient_background.dart';
 import '/navigation_provider.dart';
 import 'package:stemxploref2/widgets/curved_navigation_bar.dart';
 import '/widgets/language_toggle.dart';
 import '../widgets/box_shadow.dart';
+import '../widgets/rawscrollbar.dart';
 
 class StemDetailPage extends StatefulWidget {
   final Map<String, dynamic> stemInfo;
@@ -24,6 +26,8 @@ class StemDetailPage extends StatefulWidget {
 class _StemDetailPageState extends State<StemDetailPage> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
+  final ScrollController _scrollController = ScrollController();
+  bool _needsScrollReset = true;
 
   @override
   void initState() {
@@ -59,11 +63,75 @@ class _StemDetailPageState extends State<StemDetailPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Logic: Every time this page is built/pushed, reset the scroll to 0
+    if (_needsScrollReset) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+          _needsScrollReset = false;
+        }
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _videoController?.pause();
     _videoController?.dispose();
     _chewieController?.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _showFullScreenImage(BuildContext context, String imagePath) {
+    showDialog(
+      context: context,
+      // 'useRootNavigator: true' ensures the image overlays everything,
+      // including bottom nav and app bars.
+      useRootNavigator: true,
+      builder: (context) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black, // Classic dark backdrop for photos
+          child: Stack(
+            children: [
+              // 1. The Zoomable Image
+              PhotoView(
+                imageProvider: AssetImage(imagePath),
+                loadingBuilder: (context, event) =>
+                    const Center(child: CircularProgressIndicator()),
+                // Allow some minor bouncing at the edges
+                tightMode: false,
+                // Define how the image fits (contain is usually best)
+                initialScale: PhotoViewComputedScale.contained,
+                minScale: PhotoViewComputedScale.contained * 0.8,
+                maxScale:
+                    PhotoViewComputedScale.covered * 2.0, // Significant zoom
+              ),
+
+              // 2. The Close Button (Top Left/Right)
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black54,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () =>
+                            Navigator.of(context).pop(), // Close the dialog
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -89,7 +157,6 @@ class _StemDetailPageState extends State<StemDetailPage> {
 
     final String appBarTitle = isEnglish ? 'STEM Info' : 'Maklumat STEM';
 
-    // Handle sound sync for Chewie/VideoPlayer
     if (_videoController != null && _videoController!.value.isInitialized) {
       _videoController!.setVolume(isSoundEnabled ? 1.0 : 0.0);
     }
@@ -97,12 +164,8 @@ class _StemDetailPageState extends State<StemDetailPage> {
     return VisibilityDetector(
       key: const Key('stem-detail-page-key'),
       onVisibilityChanged: (visibilityInfo) {
-        var visiblePercentage = visibilityInfo.visibleFraction * 100;
-
-        // If the page is less than 1% visible, pause the video
-        if (visiblePercentage < 1) {
+        if (visibilityInfo.visibleFraction * 100 < 1) {
           _videoController?.pause();
-          debugPrint("Video paused because page is hidden");
         }
       },
       child: _buildScaffold(
@@ -139,7 +202,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
             children: [
               // HEADER
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+                padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -155,144 +218,180 @@ class _StemDetailPageState extends State<StemDetailPage> {
                   ],
                 ),
               ),
+
               // CONTENT
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
+                child: Padding(
+                  // 1. Matches the scrollbar offset from the right edge
+                  padding: const EdgeInsets.only(right: 0),
+                  child: AppRawScrollbar(
+                    key: UniqueKey(),
+                    controller: _scrollController,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          controller: _scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          // 2. Exact padding from your StemInfoPage
+                          padding: const EdgeInsets.fromLTRB(30, 13, 30, 16),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              // Subtract vertical padding to calculate available space
+                              minHeight: constraints.maxHeight - 29,
                             ),
-                            const SizedBox(height: 2),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: cardBg,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isDark
-                                      ? Colors.white10
-                                      : Colors.black26,
-                                ),
-                                boxShadow: isDark ? [] : appBoxShadow,
-                              ),
+                            child: Center(
+                              // THIS ensures the card is always at the middle center
                               child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (description != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: 2),
-                                      child: Text(
-                                        description,
-                                        textAlign: TextAlign.justify,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          height: 1.5,
-                                          color: subTextColor,
-                                        ),
-                                      ),
+                                  // Title
+                                  Text(
+                                    title,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
                                     ),
-
-                                  // Display Video Player if ready
-                                  if (_chewieController != null &&
-                                      _chewieController!
-                                          .videoPlayerController
-                                          .value
-                                          .isInitialized)
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 10,
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(15),
-                                        child: AspectRatio(
-                                          aspectRatio:
-                                              _chewieController!.aspectRatio ??
-                                              16 / 9,
-                                          child: Chewie(
-                                            controller: _chewieController!,
+                                  ),
+                                  const SizedBox(height: 5),
+                                  // THE CARD
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: cardBg,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: isDark ? [] : appBoxShadow,
+                                      border: isDark
+                                          ? Border.all(
+                                              color: Colors.white10,
+                                              width: 0.5,
+                                            )
+                                          : null,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        if (description != null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 15,
+                                            ),
+                                            child: Text(
+                                              description,
+                                              textAlign: TextAlign.justify,
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                height: 1.6,
+                                                color: subTextColor,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                    ),
 
-                                  if (detailImage != null)
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(15),
-                                      child: Image.asset(
-                                        detailImage,
-                                        fit: BoxFit.contain,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                const Icon(
-                                                  Icons.broken_image,
-                                                  size: 50,
+                                        // Video Section
+                                        if (_chewieController != null &&
+                                            _chewieController!
+                                                .videoPlayerController
+                                                .value
+                                                .isInitialized)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 15,
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                              child: AspectRatio(
+                                                aspectRatio:
+                                                    _chewieController!
+                                                        .aspectRatio ??
+                                                    16 / 9,
+                                                child: Chewie(
+                                                  controller:
+                                                      _chewieController!,
                                                 ),
-                                      ),
-                                    ),
-
-                                  if (sourceText != null) ...[
-                                    const SizedBox(height: 3),
-                                    Divider(
-                                      color: isDark
-                                          ? Colors.white24
-                                          : Colors.black12,
-                                    ),
-                                    const SizedBox(height: 5),
-                                    RichText(
-                                      text: TextSpan(
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: subTextColor.withValues(
-                                            alpha: 0.7,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                            text: isEnglish
-                                                ? "Source:\n"
-                                                : "Sumber:\n",
+
+                                        // Image Section
+                                        if (detailImage != null)
+                                          GestureDetector(
+                                            onTap: () => _showFullScreenImage(
+                                              context,
+                                              detailImage,
+                                            ),
+                                            child: Hero(
+                                              tag:
+                                                  'stem_detail_image_$detailImage',
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(15),
+                                                child: Image.asset(
+                                                  detailImage,
+                                                  fit: BoxFit.contain,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+
+                                        // Source Section
+                                        if (sourceText != null) ...[
+                                          const SizedBox(height: 10),
+                                          Divider(
+                                            color: isDark
+                                                ? Colors.white24
+                                                : Colors.black12,
+                                          ),
+                                          const SizedBox(height: 10),
+                                          Text(
+                                            isEnglish ? "Source:" : "Sumber:",
                                             style: const TextStyle(
+                                              fontSize: 12,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                          TextSpan(text: "$sourceText\n"),
-                                          if (widget.stemInfo['video_url'] !=
-                                              null)
-                                            TextSpan(
-                                              text:
-                                                  "${widget.stemInfo['video_url']}",
-                                              style: const TextStyle(
-                                                color: Colors.blue,
+                                          Text(
+                                            sourceText,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: subTextColor.withOpacity(
+                                                0.7,
                                               ),
                                             ),
+                                          ),
+
+                                          // Changed 'item' to 'widget.stemInfo' to fix the Undefined Name error
+                                          if (widget.stemInfo['video_url'] !=
+                                                  null &&
+                                              widget.stemInfo['video_url']
+                                                  .toString()
+                                                  .isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              widget.stemInfo['video_url']
+                                                  .toString(),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.blueAccent,
+                                              ),
+                                            ),
+                                          ],
                                         ],
-                                      ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -302,9 +401,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
       bottomNavigationBar: AppCurvedNavBar(
         currentIndex: 0,
         onTap: (index) {
-          // Manually pause before switching tabs
           _videoController?.pause();
-
           Provider.of<NavigationProvider>(
             context,
             listen: false,

@@ -44,9 +44,9 @@ class StemQuizDesign {
       onPressed: onTap,
       style: ElevatedButton.styleFrom(
         backgroundColor: isEnabled
-            ? (isDark ? const Color(0xFFEFA638) : Colors.black)
+            ? (isDark ? const Color(0xFFEB9000) : const Color(0xFFEB9000))
             : (isDark ? Colors.grey.shade800 : Colors.grey.shade400),
-        foregroundColor: isDark ? Colors.black : Colors.white,
+        foregroundColor: isDark ? Colors.black : Colors.black,
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),

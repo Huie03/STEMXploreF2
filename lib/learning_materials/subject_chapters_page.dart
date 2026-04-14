@@ -96,7 +96,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
 
   Future<List<dynamic>> fetchChapters(String subject) async {
     final url = Uri.parse(
-      '${ipadress.baseUrl}get_chapters.php?subject=$subject',
+      '${ipaddress.baseUrl}get_chapters.php?subject=$subject',
     );
     try {
       final response = await http.get(url);
@@ -177,7 +177,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
 
                         Widget listView = ListView.builder(
                           controller: _verticalScrollController,
-                          padding: const EdgeInsets.fromLTRB(30, 5, 22, 30),
+                          padding: const EdgeInsets.fromLTRB(30, 5, 30, 30),
                           itemCount: chapters.length,
                           itemBuilder: (context, index) {
                             return GestureDetector(
@@ -202,7 +202,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
 
                         if (needsScroll) {
                           return Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 5, 14, 60),
+                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 60),
                             child: AppRawScrollbar(
                               controller: _verticalScrollController,
                               child: listView,
@@ -210,7 +210,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
                           );
                         } else {
                           return Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 5, 14, 0),
+                            padding: const EdgeInsets.fromLTRB(0, 5, 0, 0),
                             child: listView,
                           );
                         }
@@ -228,7 +228,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
 
   Widget _buildCustomAppBar(String title, Color textColor) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
       child: Row(
         children: [
           Expanded(
@@ -277,8 +277,8 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 25),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF0091EA) : cardBg,
-                  borderRadius: BorderRadius.circular(24),
+                  color: isSelected ? const Color(0xFFEB9000) : cardBg,
+                  borderRadius: BorderRadius.circular(18),
                   border: isDark && !isSelected
                       ? Border.all(color: Colors.white10)
                       : null,
@@ -288,7 +288,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
                   child: Text(
                     _translateSubject(subjects[index], isEnglish),
                     style: TextStyle(
-                      color: isSelected ? Colors.white : textColor,
+                      color: isSelected ? Colors.black : textColor,
                       fontWeight: isSelected
                           ? FontWeight.bold
                           : FontWeight.normal,
@@ -317,7 +317,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
         ? (data['title_en'] ?? "No Title")
         : (data['title_ms'] ?? "Tiada Tajuk");
 
-    final String fullImageUrl = '${ipadress.baseUrl}${data['image_url']}';
+    final String fullImageUrl = '${ipaddress.baseUrl}${data['image_url']}';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -355,8 +355,8 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
             borderRadius: BorderRadius.circular(10),
             child: Image.network(
               Uri.encodeFull(fullImageUrl),
-              height: 70,
-              width: 55,
+              height: 85,
+              width: 70,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 debugPrint("Failed to load: $fullImageUrl");

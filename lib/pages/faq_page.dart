@@ -9,26 +9,7 @@ import '../navigation_provider.dart';
 import '../widgets/box_shadow.dart';
 import '../widgets/rawscrollbar.dart';
 import '../ipaddress.dart';
-
-class FaqModel {
-  final String questionEn, questionMs, answerEn, answerMs;
-
-  FaqModel({
-    required this.questionEn,
-    required this.questionMs,
-    required this.answerEn,
-    required this.answerMs,
-  });
-
-  factory FaqModel.fromJson(Map<String, dynamic> json) {
-    return FaqModel(
-      questionEn: json['question_en'] ?? '',
-      questionMs: json['question_ms'] ?? '',
-      answerEn: json['answer_en'] ?? '',
-      answerMs: json['answer_ms'] ?? '',
-    );
-  }
-}
+import 'package:photo_view/photo_view.dart';
 
 class FaqPage extends StatefulWidget {
   static const routeName = '/faq';
@@ -40,38 +21,105 @@ class FaqPage extends StatefulWidget {
 
 class _FaqPageState extends State<FaqPage> {
   final ScrollController _scrollController = ScrollController();
-  int _expandedIndex = -1;
-  late Future<List<FaqModel>> _faqFuture;
+  int _expandedIndex = -1; // -1 means everything is closed
+  late Future<List<Map<String, dynamic>>> _faqFuture;
 
+  // 1. Keep initState as is - it ensures boxes are closed on fresh entry
   @override
   void initState() {
     super.initState();
+    _expandedIndex = -1;
     _faqFuture = _fetchFaqs();
-  }
-
-  Future<List<FaqModel>> _fetchFaqs() async {
-    final url = Uri.parse('${ipadress.baseUrl}get_faq.php');
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        List<dynamic> jsonResponse = json.decode(response.body);
-        return jsonResponse.map((data) => FaqModel.fromJson(data)).toList();
-      } else {
-        debugPrint("Server Error: ${response.statusCode}");
-        return [];
-      }
-    } catch (e) {
-      debugPrint("Network Error: $e");
-      return [];
-    }
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  // Remove deactivate entirely
+  // Simplify didChangeDependencies to only handle the scroll jump
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // We no longer reset _expandedIndex here.
+    // We only handle the scrolling logic.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients && _expandedIndex == -1) {
+        _scrollController.jumpTo(0);
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchFaqs() async {
+    final url = Uri.parse('${ipaddress.baseUrl}get_faq.php');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        // Decode the response as a Map (because it starts with { })
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+
+        // Look for the 'data' key you added in PHP
+        if (jsonResponse['status'] == 'success' &&
+            jsonResponse['data'] != null) {
+          List<dynamic> data = jsonResponse['data'];
+          return data.map((item) => item as Map<String, dynamic>).toList();
+        } else {
+          debugPrint("PHP returned success: false or data is null");
+          return [];
+        }
+      } else {
+        debugPrint("Server Error: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      // This will tell you if there is a connection or parsing error
+      debugPrint("Flutter Fetch Error: $e");
+      return [];
+    }
+  }
+
+  void _showFullScreenImage(BuildContext context, String imagePath) {
+    showDialog(
+      context: context,
+      useRootNavigator: true,
+      builder: (context) {
+        return Dialog.fullscreen(
+          backgroundColor: Colors.black,
+          child: Stack(
+            children: [
+              PhotoView(
+                // Use NetworkImage for XAMPP server files
+                imageProvider: NetworkImage('${ipaddress.baseUrl}$imagePath'),
+                loadingBuilder: (context, event) =>
+                    const Center(child: CircularProgressIndicator()),
+                initialScale: PhotoViewComputedScale.contained,
+                minScale: PhotoViewComputedScale.contained * 0.8,
+                maxScale: PhotoViewComputedScale.covered * 2.0,
+              ),
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black54,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -88,52 +136,40 @@ class _FaqPageState extends State<FaqPage> {
         child: SafeArea(
           child: Column(
             children: [
-              _buildCustomAppBar(
+              _buildAppBar(
                 context,
-                isEnglish ? 'Frequent Asked Questions' : 'Soalan Lazim',
+                isEnglish ? 'Frequently Asked Question' : 'Soalan Lazim',
                 textColor,
               ),
               Expanded(
-                child: FutureBuilder<List<FaqModel>>(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
                   future: _faqFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(
-                        child: Text(
-                          "Error: ${snapshot.error}",
-                          style: TextStyle(color: textColor),
-                        ),
-                      );
                     }
 
                     final faqs = snapshot.data ?? [];
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: AppRawScrollbar(
+
+                    return AppRawScrollbar(
+                      controller: _scrollController,
+                      child: ListView.builder(
                         controller: _scrollController,
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.fromLTRB(28, 13, 18, 16),
-                          itemCount: faqs.length,
-                          itemBuilder: (context, index) {
-                            final item = faqs[index];
-                            return FaqItem(
-                              question: isEnglish
-                                  ? item.questionEn
-                                  : item.questionMs,
-                              answer: isEnglish ? item.answerEn : item.answerMs,
-                              isExpanded: _expandedIndex == index,
-                              isDark: isDark,
-                              onTap: () => setState(
-                                () => _expandedIndex = (_expandedIndex == index)
-                                    ? -1
-                                    : index,
-                              ),
-                            );
-                          },
-                        ),
+                        padding: const EdgeInsets.fromLTRB(30, 13, 30, 16),
+                        itemCount: faqs.length,
+                        itemBuilder: (context, index) {
+                          final item = faqs[index];
+                          return _buildFaqItem(
+                            index,
+                            isEnglish
+                                ? (item['question_en'] ?? '')
+                                : (item['question_ms'] ?? ''),
+                            isEnglish
+                                ? (item['answer_en'] ?? '')
+                                : (item['answer_ms'] ?? ''),
+                            isDark,
+                          );
+                        },
                       ),
                     );
                   },
@@ -145,46 +181,52 @@ class _FaqPageState extends State<FaqPage> {
       ),
     );
   }
-}
 
-class FaqItem extends StatelessWidget {
-  final String question;
-  final String answer;
-  final bool isExpanded;
-  final bool isDark;
-  final VoidCallback onTap;
+  // --- Combined Helper: AppBar ---
+  Widget _buildAppBar(BuildContext context, String title, Color textColor) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              color: textColor,
+            ),
+          ),
+          const LanguageToggle(),
+        ],
+      ),
+    );
+  }
 
-  const FaqItem({
-    super.key,
-    required this.question,
-    required this.answer,
-    required this.isExpanded,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final Color questionBg = isDark ? const Color(0xFF3D3D3D) : Colors.white;
+  // --- Combined Helper: Faq Item ---
+  Widget _buildFaqItem(int index, String question, String answer, bool isDark) {
+    final bool isExpanded = _expandedIndex == index;
+    final Color questionBg = isDark ? const Color(0xFF535252) : Colors.white;
     final Color answerBg = isDark
         ? const Color.fromARGB(255, 111, 111, 111)
         : const Color.fromARGB(255, 235, 145, 0);
-    final Color questionTextColor = isDark ? Colors.white : Colors.black;
-    final Color answerTextColor = Theme.of(context).colorScheme.onSurface;
+
+    bool isImagePath = answer.contains('assets/') && (answer.endsWith('.png'));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18.0),
       child: Column(
         children: [
           GestureDetector(
-            onTap: onTap,
+            onTap: () =>
+                setState(() => _expandedIndex = isExpanded ? -1 : index),
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: questionBg,
                 boxShadow: isDark ? [] : appBoxShadow,
-                border: isDark ? Border.all(color: Colors.white10) : null,
                 borderRadius: BorderRadius.circular(15),
+                border: isDark ? Border.all(color: Colors.white10) : null,
               ),
               child: Row(
                 children: [
@@ -194,7 +236,7 @@ class FaqItem extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: questionTextColor,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
                   ),
@@ -202,56 +244,60 @@ class FaqItem extends StatelessWidget {
                     isExpanded
                         ? Icons.keyboard_arrow_up
                         : Icons.keyboard_arrow_down,
-                    color: isDark ? Colors.redAccent : Colors.redAccent,
+                    color: Colors.redAccent,
                   ),
                 ],
               ),
             ),
           ),
-          if (isExpanded) ...[
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: answerBg,
-                boxShadow: isDark ? [] : appBoxShadow,
-                border: isDark ? Border.all(color: Colors.white10) : null,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Text(
-                answer,
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  fontSize: 15,
-                  height: 1.5,
-                  color: answerTextColor,
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: answerBg,
+                  boxShadow: isDark ? [] : appBoxShadow,
+                  borderRadius: BorderRadius.circular(15),
                 ),
+                child: isImagePath
+                    ? GestureDetector(
+                        // 2. Wrap image in GestureDetector to trigger PhotoView
+                        onTap: () => _showFullScreenImage(context, answer),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            '${ipaddress.baseUrl}$answer',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text(
+                                  'Image not found on server',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      )
+                    : Text(
+                        answer,
+                        textAlign: TextAlign.justify,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          height: 1.5,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
-          ],
         ],
       ),
     );
   }
-}
-
-Widget _buildCustomAppBar(BuildContext context, String title, Color textColor) {
-  return Padding(
-    padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            color: textColor,
-          ),
-        ),
-        const LanguageToggle(),
-      ],
-    ),
-  );
 }

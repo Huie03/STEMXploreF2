@@ -26,6 +26,7 @@ dependencies:
   sqflite: ^2.3.0
   path: ^1.9.0
   visibility_detector: ^0.4.0+2
+  photo_view: ^0.14.0
 
 
 dev_dependencies:
@@ -60,5 +61,8 @@ flutter:
     - assets/audio/quiz_bm.music.mp3
     - assets/stem_info/images/
     - assets/stem_info/videos/
+    - assets/daily_info/
+    - assets/highlights/images/
+    - assets/highlights/videos/
 
 

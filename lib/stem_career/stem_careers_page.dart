@@ -11,6 +11,7 @@ import '../ipaddress.dart';
 import '../widgets/box_shadow.dart';
 import 'package:stemxploref2/stem_career/career_quiz.dart';
 import '../stem_career/career_logic.dart';
+import 'package:photo_view/photo_view.dart';
 
 class StemCareersPage extends StatefulWidget {
   static const routeName = '/stem-careers';
@@ -69,7 +70,7 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     });
     try {
       final response = await http
-          .get(Uri.parse('${ipadress.baseUrl}fetch_quiz.php'))
+          .get(Uri.parse('${ipaddress.baseUrl}fetch_career_quiz.php'))
           .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -132,7 +133,7 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
   }
 
   Widget _buildAppBar(bool isEn, bool isDark) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 10, 16, 0),
+    padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -345,8 +346,13 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
             Expanded(
               child: Text(
                 isEn ? opt['opt_text_en'] : opt['opt_text_ms'],
+                // Add these three lines:
+                softWrap: true,
+                maxLines: 2,
+                overflow: TextOverflow.visible,
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize:
+                      15, // Slightly smaller font (13 instead of 15) helps a lot
                   color: selected
                       ? activeColor
                       : (isDark ? Colors.white : Colors.black),
@@ -454,7 +460,7 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
               controller: _exploreScrollController,
               child: ListView.builder(
                 controller: _exploreScrollController,
-                padding: const EdgeInsets.only(right: 20),
+                padding: const EdgeInsets.only(right: 5),
                 itemCount: sorted.length,
                 itemBuilder: (c, i) {
                   final career = sorted[i], cat = career['category_en'];
@@ -577,23 +583,98 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
   }
 
   Widget _mindMap(Map career, bool isEn) {
-    final path = isEn ? career['image_en_url'] : career['image_ms_url'];
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFD9D9D9),
-        borderRadius: BorderRadius.circular(20),
+    String? rawPath = isEn ? career['image_en_url'] : career['image_ms_url'];
+
+    if (rawPath == null || rawPath.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(20),
+        child: Text("No image path found in DB"),
+      );
+    }
+
+    String base = ipaddress.baseUrl.endsWith('/')
+        ? ipaddress.baseUrl.substring(0, ipaddress.baseUrl.length - 1)
+        : ipaddress.baseUrl;
+
+    String path = rawPath.startsWith('/') ? rawPath : "/$rawPath";
+    String finalUrl = "$base$path";
+
+    return GestureDetector(
+      onTap: () => _showFullMindMap(context, finalUrl), // OPEN ZOOM VIEW
+      child: Container(
+        margin: const EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFD9D9D9),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Hero(
+            tag: finalUrl, // Match the tag in the full-screen view
+            child: Image.network(
+              finalUrl,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const SizedBox(
+                  height: 150,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.broken_image, color: Colors.red),
+                      Text(
+                        "Load Error!\nURL: $finalUrl",
+                        style: const TextStyle(color: Colors.red, fontSize: 10),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: (path != null && path.isNotEmpty)
-            ? (path.startsWith('http')
-                  ? Image.network(path, fit: BoxFit.contain)
-                  : Image.asset(path, fit: BoxFit.contain))
-            : const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text("No image"),
+    );
+  }
+
+  void _showFullMindMap(BuildContext context, String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            // CHANGED: Added leading with Icons.close
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            iconTheme: const IconThemeData(color: Colors.white),
+            elevation: 0,
+          ),
+          body: Center(
+            child: Hero(
+              tag: imageUrl,
+              child: PhotoView(
+                imageProvider: NetworkImage(imageUrl),
+                initialScale: PhotoViewComputedScale.contained,
+                minScale: PhotoViewComputedScale.contained,
+                maxScale: PhotoViewComputedScale.covered * 3.0,
+                backgroundDecoration: const BoxDecoration(color: Colors.black),
+                loadingBuilder: (context, event) => const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
               ),
+            ),
+          ),
+        ),
       ),
     );
   }
