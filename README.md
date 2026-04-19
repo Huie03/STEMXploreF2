@@ -1,16 +1,7 @@
-# stemxploref2
+# STEMXploreF2
 
-A new Flutter project.
+# Final Year Project
 
-## Getting Started
+STEMXploreF2 is a mobile application developed to enhance interest and engagement in Science, Technology, Engineering, and Mathematics (STEM) among secondary school students. The app provides an interactive learning materials, quiz, STEM info and more.
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This project also aligns with Malaysia’s goal of increasing STEM participation and SDG 4: Education Quality by promoting critical thinking, problem-solving skills, and student motivation in STEM fields.
