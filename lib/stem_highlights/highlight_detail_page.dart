@@ -29,7 +29,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Logic: Every time this page is built/pushed, reset the scroll to 0
     if (_needsScrollReset) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
@@ -60,7 +59,7 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
     return Scaffold(
       body: GradientBackground(
         child: SafeArea(
-          bottom: false, // Match SubjectChaptersPage
+          bottom: false,
           child: Column(
             children: [
               // Header
@@ -83,17 +82,14 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
               ),
               const SizedBox(height: 6),
 
-              // THE CONTENT AREA - Updated to match SubjectChaptersPage layout
               Expanded(
                 child: Padding(
-                  // 14 on right matches the scrollbar gutter in SubjectChaptersPage
                   padding: const EdgeInsets.fromLTRB(0, 0, 0, 60),
                   child: AppRawScrollbar(
                     controller: _scrollController,
                     child: SingleChildScrollView(
                       key: UniqueKey(),
                       controller: _scrollController,
-                      // Padding applied inside scroll view (30 left matches SubjectChaptersPage)
                       padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,9 +129,8 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                   textColor,
                                   isBold: true,
                                 ),
-                                const Divider(height: 15),
 
-                                // Section 1: Image and Desc
+                                //Image and Desc
                                 _buildLocalImage(widget.highlight.image1Url),
                                 const SizedBox(height: 12),
                                 _buildBodyText(
@@ -144,11 +139,10 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                       : widget.highlight.desc1Ms,
                                   subTextColor,
                                 ),
-
-                                // Section 2: Optional
+                                const SizedBox(height: 12),
+                                //Optional
                                 if (widget.highlight.image2Url.isNotEmpty ||
                                     widget.highlight.desc2En.isNotEmpty) ...[
-                                  const Divider(height: 20),
                                   if (widget.highlight.image2Url.isNotEmpty)
                                     _buildLocalImage(
                                       widget.highlight.image2Url,
@@ -162,10 +156,8 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                       subTextColor,
                                     ),
                                 ],
-
-                                const Divider(height: 15),
-
-                                // Section 3: Skills
+                                const SizedBox(height: 12),
+                                //Skills
                                 _buildBodyText(
                                   isEnglish
                                       ? 'Skills Developed:'
@@ -178,12 +170,10 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                       ? widget.highlight.skillsImageEn
                                       : widget.highlight.skillsImageMs,
                                 ),
-                                const Divider(height: 15),
-
-                                // Section: Video
+                                const SizedBox(height: 12),
+                                //Video
                                 if (widget.highlight.videoUrl != null &&
                                     widget.highlight.videoUrl!.isNotEmpty) ...[
-                                  // Added the Video Label here
                                   _buildBodyText(
                                     isEnglish ? 'Video:' : 'Video:',
                                     textColor,
@@ -192,10 +182,9 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                   VideoPlayerWidget(
                                     assetPath: widget.highlight.videoUrl!,
                                   ),
-                                  const Divider(height: 15),
                                 ],
-
-                                // Section 4: Sources
+                                const SizedBox(height: 10),
+                                //Sources
                                 Text(
                                   isEnglish ? 'Source:' : 'Sumber:',
                                   style: TextStyle(
@@ -211,7 +200,7 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: subTextColor,
-                                    height: 1.4,
+                                    height: 1,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -222,6 +211,88 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                     color: Colors.blueAccent,
                                   ),
                                 ),
+
+                                //EXTRA SOURCES
+                                if (widget
+                                    .highlight
+                                    .extraSources
+                                    .isNotEmpty) ...[
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 10),
+                                    child: Divider(),
+                                  ),
+                                  Text(
+                                    isEnglish
+                                        ? 'Additional Highlights:'
+                                        : 'Sorotan Tambahan:',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  ...widget.highlight.extraSources.map((extra) {
+                                    final String? extraVid = extra['videoUrl'];
+                                    final bool hasVideo =
+                                        extraVid != null && extraVid.isNotEmpty;
+
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 24.0,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          //Description
+                                          _buildBodyText(
+                                            isEnglish
+                                                ? (extra['descEn'] ?? '')
+                                                : (extra['descMs'] ?? ''),
+                                            subTextColor,
+                                          ),
+                                          //Video Player
+                                          if (hasVideo) ...[
+                                            VideoPlayerWidget(
+                                              assetPath: extraVid,
+                                            ),
+                                            const SizedBox(height: 12),
+                                          ],
+
+                                          //Citation
+                                          Text(
+                                            isEnglish ? 'Source:' : 'Sumber:',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: subTextColor,
+                                            ),
+                                          ),
+                                          Text(
+                                            isEnglish
+                                                ? (extra['citationEn'] ?? '')
+                                                : (extra['citationMs'] ?? ''),
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              height: 1,
+                                            ),
+                                          ),
+
+                                          //Source URL
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            extra['sourceUrl'] ?? '',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.blueAccent,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ],
                               ],
                             ),
                           ),
@@ -257,7 +328,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                 maxScale: PhotoViewComputedScale.covered * 2.0,
               ),
 
-              // Close Cross Button
               SafeArea(
                 child: Align(
                   alignment: Alignment.topLeft,
@@ -266,7 +336,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                     child: CircleAvatar(
                       backgroundColor: Colors.black54,
                       child: IconButton(
-                        // Changed from return/back icon to cross icon
                         icon: const Icon(Icons.close, color: Colors.white),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
@@ -284,16 +353,14 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
   Widget _buildLocalImage(String path) {
     if (path.isEmpty) return const SizedBox.shrink();
 
-    // Prepare the correct path
     final String assetPath = path.startsWith('/') ? path.substring(1) : path;
 
     return GestureDetector(
-      onTap: () =>
-          _showFullScreenImage(context, assetPath), // Trigger zoom view
+      onTap: () => _showFullScreenImage(context, assetPath),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
         child: Hero(
-          tag: assetPath, // Smooth transition animation
+          tag: assetPath,
           child: Image.asset(assetPath, fit: BoxFit.cover),
         ),
       ),
@@ -317,7 +384,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
   }
 }
 
-// Sub-widget for Video Playback with STOP logic
 class VideoPlayerWidget extends StatefulWidget {
   final String assetPath;
   const VideoPlayerWidget({super.key, required this.assetPath});
@@ -328,9 +394,9 @@ class VideoPlayerWidget extends StatefulWidget {
 
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
     with WidgetsBindingObserver {
-  VideoPlayerController? _videoPlayerController; // Made nullable for safety
+  VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
-  bool _isDisposed = false; // Flag to prevent async leaks
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -345,8 +411,6 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
     try {
       await _videoPlayerController!.initialize();
 
-      // CRITICAL: If the user left the page while we were initializing,
-      // kill the controller immediately.
       if (_isDisposed || !mounted) {
         _videoPlayerController?.dispose();
         return;
@@ -379,12 +443,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
 
   @override
   void dispose() {
-    _isDisposed = true; // Mark as disposed immediately
+    _isDisposed = true;
     WidgetsBinding.instance.removeObserver(this);
 
-    // IMPORTANT: Dispose Chewie FIRST, then the VideoPlayerController
     _chewieController?.dispose();
-    _videoPlayerController?.pause(); // Force stop audio stream
+    _videoPlayerController?.pause();
     _videoPlayerController?.dispose();
 
     debugPrint("CLEANUP: Video resources released for ${widget.assetPath}");
@@ -396,7 +459,6 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
     return VisibilityDetector(
       key: Key(widget.assetPath),
       onVisibilityChanged: (visibilityInfo) {
-        // If less than 10% visible, stop the audio/video
         if (visibilityInfo.visibleFraction < 0.1 && mounted) {
           _videoPlayerController?.pause();
         }

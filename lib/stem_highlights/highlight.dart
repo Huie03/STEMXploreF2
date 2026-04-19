@@ -16,6 +16,7 @@ class Highlight {
   final String citationMs;
   final String sourceUrl;
   final String? videoUrl;
+  final List<Map<String, String?>> extraSources;
 
   Highlight({
     required this.id,
@@ -35,6 +36,7 @@ class Highlight {
     required this.citationMs,
     required this.sourceUrl,
     this.videoUrl,
+    this.extraSources = const [],
   });
 
   static List<Highlight> getHardcodedHighlights() {
@@ -65,6 +67,32 @@ class Highlight {
             'Peng Yen Liew. (2025, May 15). Pertandingan STEM MJIIT mempromosikan STEM dalam kalangan pelajar Malaysia. UTM NewsHub.',
         sourceUrl:
             'https://news.utm.my/2025/05/mjiit-stem-competitions-promotes-stem-among-malaysian-students/',
+        extraSources: [
+          {
+            'descEn':
+                'Bottle rocket design demonstrates thrust and flight principles.',
+            'descMs':
+                'Reka bentuk roket botol menunjukkan prinsip tujahan dan penerbangan.',
+            'citationEn':
+                'Science Buddies. (2020, Sept 18). Design and Launch Bottle Rockets | STEM Activity. YouTube.',
+            'citationMs':
+                'Science Buddies. (2020, Sept 18). Design and Launch Bottle Rockets | STEM Activity. YouTube.',
+            'sourceUrl': 'https://www.youtube.com/watch?v=mrHi-cc6F9E',
+            'videoUrl': 'assets/highlights/videos/h1.1.mp4',
+          },
+          {
+            'descEn':
+                'The parachute system shows controlled descent and safe landing mechanics.',
+            'descMs':
+                'Sistem payung terjun menunjukkan penurunan terkawal dan mekanisme pendaratan yang selamat.',
+            'citationEn':
+                'Science Buddies. (2020, Sept 18). Bottle Rocket Parachutes | STEM Activity. YouTube.',
+            'citationMs':
+                'Science Buddies. (2020, Sept 18). Bottle Rocket Parachutes | STEM Activity. YouTube.',
+            'sourceUrl': 'https://www.youtube.com/watch?v=c1hi1l4rsYM',
+            'videoUrl': 'assets/highlights/videos/h1.2.mp4',
+          },
+        ],
       ),
       Highlight(
         id: 2,
@@ -92,6 +120,32 @@ class Highlight {
             'Breaking barriers, building bots. (2025, March 25). The Star.',
         sourceUrl:
             'https://www.thestar.com.my/starpicks/2025/03/25/breaking-barriers-building-bots',
+        extraSources: [
+          {
+            'descEn':
+                'Petrosains Tech4All students win robotics competition and represent Malaysia at International Robotics Olympiad.',
+            'descMs':
+                'Pelajar Petrosains Tech4All memenangi pertandingan robotik dan mewakili Malaysia di Olympiad Robot Antarabangsa.',
+            'citationEn':
+                'BERNAMA TV. (2025, Oct 9). Petrosains Tech4All 2025: Empowers Critical Thinking Skills in Robotics & STEM Learning. YouTube.',
+            'citationMs':
+                'BERNAMA TV. (2025, Okt 9). Petrosains Tech4All 2025: Memperkasakan Kemahiran Pemikiran Kritikal dalam Pembelajaran Robotik & STEM. YouTube.',
+            'sourceUrl': 'https://www.youtube.com/watch?v=EJnIvU-i4vU',
+            'videoUrl': 'assets/highlights/videos/h2.1.mp4',
+          },
+          {
+            'descEn':
+                'Petrosains Tech4All empowers Indigenous students with STEM education, robotics learning, and innovation skills.',
+            'descMs':
+                'Petrosains Tech4All memperkasakan pelajar Orang Asli dengan pendidikan STEM, pembelajaran robotik, dan kemahiran inovasi.',
+            'citationEn':
+                'Petrosains. (2025). Tech4All Empowerment Video. Facebook.',
+            'citationMs':
+                'Petrosains. (2025). Video Pemerkasaan Tech4All. Facebook.',
+            'sourceUrl': 'https://web.facebook.com/watch/?v=1119713450309742',
+            'videoUrl': 'assets/highlights/videos/h2.2.mp4',
+          },
+        ],
       ),
       Highlight(
         id: 3,
@@ -145,6 +199,32 @@ class Highlight {
             'Curtin Malaysia membawa sains ke dalam kehidupan pelajar SMK Lutong. (2025, Mac 28). Berita Curtin University Malaysia.',
         sourceUrl:
             'https://news.curtin.edu.my/news/curtin-malaysia-brings-science-to-life-for-smk-lutong-students/',
+        extraSources: [
+          {
+            'descEn':
+                'Elephant toothpaste experiment demonstrates an explosive chemical reaction, explained with safe, fun science learning.',
+            'descMs':
+                'Eksperimen ubat gigi gajah menunjukkan tindak balas kimia yang meletup, dijelaskan dengan pembelajaran sains yang selamat dan menyeronokkan.',
+            'citationEn':
+                'Scitech WA. (2020, May 27). Explosive Elephant’s Toothpaste Experiment. YouTube.',
+            'citationMs':
+                'Scitech WA. (2020, Mei 27). Eksperimen Ubat Gigi Gajah. YouTube.',
+            'sourceUrl': 'https://www.youtube.com/watch?v=mrHi-cc6F9E',
+            'videoUrl': 'assets/highlights/videos/h4.1.mp4',
+          },
+          {
+            'descEn':
+                'DIY lava lamp experiment using oil, water, baking soda, and vinegar to demonstrate chemical reactions.',
+            'descMs':
+                'Eksperimen lampu lava DIY menggunakan minyak, air, soda penaik, dan cuka untuk menunjukkan tindak balas kimia.',
+            'citationEn':
+                'TheDadLab. (2024, Oct 16). How to Make a Lava Lamp at Home with Baking Soda. YouTube.',
+            'citationMs':
+                'TheDadLab. (2024, Okt 16). Cara Membuat Lampu Lava di Rumah dengan Soda Penaik. YouTube.',
+            'sourceUrl': 'https://www.youtube.com/watch?v=c1hi1l4rsYM',
+            'videoUrl': 'assets/highlights/videos/h4.2.mp4',
+          },
+        ],
       ),
       Highlight(
         id: 5,
@@ -170,6 +250,20 @@ class Highlight {
             'Samsung Newsroom Malaysia. (2025, Disember 10). Young Innovators Shine at Samsung Solve for Tomorrow 2025 Grand Finale.',
         sourceUrl:
             'https://news.samsung.com/my/young-innovators-shine-at-samsung-solve-for-tomorrow-2025-grand-finale',
+        extraSources: [
+          {
+            'descEn':
+                'Samsung Solve for Tomorrow 2025 highlights student STEM innovation, prototypes, awards, and winners ceremony.',
+            'descMs':
+                'Samsung Solve for Tomorrow 2025 menonjolkan inovasi STEM pelajar, prototaip, anugerah, dan majlis pemenang.',
+            'citationEn':
+                'Samsung India. (2026, Jan 20). Samsung Solve for Tomorrow 2025 | Grand Finale Highlights. YouTube.',
+            'citationMs':
+                'Samsung India. (2026, Jan 20). Samsung Solve for Tomorrow 2025 | Sorotan Pentas Akhir. YouTube.',
+            'sourceUrl': 'https://www.youtube.com/watch?v=iTr_lsfNbaQ',
+            'videoUrl': 'assets/highlights/videos/h5.mp4',
+          },
+        ],
       ),
       Highlight(
         id: 6,
