@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
-import '../widgets/box_shadow.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
 
 class QuizUi {
   static Widget buildAppBar({

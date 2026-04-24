@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/language_toggle.dart';
-import '/widgets/rawscrollbar.dart';
-import '/widgets/box_shadow.dart';
-import '/theme_provider.dart';
-import '/database_helper.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/widgets/rawscrollbar.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/database_helper.dart';
 
 class StemInfoPage extends StatefulWidget {
   static const routeName = '/stem-info';

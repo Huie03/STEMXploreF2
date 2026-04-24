@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/box_shadow.dart';
-import '/widgets/language_toggle.dart';
-import '/navigation_provider.dart';
-import '/quiz_game/quiz_ui.dart';
-import '/theme_provider.dart';
-import '/widgets/rawscrollbar.dart';
-import '/full_screen_image_page.dart';
-import '/database_helper.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/navigation_provider.dart';
+import 'package:stemxploref2/quiz_game/quiz_ui.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/widgets/rawscrollbar.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/database_helper.dart';
 
 class PlayQuizPage extends StatefulWidget {
   final String subjectAndMode;

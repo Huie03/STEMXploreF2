@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '/database_helper.dart';
+import 'package:stemxploref2/database_helper.dart';
 
 class BookmarkProvider with ChangeNotifier {
   List<Map<String, dynamic>> _favorites = [];

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import 'stem_highlights/highlight.dart';
+import 'package:stemxploref2/stem_highlights/highlight.dart';
 
 class NavigationProvider with ChangeNotifier {
   int _currentIndex = 0;

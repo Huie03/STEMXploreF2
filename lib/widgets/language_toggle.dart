@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/navigation_provider.dart';
-import '/theme_provider.dart';
-import 'box_shadow.dart';
+import 'package:stemxploref2/navigation_provider.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
 
 class LanguageToggle extends StatelessWidget {
   final VoidCallback? onLanguageChanged;

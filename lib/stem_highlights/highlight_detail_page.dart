@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:provider/provider.dart';
-import '/widgets/video_player.dart';
-import 'highlight.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/language_toggle.dart';
-import '/widgets/rawscrollbar.dart';
-import '/widgets/box_shadow.dart';
-import '/theme_provider.dart';
-import '/full_screen_image_page.dart';
+import 'package:stemxploref2/widgets/video_player.dart';
+import 'package:stemxploref2/stem_highlights/highlight.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/widgets/rawscrollbar.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
 
 class HighlightDetailPage extends StatefulWidget {
   static const routeName = '/highlight-detail';

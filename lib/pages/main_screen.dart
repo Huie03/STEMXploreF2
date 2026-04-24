@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/navigation_provider.dart';
-import '/widgets/curved_navigation_bar.dart';
+import 'package:stemxploref2/navigation_provider.dart';
+import 'package:stemxploref2/widgets/curved_navigation_bar.dart';
 
-import 'home_page.dart';
-import '/bookmark/bookmark_page.dart';
-import 'info_page.dart';
-import 'settings_page.dart';
-import '/stem_info/stem_info_page.dart';
-import '/quiz_game/quiz_game_page.dart';
-import '/quiz_game/play_quiz_page.dart';
-import '/stem_career/stem_careers_page.dart';
-import '/daily_info/daily_info_page.dart';
-import '/pages/faq_page.dart';
-import '/stem_highlights/highlight_detail_page.dart';
-import '/learning_materials/subject_chapters_page.dart';
-import '/learning_materials/material_details_page.dart';
-import '/stem_info/stem_detail_page.dart';
-import '/stem_highlights/highlight.dart';
+import 'package:stemxploref2/pages/home_page.dart';
+import 'package:stemxploref2/bookmark/bookmark_page.dart';
+import 'package:stemxploref2/pages/info_page.dart';
+import 'package:stemxploref2/pages/settings_page.dart';
+import 'package:stemxploref2/stem_info/stem_info_page.dart';
+import 'package:stemxploref2/quiz_game/quiz_game_page.dart';
+import 'package:stemxploref2/quiz_game/play_quiz_page.dart';
+import 'package:stemxploref2/stem_career/stem_careers_page.dart';
+import 'package:stemxploref2/daily_info/daily_info_page.dart';
+import 'package:stemxploref2/pages/faq_page.dart';
+import 'package:stemxploref2/stem_highlights/highlight_detail_page.dart';
+import 'package:stemxploref2/learning_materials/subject_chapters_page.dart';
+import 'package:stemxploref2/learning_materials/material_details_page.dart';
+import 'package:stemxploref2/stem_info/stem_detail_page.dart';
+import 'package:stemxploref2/stem_highlights/highlight.dart';
 
 class MainScreen extends StatefulWidget {
   static const routeName = '/main';

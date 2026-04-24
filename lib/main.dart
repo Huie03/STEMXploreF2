@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; //App in portrait, no rotate to landscape
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import 'l10n/languages.dart';
-import 'pages/main_screen.dart';
-import 'pages/splash_page.dart';
-import 'pages/faq_page.dart';
-import 'pages/info_page.dart';
-import 'pages/settings_page.dart';
-import 'daily_info/daily_info_page.dart';
-import 'stem_highlights/highlight.dart';
-import 'stem_highlights/highlight_detail_page.dart';
-import 'bookmark/bookmark_provider.dart';
-import '/stem_career/stem_careers_page.dart';
-import '/theme_provider.dart';
-import '/navigation_provider.dart';
+import 'package:stemxploref2/l10n/languages.dart';
+import 'package:stemxploref2/pages/main_screen.dart';
+import 'package:stemxploref2/pages/splash_page.dart';
+import 'package:stemxploref2/pages/faq_page.dart';
+import 'package:stemxploref2/pages/info_page.dart';
+import 'package:stemxploref2/pages/settings_page.dart';
+import 'package:stemxploref2/daily_info/daily_info_page.dart';
+import 'package:stemxploref2/stem_highlights/highlight.dart';
+import 'package:stemxploref2/stem_highlights/highlight_detail_page.dart';
+import 'package:stemxploref2/bookmark/bookmark_provider.dart';
+import 'package:stemxploref2/stem_career/stem_careers_page.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/navigation_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

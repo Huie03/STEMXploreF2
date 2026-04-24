@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import '/theme_provider.dart';
-import '/widgets/video_player.dart';
-import '/full_screen_image_page.dart';
-import '/widgets/gradient_background.dart';
-import '/navigation_provider.dart';
-import '/widgets/curved_navigation_bar.dart';
-import '/widgets/language_toggle.dart';
-import '/widgets/box_shadow.dart';
-import '/widgets/rawscrollbar.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/widgets/video_player.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/navigation_provider.dart';
+import 'package:stemxploref2/widgets/curved_navigation_bar.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
+import 'package:stemxploref2/widgets/rawscrollbar.dart';
 
 class StemDetailPage extends StatefulWidget {
   final Map<String, dynamic> stemInfo;

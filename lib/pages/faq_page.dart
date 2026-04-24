@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/language_toggle.dart';
-import '/navigation_provider.dart';
-import '/widgets/box_shadow.dart';
-import '/widgets/rawscrollbar.dart';
-import '/database_helper.dart';
-import '/full_screen_image_page.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/navigation_provider.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
+import 'package:stemxploref2/widgets/rawscrollbar.dart';
+import 'package:stemxploref2/database_helper.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
 
 class FaqPage extends StatefulWidget {
   static const routeName = '/faq';

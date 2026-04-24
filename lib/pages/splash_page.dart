@@ -1,8 +1,8 @@
 // lib/pages/splash_page.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'main_screen.dart';
-import '/widgets/gradient_background.dart';
+import 'package:stemxploref2/pages/main_screen.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
 
 class SplashPage extends StatelessWidget {
   static const routeName = 'splash-page';

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import '/theme_provider.dart';
-import '/bookmark/bookmark_provider.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/language_toggle.dart';
-import '/widgets/box_shadow.dart';
-import '/full_screen_image_page.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/bookmark/bookmark_provider.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
 
 class MaterialDetailPage extends StatefulWidget {
   final Map<String, dynamic> chapterData;

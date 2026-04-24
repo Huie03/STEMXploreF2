@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:provider/provider.dart';
-import '/theme_provider.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/language_toggle.dart';
-import '/widgets/box_shadow.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
 
 class SettingsPage extends StatefulWidget {
   static const routeName = '/settings';

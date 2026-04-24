@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'bookmark_provider.dart';
-import '/navigation_provider.dart';
-import '/theme_provider.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/language_toggle.dart';
-import '/widgets/box_shadow.dart';
-import '/widgets/rawscrollbar.dart';
+import 'package:stemxploref2/bookmark/bookmark_provider.dart';
+import 'package:stemxploref2/navigation_provider.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
+import 'package:stemxploref2/widgets/rawscrollbar.dart';
 
 class BookmarkPage extends StatefulWidget {
   static const String routeName = '/favorite';

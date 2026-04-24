@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '/theme_provider.dart';
-import '/navigation_provider.dart';
-import '/widgets/gradient_background.dart';
-import '/widgets/language_toggle.dart';
-import '/stem_highlights/highlight.dart';
-import '/database_helper.dart';
-import '/widgets/feature_button.dart';
-import '/widgets/box_shadow.dart';
+import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/navigation_provider.dart';
+import 'package:stemxploref2/widgets/gradient_background.dart';
+import 'package:stemxploref2/widgets/language_toggle.dart';
+import 'package:stemxploref2/stem_highlights/highlight.dart';
+import 'package:stemxploref2/database_helper.dart';
+import 'package:stemxploref2/widgets/feature_button.dart';
+import 'package:stemxploref2/widgets/box_shadow.dart';
 
 class HomePage extends StatefulWidget {
   static const routeName = '/home';
