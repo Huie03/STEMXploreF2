@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
-import '../widgets/gradient_background.dart';
-import '../widgets/box_shadow.dart';
-import '../widgets/language_toggle.dart';
-import '../navigation_provider.dart';
-import '../quiz_game/quiz_ui.dart';
 import 'package:confetti/confetti.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:stemxploref2/theme_provider.dart';
-import '../widgets/rawscrollbar.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
-import 'package:stemxploref2/database_helper.dart'; // Import local DB helper
+import '/widgets/gradient_background.dart';
+import '/widgets/box_shadow.dart';
+import '/widgets/language_toggle.dart';
+import '/navigation_provider.dart';
+import '/quiz_game/quiz_ui.dart';
+import '/theme_provider.dart';
+import '/widgets/rawscrollbar.dart';
+import '/full_screen_image_page.dart';
+import '/database_helper.dart';
 
 class PlayQuizPage extends StatefulWidget {
   final String subjectAndMode;
@@ -34,7 +34,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
 
   List<dynamic> _questions = [];
   bool _isLoading = true;
-  bool _showResults = false; // Added missing state variable
+  bool _showResults = false;
   String? _errorMessage;
 
   int _currentQuestionIndex = 0;
@@ -82,17 +82,15 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       _errorMessage = null;
     });
     _parseParams();
-    _fetchQuestions(); // Now calls local DB
+    _fetchQuestions();
   }
 
   void _parseParams() {
     final parts = widget.subjectAndMode.split('|');
 
     if (parts.length >= 3) {
-      // 1. Normalize the Subject
       String rawSubject = parts[0].trim();
 
-      // Check for both the ID "4" and the full string "Design And Technology"
       if (rawSubject == "4" || rawSubject.contains("Design And Technology")) {
         _subject = "RBT";
       } else if (rawSubject == "3" || rawSubject.contains("Computer Science")) {
@@ -102,20 +100,19 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       } else if (rawSubject == "1") {
         _subject = "Science";
       } else {
-        _subject = rawSubject; // Fallback to whatever was passed
+        _subject = rawSubject;
       }
 
       _titleEn = parts[1].trim();
       _titleMs = parts[2].trim();
 
-      // 2. Extract Chapter ID (Finds the first number in the string)
       final RegExp numRegex = RegExp(r'\d+');
       final match = numRegex.firstMatch(_titleEn);
 
       if (match != null) {
         _chapterId = match.group(0)!;
       } else {
-        _chapterId = "1"; // Default to 1 if no number found
+        _chapterId = "1";
       }
     } else {
       _titleEn = "Quiz Game";
@@ -141,18 +138,13 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
 
       final int id = int.parse(_chapterId);
 
-      // Query local DatabaseHelper
       final List<Map<String, dynamic>> results = await _dbHelper
           .getQuizQuestions(_subject, id);
 
       if (mounted) {
         setState(() {
-          // 1. Create a mutable list from the results
           _questions = List.from(results);
-
-          // 2. SHUFFLE the questions randomly
           _questions.shuffle();
-
           _isLoading = false;
         });
 
@@ -198,8 +190,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       _selectedOptionIndex = selectedIndex;
       _isLocked = true;
       if (selectedIndex == correctIndex) _score++;
-
-      // Store user choice in the local list for Review Mode
       _questions[_currentQuestionIndex] = Map<String, dynamic>.from(
         _questions[_currentQuestionIndex],
       );
@@ -275,7 +265,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
 
     final q = _questions[_currentQuestionIndex];
 
-    // Mapping SQLite columns to the UI
     final List<Map<String, String>> optionData = [
       {
         'text': isEnglish ? (q['opt_a_en'] ?? "") : (q['opt_a_ms'] ?? ""),
@@ -371,12 +360,10 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                             ),
                             child: Center(
                               child: Hero(
-                                // The tag must match the one in FullScreenImagePage
                                 tag: q['question_image'],
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: Image.asset(
-                                    // Changed to Image.asset for local paths
                                     q['question_image'],
                                     height: 150,
                                     fit: BoxFit.contain,
@@ -410,8 +397,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                         context: context,
                         index: i,
                         text: optionData[i]['text']!,
-                        imageUrl:
-                            optionData[i]['image']!, // Pass local asset path
+                        imageUrl: optionData[i]['image']!,
                         correctIndex: correctIndex,
                         selectedIndex: activeSelection,
                         showFeedback: showFeedback,
@@ -524,12 +510,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: isDark
-                  ? const Color.fromARGB(
-                      255,
-                      115,
-                      114,
-                      114,
-                    ) // Or any specific dark mode color like Colors.blueGrey[900]
+                  ? const Color.fromARGB(255, 115, 114, 114)
                   : Colors.black.withValues(alpha: 0.8),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
@@ -600,12 +581,11 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        opaque: false, // Background stays visible during the transition
+        opaque: false,
         barrierColor: Colors.black,
         pageBuilder: (context, _, _) =>
             FullScreenImagePage(assetPath: imagePath),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Smooth fade transition for the background
           return FadeTransition(opacity: animation, child: child);
         },
       ),

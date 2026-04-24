@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/theme_provider.dart';
+import '/theme_provider.dart';
 import '/navigation_provider.dart';
 import '/widgets/gradient_background.dart';
 import '/widgets/language_toggle.dart';
 import '/stem_highlights/highlight.dart';
-import 'package:stemxploref2/database_helper.dart';
+import '/database_helper.dart';
 import '/widgets/feature_button.dart';
-import '../widgets/box_shadow.dart';
+import '/widgets/box_shadow.dart';
 
 class HomePage extends StatefulWidget {
   static const routeName = '/home';
@@ -118,7 +118,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final bool isEnglish = navProvider.locale.languageCode == 'en';
     final Color textColor = Theme.of(context).colorScheme.onSurface;
 
-    // --- BREAKPOINTS ---
     final Size screenSize = MediaQuery.of(context).size;
     final double shortestSide = screenSize.shortestSide;
     final double totalAvailableHeight = screenSize.height;
@@ -145,15 +144,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         ? 770
                         : (isSmallTablet ? 630 : double.infinity),
                   ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: sidePadding,
-                  ), //empty space to both left and right
+                  padding: EdgeInsets.symmetric(horizontal: sidePadding),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       double totalHeight = constraints.maxHeight;
                       bool isSmallPhone = totalHeight < 650;
 
-                      // --- DYNAMIC MULTIPLIERS ---
                       double gridMultiplier;
                       double highlightMultiplier;
 
@@ -164,7 +160,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         gridMultiplier = 0.64;
                         highlightMultiplier = 0.34;
                       } else {
-                        // STRICTLY YOUR ORIGINAL PHONE LOGIC
                         gridMultiplier = isSmallPhone ? 0.62 : 0.65;
                         highlightMultiplier = isSmallPhone ? 0.35 : 0.34;
                       }
@@ -173,7 +168,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       double highlightHeight =
                           totalHeight * highlightMultiplier;
 
-                      // --- GRID SETTINGS ---
                       int crossAxisCount = isStandardTablet ? 2 : 2;
 
                       return Column(

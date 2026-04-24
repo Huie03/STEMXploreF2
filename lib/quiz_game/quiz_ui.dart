@@ -38,7 +38,7 @@ class QuizUi {
     required BuildContext context,
     required int index,
     required String text,
-    String? imageUrl, // This will now handle the asset path from SQLite
+    String? imageUrl,
     required int correctIndex,
     int? selectedIndex,
     required bool showFeedback,
@@ -134,11 +134,9 @@ class QuizUi {
     );
   }
 
-  // UPDATED: Handles asset paths from SQLite instead of network URLs
   static Widget _buildImageLayout(String path, String text, Color textColor) {
     final bool hasText = text.trim().isNotEmpty;
 
-    // Use Image.asset because your SQLite stores paths like 'assets/Quiz/...'
     Widget imageWidget = Image.asset(
       path,
       fit: BoxFit.contain,
@@ -178,7 +176,7 @@ class QuizUi {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 14, // Slightly smaller for SQLite image layouts
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: textColor,
               ),
@@ -199,7 +197,6 @@ class QuizUi {
     required VoidCallback onReview,
   }) {
     final bool isPerfect = score == total;
-    // Celeberation logic matches the standard 70% threshold
     final bool shouldCelebrate = total > 0 && (score / total) >= 0.7;
 
     return Container(

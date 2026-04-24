@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
-
-import 'package:stemxploref2/widgets/gradient_background.dart';
-import 'package:stemxploref2/widgets/language_toggle.dart';
-import 'package:stemxploref2/navigation_provider.dart';
-import 'package:stemxploref2/theme_provider.dart';
-import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/database_helper.dart';
+import '/full_screen_image_page.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/navigation_provider.dart';
+import '/theme_provider.dart';
+import '/widgets/box_shadow.dart';
+import '/database_helper.dart';
 
 class DailyInfoPage extends StatefulWidget {
   static const routeName = '/daily-info';
@@ -30,7 +29,6 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
     _loadInitialData();
   }
 
-  // Fetches data from SQLite instead of HTTP
   Future<void> _loadInitialData() async {
     try {
       final dbHelper = DatabaseHelper();
@@ -130,7 +128,7 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
 
     final now = DateTime.now();
 
-    // 1. Map weekday to category (1=Mon, 7=Sun)
+    // Map weekday to category (1=Mon, 7=Sun)
     final categories = [
       "Science",
       "Mathematics",
@@ -142,7 +140,7 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
     ];
     final target = categories[now.weekday - 1];
 
-    // 2. Filter list
+    //Filter list
     final items = _challenges.where((i) {
       final cat = (i['category'] ?? '').toString().toLowerCase();
       return target == "Mixed"
@@ -152,11 +150,11 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
 
     if (items.isEmpty) return const Center(child: Text("No items available"));
 
-    // 3. Optimized Occurrence Logic
+    //Optimized Occurrence Logic
     final start = DateTime(now.year, 1, 1);
     int occurrences = 0;
 
-    // Count how many times this category's scheduled days have passed since Jan 1st
+    //Count how many times this category's scheduled days have passed since Jan 1st
     for (int i = 0; i <= now.difference(start).inDays; i++) {
       int wd = start.add(Duration(days: i)).weekday;
       bool isMatch =

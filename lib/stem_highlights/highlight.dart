@@ -41,7 +41,6 @@ class Highlight {
     this.extraSources = const [],
   });
 
-  // inside highlight.dart
   factory Highlight.fromMap(Map<String, dynamic> map) {
     return Highlight(
       id: map['id'],
@@ -61,7 +60,6 @@ class Highlight {
       citationMs: map['citationMs'] ?? '',
       sourceUrl: map['sourceUrl'] ?? '',
       videoUrl: map['videoUrl'],
-      // This is the CRITICAL part for SQLite
       extraSources: map['extraSources'] != null && map['extraSources'] is String
           ? List<Map<String, String?>>.from(
               jsonDecode(

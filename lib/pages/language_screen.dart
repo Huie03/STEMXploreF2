@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/widgets/gradient_background.dart';
+import '/widgets/gradient_background.dart';
 import 'language_provider.dart';
 
 class LanguageScreen extends StatefulWidget {

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:stemxploref2/database_helper.dart';
+import '/database_helper.dart';
 
 class BookmarkProvider with ChangeNotifier {
   List<Map<String, dynamic>> _favorites = [];
   final DatabaseHelper _dbHelper = DatabaseHelper();
-
-  // Static ID for local use as per your previous logic
   final int _currentUserId = 1;
 
   List<Map<String, dynamic>> get bookmarks => _favorites;
@@ -14,11 +12,9 @@ class BookmarkProvider with ChangeNotifier {
     refreshBookmarks();
   }
 
-  // Fetch list from local SQLite instead of MySQL
   Future<void> refreshBookmarks() async {
     try {
-      final data = await _dbHelper
-          .getBookmarks(); // Uses the method in your DatabaseHelper
+      final data = await _dbHelper.getBookmarks();
 
       _favorites = data.map((item) {
         return {
@@ -38,7 +34,6 @@ class BookmarkProvider with ChangeNotifier {
     }
   }
 
-  // Toggle bookmark logic for SQLite
   Future<void> toggleFavorite(Map<String, dynamic> material) async {
     try {
       final db = await _dbHelper.database;
@@ -75,14 +70,13 @@ class BookmarkProvider with ChangeNotifier {
         });
       }
 
-      // Refresh the local list to update UI
       await refreshBookmarks();
     } catch (e) {
       debugPrint("Database Toggle Error: $e");
     }
   }
 
-  // Local check if item is favorited
+  // Local check if item is favorited/bookmarked
   bool isFavorited(String subject, String chapterNum) {
     return _favorites.any((m) {
       final mSubject = m['title']?.toString().trim() ?? '';

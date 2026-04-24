@@ -39,71 +39,72 @@ class DatabaseHelper {
     return await openDatabase(path);
   }
 
-  // --- DATA RETRIEVAL METHODS ---
-
-  // 1. Get Daily Info Facts (Science, Math, ASK, RBT)
+  //Get Daily Info Facts
   Future<List<Map<String, dynamic>>> getDailyInfo() async {
     final db = await database;
-    return await db.query('daily_info'); // [cite: 19]
+    return await db.query('daily_info');
   }
 
-  // 2. Get All Chapters for a specific subject
+  //Get All Chapters for a specific subject
   Future<List<Map<String, dynamic>>> getChapters(String subject) async {
     final db = await database;
     return await db.query(
-      'chapters', // [cite: 20]
+      'chapters',
       where: 'subject_name = ?',
       whereArgs: [subject],
     );
   }
 
-  // 3. Get Quiz Questions for a specific subject and chapter
+  //Get Quiz Questions for a specific subject and chapter
   Future<List<Map<String, dynamic>>> getQuizQuestions(
     String subject,
     int chapterId,
   ) async {
     final db = await database;
     return await db.query(
-      'quiz_questions', // [cite: 17, 18]
+      'quiz_questions',
       where: 'subject = ? AND chapter_id = ?',
       whereArgs: [subject, chapterId],
     );
   }
 
-  // 4. Get STEM Career Categories
+  // Get STEM Career Categories
   Future<List<Map<String, dynamic>>> getStemCareers() async {
     final db = await database;
-    return await db.query('stem_careers'); // [cite: 16]
+    return await db.query('stem_careers');
   }
 
-  // 5. Get Frequently Asked Questions
+  // Get Frequently Asked Questions
   Future<List<Map<String, dynamic>>> getFaqs() async {
     final db = await database;
-    return await db.query('faqs'); // [cite: 18]
+    return await db.query('faqs');
   }
 
-  // 6. Get Subject Info for Quizzes
+  //Get Subject Info for Quizzes
   Future<List<Map<String, dynamic>>> getQuizSubjects() async {
     final db = await database;
-    return await db.query('quiz_subject'); // [cite: 17]
+    return await db.query('quiz_subject');
   }
 
-  // 7. Save or Retrieve Bookmarks (Read/Write)
+  // Save or Retrieve Bookmarks
   Future<int> insertBookmark(Map<String, dynamic> row) async {
     final db = await database;
-    return await db.insert('user_bookmarks', row); //
+    return await db.insert('user_bookmarks', row);
   }
 
+  //Fet Bookmarks
   Future<List<Map<String, dynamic>>> getBookmarks() async {
     final db = await database;
-    return await db.query('user_bookmarks'); // [cite: 15]
+    return await db.query('user_bookmarks');
   }
 
+  //Get Stem Info
   Future<List<Map<String, dynamic>>> getStemInfo() async {
     final db = await database;
     return await db.query('stem_info');
   }
 
+  //Get STEM Highlights
   Future<List<Map<String, dynamic>>> getStemHighlights() async {
     final db = await database;
     return await db.query('stem_highlights');

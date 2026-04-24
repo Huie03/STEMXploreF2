@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/theme_provider.dart';
+import '/widgets/box_shadow.dart';
+import '/theme_provider.dart';
 
 class StemQuizDesign {
   static const double cardRadius = 35.0;

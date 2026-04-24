@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import '../widgets/video_player.dart';
-import 'highlight.dart';
-import '../widgets/gradient_background.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import '/widgets/language_toggle.dart';
-import '../widgets/rawscrollbar.dart';
-import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/theme_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/full_screen_image_page.dart'; // Make sure the filename matches exactly
+import '/widgets/video_player.dart';
+import 'highlight.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/widgets/rawscrollbar.dart';
+import '/widgets/box_shadow.dart';
+import '/theme_provider.dart';
+import '/full_screen_image_page.dart';
 
 class HighlightDetailPage extends StatefulWidget {
   static const routeName = '/highlight-detail';
@@ -311,7 +311,7 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        opaque: false, // Allows seeing the background during transition
+        opaque: false,
         barrierColor: Colors.black,
         pageBuilder: (context, _, _) =>
             FullScreenImagePage(assetPath: assetPath),
@@ -334,7 +334,7 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
         child: Hero(
-          tag: assetPath, // This matches the tag in FullScreenImagePage
+          tag: assetPath,
           child: Image.asset(assetPath, fit: BoxFit.cover),
         ),
       ),

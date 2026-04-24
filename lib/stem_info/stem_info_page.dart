@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../widgets/gradient_background.dart';
-import 'package:flutter_localization/flutter_localization.dart';
-import 'package:stemxploref2/widgets/language_toggle.dart';
-import '../widgets/rawscrollbar.dart';
-import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/theme_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/database_helper.dart';
+import 'package:flutter_localization/flutter_localization.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/widgets/rawscrollbar.dart';
+import '/widgets/box_shadow.dart';
+import '/theme_provider.dart';
+import '/database_helper.dart';
 
 class StemInfoPage extends StatefulWidget {
   static const routeName = '/stem-info';
@@ -112,13 +112,11 @@ class _StemInfoPageState extends State<StemInfoPage> {
                           itemBuilder: (context, index) {
                             final item = _stemInfoList[index];
 
-                            // Data Extraction
                             final String title =
                                 item['title_$lang'] ?? item['title_en'] ?? '';
                             final String? previewText =
                                 item['preview_$lang'] ?? item['preview_en'];
 
-                            // CRITICAL FIX: Treat empty strings as null
                             final dynamic rawImg = item['preview_image'];
                             final String? previewImage =
                                 (rawImg != null &&

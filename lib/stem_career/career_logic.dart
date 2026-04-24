@@ -63,7 +63,6 @@ mixin CareerLogic {
       }
     }
 
-    // Find the highest score
     return scores.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   }
 

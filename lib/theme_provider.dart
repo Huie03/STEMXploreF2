@@ -13,7 +13,7 @@ class ThemeProvider with ChangeNotifier {
 
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;
-    notifyListeners(); //Tells the whole app to rebuild
+    notifyListeners();
   }
 
   void toggleSound(bool value) {
@@ -27,7 +27,7 @@ class ThemeProvider with ChangeNotifier {
     colorScheme: ColorScheme.fromSeed(
       seedColor: const Color(0xFFFFD38F),
       primary: const Color(0xFFFFD38F),
-      surface: Colors.white, // Explicitly define this
+      surface: Colors.white,
       onSurface: Colors.black,
     ),
     scaffoldBackgroundColor: const Color(0xFFFFD38F),
@@ -40,7 +40,7 @@ class ThemeProvider with ChangeNotifier {
     ),
   );
 
-  // Define your Dark Theme
+  //Dark Theme
   static final darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
@@ -48,9 +48,9 @@ class ThemeProvider with ChangeNotifier {
     colorScheme: ColorScheme.fromSeed(
       seedColor: const Color(0xA2333333),
       brightness: Brightness.dark,
-      primary: const Color(0xA2333333), //
-      surface: const Color(0xFF535252), // dark card color
-      onSurface: Colors.white, // Default text color on surface
+      primary: const Color(0xA2333333),
+      surface: const Color(0xFF535252),
+      onSurface: Colors.white,
     ),
 
     scaffoldBackgroundColor: const Color(0xA2333333),

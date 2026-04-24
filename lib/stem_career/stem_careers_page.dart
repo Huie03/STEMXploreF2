@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/widgets/gradient_background.dart';
-import 'package:stemxploref2/widgets/language_toggle.dart';
-import 'package:stemxploref2/widgets/rawscrollbar.dart';
-import 'package:stemxploref2/theme_provider.dart';
-import '../navigation_provider.dart';
-import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/stem_career/career_quiz.dart';
-import '../stem_career/career_logic.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
-import 'package:stemxploref2/database_helper.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/widgets/rawscrollbar.dart';
+import '/theme_provider.dart';
+import '/navigation_provider.dart';
+import '/widgets/box_shadow.dart';
+import '/stem_career/career_quiz.dart';
+import '/stem_career/career_logic.dart';
+import '/full_screen_image_page.dart';
+import '/database_helper.dart';
 
 class StemCareersPage extends StatefulWidget {
   static const routeName = '/stem-careers';
@@ -140,7 +140,6 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     final bool isEn = nav.locale.languageCode == 'en',
         isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // RESPONSIVE CALCULATIONS
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isTablet = screenWidth >= 600;
     final double verticalGap = isTablet ? 3 : 5;

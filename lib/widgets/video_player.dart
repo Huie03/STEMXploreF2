@@ -75,19 +75,14 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
 
   @override
   Widget build(BuildContext context) {
-    // Determine screen width
     double screenWidth = MediaQuery.of(context).size.width;
 
-    // 420 Tablet. 200 Phone
     double responsiveHeight;
     if (screenWidth >= 800) {
-      // Standard
       responsiveHeight = 400;
     } else if (screenWidth >= 600) {
-      // SMALL TABLET
       responsiveHeight = 280;
     } else {
-      // Phone
       responsiveHeight = 200;
     }
 
@@ -102,7 +97,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
           _chewieController != null &&
               _chewieController!.videoPlayerController.value.isInitialized
           ? Container(
-              height: responsiveHeight, // Dynamic height applied here
+              height: responsiveHeight,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
                 color: Colors.black,
@@ -113,7 +108,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
               ),
             )
           : SizedBox(
-              height: responsiveHeight, // Match height for the loader
+              height: responsiveHeight,
               child: const Center(child: CircularProgressIndicator()),
             ),
     );

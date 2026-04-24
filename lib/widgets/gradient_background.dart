@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/theme_provider.dart';
+import '/theme_provider.dart';
 
 class GradientBackground extends StatelessWidget {
   final Widget child;
@@ -21,7 +21,7 @@ class GradientBackground extends StatelessWidget {
           colors: isDark
               ? [
                   const Color(0xA2333333), //black color lighter 20%
-                  const Color.fromARGB(161, 51, 51, 51),
+                  const Color(0xA0333333),
                 ]
               : [const Color(0xFFFFD38F), const Color(0xFFFFFFFF)],
         ),

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
-import '../widgets/gradient_background.dart';
-import '../widgets/language_toggle.dart';
-import '../navigation_provider.dart';
-import '../widgets/box_shadow.dart';
-import '../widgets/rawscrollbar.dart';
-import 'package:stemxploref2/database_helper.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/navigation_provider.dart';
+import '/widgets/box_shadow.dart';
+import '/widgets/rawscrollbar.dart';
+import '/database_helper.dart';
+import '/full_screen_image_page.dart';
 
 class FaqPage extends StatefulWidget {
   static const routeName = '/faq';
@@ -133,7 +133,6 @@ class _FaqPageState extends State<FaqPage> {
     );
   }
 
-  // --- Combined Helper: AppBar ---
   Widget _buildAppBar(BuildContext context, String title, Color textColor) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
@@ -154,7 +153,6 @@ class _FaqPageState extends State<FaqPage> {
     );
   }
 
-  // --- Combined Helper: Faq Item ---
   Widget _buildFaqItem(int index, String question, String answer, bool isDark) {
     final bool isExpanded = _expandedIndex == index;
     final Color questionBg = isDark ? const Color(0xFF535252) : Colors.white;
@@ -214,13 +212,10 @@ class _FaqPageState extends State<FaqPage> {
                   boxShadow: isDark ? [] : appBoxShadow,
                   borderRadius: BorderRadius.circular(15),
                 ),
-                // ... inside _buildFaqItem if (isExpanded) ...
                 child: isImagePath
                     ? GestureDetector(
-                        // 1. When the user taps, navigate to the FullScreenImagePage
                         onTap: () => _showFullScreenImage(context, answer),
                         child: Hero(
-                          // 2. The tag MUST match the one in FullScreenImagePage
                           tag: answer,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),

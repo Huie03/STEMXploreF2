@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/navigation_provider.dart';
-import 'package:stemxploref2/theme_provider.dart';
-import '../widgets/gradient_background.dart';
-import '../widgets/language_toggle.dart';
 import 'bookmark_provider.dart';
-import '../widgets/box_shadow.dart';
-import '../widgets/rawscrollbar.dart';
+import '/navigation_provider.dart';
+import '/theme_provider.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/widgets/box_shadow.dart';
+import '/widgets/rawscrollbar.dart';
 
 class BookmarkPage extends StatefulWidget {
   static const String routeName = '/favorite';
@@ -65,7 +65,6 @@ class _BookmarkPageState extends State<BookmarkPage> {
     });
   }
 
-  // Instant delete logic
   void _deleteSelected(
     BuildContext context,
     List<Map<String, dynamic>> favorites,
@@ -140,7 +139,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                                     : (_) => _toggleSelectAll(favorites.length),
                               ),
                             ),
-                            // ADDED: Delete icon beside the "Select All" checkbox
+                            // Delete icon beside the Select All checkbox
                             IconButton(
                               constraints: const BoxConstraints(),
                               padding: const EdgeInsets.only(left: 8),
@@ -211,7 +210,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                 ],
               ),
 
-              // Animated Red Delete Button (Floating Action)
+              // Animated Red Delete Button
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOutBack,

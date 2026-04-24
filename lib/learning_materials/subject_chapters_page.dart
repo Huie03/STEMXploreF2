@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import '../widgets/gradient_background.dart';
-import '../widgets/language_toggle.dart';
-import '../widgets/rawscrollbar.dart';
-import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/theme_provider.dart';
-import 'package:stemxploref2/database_helper.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/widgets/rawscrollbar.dart';
+import '/widgets/box_shadow.dart';
+import '/theme_provider.dart';
+import '/database_helper.dart';
 import 'package:provider/provider.dart';
 
 class SubjectChaptersPage extends StatefulWidget {
@@ -46,7 +46,6 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   @override
   void initState() {
     super.initState();
-    // Ensure we start with the value passed from MainScreen (which is "Science")
     selectedSubject = widget.initialSubject;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -60,24 +59,22 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
     // This triggers when the parent screen changes the 'initialSubject'
     if (oldWidget.initialSubject != widget.initialSubject) {
       setState(() {
-        // 1. Update the local state to match the new subject from parent
+        //Update the local state to match the new subject from parent
         selectedSubject = widget.initialSubject;
       });
 
-      // 2. Sync the UI (scroll to the new tab and reset the chapter list to top)
+      //Sync the UI (scroll to the new tab and reset the chapter list to top)
       _syncStateToSubject(selectedSubject);
     }
   }
 
   void _syncStateToSubject(String subject) {
-    // Find the index of the subject in your internal list (the DB keys)
+    // Find the index of the subject
     int index = subjects.indexOf(subject);
     if (index != -1) {
       _scrollToIndex(index);
     }
 
-    // Reset the vertical chapter list to the very top so the user
-    // doesn't start halfway down a new subject's chapters
     if (_verticalScrollController.hasClients) {
       _verticalScrollController.jumpTo(0);
     }
@@ -99,19 +96,16 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
 
   String _translateSubject(String subject, bool isEnglish) {
     if (isEnglish) {
-      // Logic for English display
       switch (subject) {
         case "Computer Science (ASK)":
           return "Fundamentals of Computer Science";
         case "Design and Technology (RBT)":
           return "Design and Technology";
         default:
-          // For Science and Mathematics, or any others, just return the string
           return subject;
       }
     }
 
-    // Logic for Malay display
     switch (subject) {
       case "Science":
         return "Sains";
@@ -126,7 +120,6 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
     }
   }
 
-  // UPDATED: Now fetches from SQLite instead of PHP
   Future<List<Map<String, dynamic>>> _getChaptersFromDb(String subject) async {
     try {
       final List<Map<String, dynamic>> data = await _dbHelper.getChapters(

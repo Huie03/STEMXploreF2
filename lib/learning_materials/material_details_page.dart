@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:stemxploref2/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import 'package:stemxploref2/bookmark/bookmark_provider.dart';
-import '../widgets/gradient_background.dart';
-import '../widgets/language_toggle.dart';
-import '../widgets/box_shadow.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
+import '/theme_provider.dart';
+import '/bookmark/bookmark_provider.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/widgets/box_shadow.dart';
+import '/full_screen_image_page.dart';
 
 class MaterialDetailPage extends StatefulWidget {
   final Map<String, dynamic> chapterData;
@@ -165,9 +165,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
                 'title_ms': tMs,
                 'infographic_en': widget.chapterData['infographic_en'] ?? '',
                 'infographic_ms': widget.chapterData['infographic_ms'] ?? '',
-                'image':
-                    widget.chapterData['image_url'] ??
-                    '', // Changed key from 'image_url' to 'image'
+                'image': widget.chapterData['image_url'] ?? '',
               };
 
               await Provider.of<BookmarkProvider>(
@@ -175,7 +173,6 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
                 listen: false,
               ).toggleFavorite(dataToToggle);
 
-              // No need to call setState manually if you use context.watch<FavoriteProvider>()
               if (mounted) {
                 _showCenterPopup(
                   isEnglish,
@@ -187,12 +184,9 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
             icon: Icon(
               isBookmarked ? Icons.bookmark : Icons.bookmark_border,
               size: 30,
-              // Ensure the color logic correctly reflects the boolean state
               color: isBookmarked
-                  ? (isDark
-                        ? const Color(0xFFEFA638)
-                        : Colors.black) // Filled color
-                  : (isDark ? Colors.white : Colors.black), // Border color
+                  ? (isDark ? const Color(0xFFEFA638) : Colors.black)
+                  : (isDark ? Colors.white : Colors.black),
             ),
           ),
         ],
@@ -274,10 +268,8 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     );
   }
 
-  // 1. Image now sits directly on the background without a card
   Widget _buildMainContent(String imagePath, Color cardBg, bool isDark) {
     return Center(
-      // This centers the child vertically and horizontally within the Expanded space
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: GestureDetector(
@@ -285,9 +277,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
           child: Hero(
             tag: imagePath,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(
-                14,
-              ), // Smooth edges for the image
+              borderRadius: BorderRadius.circular(14),
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.contain,
@@ -320,11 +310,10 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     Navigator.push(
       context,
       PageRouteBuilder(
-        opaque: false, // Useful for the Hero animation "fly-in" effect
+        opaque: false,
         pageBuilder: (context, _, _) =>
             FullScreenImagePage(assetPath: assetPath),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Smooth fade transition as the image expands
           return FadeTransition(opacity: animation, child: child);
         },
       ),

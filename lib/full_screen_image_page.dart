@@ -8,30 +8,24 @@ class FullScreenImagePage extends StatelessWidget {
   const FullScreenImagePage({
     super.key,
     required this.assetPath,
-    this.isNetwork = false, // Set to true if loading from a URL
+    this.isNetwork = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      // Stack allows us to place the close button on top of the image
       body: Stack(
         children: [
-          // 1. The Zoomable Image
           Center(
             child: Hero(
-              // The tag must match exactly the tag used in the previous page
               tag: assetPath,
               child: PhotoView(
                 imageProvider: isNetwork
                     ? NetworkImage(assetPath) as ImageProvider
                     : AssetImage(assetPath) as ImageProvider,
-                // Ensures the image starts fully visible
                 initialScale: PhotoViewComputedScale.contained,
-                // Allows zooming out slightly
                 minScale: PhotoViewComputedScale.contained * 0.8,
-                // Allows zooming in significantly
                 maxScale: PhotoViewComputedScale.covered * 4.0,
                 loadingBuilder: (context, event) => const Center(
                   child: CircularProgressIndicator(color: Colors.white),
@@ -47,7 +41,7 @@ class FullScreenImagePage extends StatelessWidget {
             ),
           ),
 
-          // 2. The Close Button
+          //The Close Button
           SafeArea(
             child: Align(
               alignment: Alignment.topLeft,

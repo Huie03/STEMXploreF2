@@ -4,21 +4,20 @@ import '/navigation_provider.dart';
 import '/widgets/curved_navigation_bar.dart';
 
 import 'home_page.dart';
-import '../bookmark/bookmark_page.dart';
+import '/bookmark/bookmark_page.dart';
 import 'info_page.dart';
 import 'settings_page.dart';
 import '/stem_info/stem_info_page.dart';
-//import '/learning_materials/learning_materials_page.dart';
 import '/quiz_game/quiz_game_page.dart';
-import '../quiz_game/play_quiz_page.dart';
+import '/quiz_game/play_quiz_page.dart';
 import '/stem_career/stem_careers_page.dart';
-import '../daily_info/daily_info_page.dart';
+import '/daily_info/daily_info_page.dart';
 import '/pages/faq_page.dart';
 import '/stem_highlights/highlight_detail_page.dart';
-import 'package:stemxploref2/learning_materials/subject_chapters_page.dart';
-import 'package:stemxploref2/learning_materials/material_details_page.dart'; // Add this
+import '/learning_materials/subject_chapters_page.dart';
+import '/learning_materials/material_details_page.dart';
 import '/stem_info/stem_detail_page.dart';
-import '../stem_highlights/highlight.dart';
+import '/stem_highlights/highlight.dart';
 
 class MainScreen extends StatefulWidget {
   static const routeName = '/main';
@@ -46,7 +45,7 @@ class _MainScreenState extends State<MainScreen> {
   void onChapterSelected(Map<String, dynamic> chapterData) {
     setState(() {
       selectedChapterData = chapterData;
-      _lastIndexBeforeDetail = 5; // User came from Subjects/Chapters
+      _lastIndexBeforeDetail = 5;
     });
     Provider.of<NavigationProvider>(context, listen: false).setIndex(13);
   }
@@ -55,7 +54,7 @@ class _MainScreenState extends State<MainScreen> {
   void onFavoriteChapterSelected(Map<String, dynamic> chapterData) {
     setState(() {
       selectedChapterData = chapterData;
-      _lastIndexBeforeDetail = 1; // User came from Favorites
+      _lastIndexBeforeDetail = 1;
     });
     Provider.of<NavigationProvider>(context, listen: false).setIndex(13);
   }
@@ -190,7 +189,6 @@ class _MainScreenState extends State<MainScreen> {
           setState(() => selectedQuizData = null);
           navProvider.setIndex(6); // Back to Quiz List from the Game
         } else if (navProvider.currentIndex == 13) {
-          // Use the stored variable to return to the correct index
           navProvider.setIndex(_lastIndexBeforeDetail);
         } else if (navProvider.currentIndex == 5 ||
             navProvider.currentIndex == 6) {

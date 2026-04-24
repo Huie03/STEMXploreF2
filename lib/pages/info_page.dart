@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/gradient_background.dart';
-import '../widgets/language_toggle.dart';
-import '../navigation_provider.dart';
-import '../widgets/box_shadow.dart';
-import '../widgets/rawscrollbar.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/navigation_provider.dart';
+import '/widgets/box_shadow.dart';
+import '/widgets/rawscrollbar.dart';
 
 class InfoPage extends StatefulWidget {
   static const routeName = '/info';
@@ -68,19 +68,16 @@ class _InfoPageState extends State<InfoPage> {
 
               Expanded(
                 child: Padding(
-                  // Added padding to prevent the scrollbar from touching the screen edge
                   padding: const EdgeInsets.only(right: 0),
                   child: AppRawScrollbar(
-                    // 3. Wrap with your custom Scrollbar
                     controller: _scrollController,
                     child: SingleChildScrollView(
-                      controller: _scrollController, // 4. Link the controller
+                      controller: _scrollController,
                       padding: const EdgeInsets.symmetric(horizontal: 28),
                       physics: const BouncingScrollPhysics(),
                       child: Column(
                         children: [
                           const SizedBox(height: 10),
-                          //Logo
                           Image.asset(
                             'assets/images/Logo_F2_2.png',
                             height: 200,
@@ -166,7 +163,6 @@ class _InfoPageState extends State<InfoPage> {
                             title: isEnglish
                                 ? "About STEMXplore F2"
                                 : "Tentang STEMXplore F2",
-                            // Pass a RichText-friendly version or handle inside the widget
                             content: isEnglish
                                 ? "STEMXplore F2 is an interactive mobile platform for Form 2 students to build essential "
                                 : "STEMXplore F2 ialah platform mudah alih interaktif untuk pelajar Tingkatan 2 bagi membina ",
@@ -252,8 +248,8 @@ class _InfoPageState extends State<InfoPage> {
     required IconData icon,
     required String title,
     required String content,
-    String? highlightedWord, // New optional parameter
-    String? trailingContent, // New optional parameter
+    String? highlightedWord,
+    String? trailingContent,
     required Color textColor,
     TextAlign textAlign = TextAlign.justify,
   }) {

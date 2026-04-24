@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../navigation_provider.dart';
-import 'package:stemxploref2/theme_provider.dart';
+import '/navigation_provider.dart';
+import '/theme_provider.dart';
 import 'box_shadow.dart';
 
 class LanguageToggle extends StatelessWidget {
@@ -19,7 +19,6 @@ class LanguageToggle extends StatelessWidget {
 
     final Color borderColor = isDark ? Colors.white : Colors.black;
     final Color circleBgColor = isDark ? Colors.grey[800]! : Colors.white;
-    // Set text color based on theme
     final Color textColor = isDark ? Colors.white : Colors.black;
 
     return GestureDetector(
@@ -60,9 +59,7 @@ class LanguageToggle extends StatelessWidget {
             ),
             const SizedBox(height: 4), // Space between flag and text
             Text(
-              isEnglish
-                  ? 'MY'
-                  : 'EN', // Logic: if current is EN, show MY (next option)
+              isEnglish ? 'MY' : 'EN',
               style: TextStyle(
                 color: textColor,
                 fontSize: 12,

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'main_screen.dart';
-import 'package:stemxploref2/widgets/gradient_background.dart';
+import '/widgets/gradient_background.dart';
 
 class SplashPage extends StatelessWidget {
   static const routeName = 'splash-page';
@@ -71,7 +71,6 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     const String assetPath = 'assets/images/Logo_F2_2.png';
 
-    // RESPONSIVE LOGIC
     final Size screenSize = MediaQuery.of(context).size;
     final double shortestSide = screenSize.shortestSide;
 
@@ -82,9 +81,9 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
     if (isTablet) {
       imageSize = screenSize.width * 0.65;
     } else if (isSmallPhone) {
-      imageSize = 280; // Smaller logo for small screens
+      imageSize = 280;
     } else {
-      imageSize = 330; // Standard phone
+      imageSize = 330;
     }
 
     // Adjust font sizes
@@ -99,12 +98,10 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
 
     return Stack(
       children: [
-        // 1. BRANDING GROUP (Logo + Text)
+        // (Logo + Text)
         Center(
           child: Padding(
-            padding: EdgeInsets.only(
-              bottom: bottomPadding,
-            ), // Adjust this value to move it higher
+            padding: EdgeInsets.only(bottom: bottomPadding),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -139,7 +136,7 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
           ),
         ),
 
-        // 2. INTERACTION GROUP (Icon + "Touch to start")
+        // (Icon + "Touch to start")
         Positioned(
           bottom: isTablet ? 70 : 50,
           left: 0,

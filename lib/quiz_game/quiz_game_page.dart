@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import '../widgets/gradient_background.dart';
-import '../widgets/language_toggle.dart';
-import '../widgets/box_shadow.dart';
-import '../widgets/rawscrollbar.dart';
-import 'package:stemxploref2/database_helper.dart';
+import '/widgets/gradient_background.dart';
+import '/widgets/language_toggle.dart';
+import '/widgets/box_shadow.dart';
+import '/widgets/rawscrollbar.dart';
+import '/database_helper.dart';
 
 class QuizGamePage extends StatefulWidget {
   final Function(String, String) onQuizStart;
-  final String initialSubject; // Add this line
+  final String initialSubject;
 
   const QuizGamePage({
     super.key,
@@ -90,7 +90,6 @@ class _QuizGamePageState extends State<QuizGamePage> {
       final allQuizzes = await _dbHelper.getQuizSubjects();
 
       final filtered = allQuizzes.where((q) {
-        // Standardize comparison to avoid issues with extra spaces or case
         String subEn = (q['quiz_subject_en'] ?? '')
             .toString()
             .trim()
@@ -177,7 +176,7 @@ class _QuizGamePageState extends State<QuizGamePage> {
         ? [
             "Science",
             "Mathematics",
-            "Fundamentals of Computer Science", // Change "Computer Science" to this
+            "Fundamentals of Computer Science",
             "Design And Technology",
           ]
         : [
@@ -254,13 +253,9 @@ class _QuizGamePageState extends State<QuizGamePage> {
           final int totalQuestions = quiz['quiz_total_question'] ?? 0;
 
           return GestureDetector(
-            // Inside QuizGamePage onTap
             onTap: () {
-              // Pass the actual subject name and the title which contains the chapter number
-              String subjectName =
-                  quiz['quiz_subject_en']; // e.g., "Science" [cite: 17]
-              String titleEn =
-                  quiz['quiz_title_en']; // e.g., "Chapter 13-Meteoroid..." [cite: 17, 22]
+              String subjectName = quiz['quiz_subject_en'];
+              String titleEn = quiz['quiz_title_en'];
               String titleMs = quiz['quiz_title_ms'];
 
               widget.onQuizStart("$subjectName | $titleEn | $titleMs", "start");

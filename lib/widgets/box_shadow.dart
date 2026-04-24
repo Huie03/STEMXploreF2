@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-//BoxShadow for the app cards
 final List<BoxShadow> appBoxShadow = [
   BoxShadow(
     color: Colors.black.withValues(alpha: 0.1),
@@ -9,7 +8,6 @@ final List<BoxShadow> appBoxShadow = [
   ),
 ];
 
-//Box shadow for Animated Filter in subject chapters page
 List<BoxShadow> filterBoxShadow(bool isSelected) {
   return [
     BoxShadow(

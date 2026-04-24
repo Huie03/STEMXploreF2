@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/theme_provider.dart';
+import '/theme_provider.dart';
 
 class AppCurvedNavBar extends StatelessWidget {
   final int currentIndex;

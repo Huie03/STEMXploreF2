@@ -4,23 +4,18 @@ import 'package:flutter/services.dart'; //App in portrait, no rotate to landscap
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'l10n/languages.dart';
-import '/navigation_provider.dart';
 import 'pages/main_screen.dart';
 import 'pages/splash_page.dart';
-//import 'pages/home_page.dart';
-//import 'stem_info/stem_info_page.dart';
-//import 'learning_materials/learning_materials_page.dart';
-//import 'quiz_game/quiz_game_page.dart';
-import '/stem_career/stem_careers_page.dart';
-import 'daily_info/daily_info_page.dart';
 import 'pages/faq_page.dart';
-//import 'favorite/favorite_page.dart';
 import 'pages/info_page.dart';
 import 'pages/settings_page.dart';
+import 'daily_info/daily_info_page.dart';
 import 'stem_highlights/highlight.dart';
 import 'stem_highlights/highlight_detail_page.dart';
 import 'bookmark/bookmark_provider.dart';
-import 'package:stemxploref2/theme_provider.dart';
+import '/stem_career/stem_careers_page.dart';
+import '/theme_provider.dart';
+import '/navigation_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -77,7 +72,7 @@ class _STEMXploreAppState extends State<STEMXploreApp> {
 
       debugShowCheckedModeBanner: false,
 
-      // THEME SETTINGS
+      // THEME
       theme: ThemeProvider.lightTheme,
       darkTheme: ThemeProvider.darkTheme,
       themeMode: themeProvider.themeMode,
@@ -86,14 +81,9 @@ class _STEMXploreAppState extends State<STEMXploreApp> {
       routes: {
         SplashPage.routeName: (_) => const SplashPage(),
         MainScreen.routeName: (_) => MainScreen(),
-        //HomePage.routeName: (_) => const HomePage(),
-        //StemInfoPage.routeName: (_) => const StemInfoPage(),
-        //LearningMaterialPage.routeName: (_) => const LearningMaterialPage(),
-        //QuizGamePage.routeName: (_) => const QuizGamePage(),
         StemCareersPage.routeName: (_) => const StemCareersPage(),
         DailyInfoPage.routeName: (_) => const DailyInfoPage(),
         FaqPage.routeName: (_) => const FaqPage(),
-        //FavoritePage.routeName: (_) => const FavoritePage(),
         InfoPage.routeName: (_) => const InfoPage(),
         SettingsPage.routeName: (_) => SettingsPage(),
       },
