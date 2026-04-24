@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import 'package:stemxploref2/favorite/favorite_provider.dart';
+import 'package:stemxploref2/bookmark/bookmark_provider.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/box_shadow.dart';
-import '../ipaddress.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
 
 class MaterialDetailPage extends StatefulWidget {
   final Map<String, dynamic> chapterData;
@@ -55,7 +54,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     final String fullChapterString = "$label $chapterNum - $chapterTitle";
 
     // Watch the provider for changes
-    final favoriteProvider = context.watch<FavoriteProvider>();
+    final favoriteProvider = context.watch<BookmarkProvider>();
 
     // This will now correctly trigger a rebuild when the list updates
     final bool isBookmarked = favoriteProvider.isFavorited(
@@ -171,7 +170,7 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
                     '', // Changed key from 'image_url' to 'image'
               };
 
-              await Provider.of<FavoriteProvider>(
+              await Provider.of<BookmarkProvider>(
                 context,
                 listen: false,
               ).toggleFavorite(dataToToggle);
@@ -232,8 +231,8 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
                 Text(
                   isAdding
                       ? (isEnglish
-                            ? "You can continue reading at bookmark"
-                            : "Anda boleh teruskan membaca di penanda buku")
+                            ? "Added to bookmarks"
+                            : "Ditambah ke penanda buku")
                       : (isEnglish
                             ? "Bookmark removed"
                             : "Penanda buku telah dialih keluar"),
@@ -277,32 +276,21 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
 
   // 1. Image now sits directly on the background without a card
   Widget _buildMainContent(String imagePath, Color cardBg, bool isDark) {
-    final String fullImageUrl = '${ipaddress.baseUrl}$imagePath';
-
     return Center(
       // This centers the child vertically and horizontally within the Expanded space
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: GestureDetector(
-          onTap: () => _showFullScreenImage(context, fullImageUrl),
+          onTap: () => _showFullScreenImage(context, imagePath),
           child: Hero(
-            tag: fullImageUrl,
+            tag: imagePath,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(
                 14,
               ), // Smooth edges for the image
-              child: Image.network(
-                Uri.encodeFull(fullImageUrl),
-                fit: BoxFit
-                    .contain, // Ensures the whole image is visible without cropping
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: isDark ? Colors.white : const Color(0xFFEFA638),
-                    ),
-                  );
-                },
+              child: Image.asset(
+                imagePath,
+                fit: BoxFit.contain,
                 errorBuilder: (context, error, stack) => Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -328,52 +316,18 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     );
   }
 
-  // 2. Full-screen zoom view
-  void _showFullScreenImage(BuildContext context, String imageUrl) {
-    showDialog(
-      context: context,
-      useRootNavigator: true,
-      builder: (context) {
-        return Dialog.fullscreen(
-          backgroundColor: Colors.black,
-          child: Stack(
-            children: [
-              Center(
-                child: Hero(
-                  tag: imageUrl,
-                  child: PhotoView(
-                    imageProvider: NetworkImage(Uri.encodeFull(imageUrl)),
-                    loadingBuilder: (context, event) => const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
-                    initialScale: PhotoViewComputedScale.contained,
-                    minScale: PhotoViewComputedScale.contained,
-                    maxScale: PhotoViewComputedScale.covered * 3.0,
-                    backgroundDecoration: const BoxDecoration(
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  void _showFullScreenImage(BuildContext context, String assetPath) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false, // Useful for the Hero animation "fly-in" effect
+        pageBuilder: (context, _, _) =>
+            FullScreenImagePage(assetPath: assetPath),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Smooth fade transition as the image expands
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import '/navigation_provider.dart';
 import '/widgets/gradient_background.dart';
 import '/widgets/language_toggle.dart';
 import '/stem_highlights/highlight.dart';
+import 'package:stemxploref2/database_helper.dart';
 import '/widgets/feature_button.dart';
 import '../widgets/box_shadow.dart';
 
@@ -22,7 +23,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   List<Highlight> highlights = [];
   bool isLoading = true;
   late PageController _pageController;
-  bool _isUserScrolling = false;
+  final bool _isUserScrolling = false;
   Timer? _autoScrollTimer;
 
   final List<Map<String, dynamic>> _features = [
@@ -49,7 +50,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       initialPage: savedPage?.round() ?? 0,
     );
 
-    _loadHardcodedHighlights(); // Changed from _fetchHighlights
+    _loadHighlightsFromDb();
     WidgetsBinding.instance.addPostFrameCallback((_) => _startAutoScroll());
   }
 
@@ -61,12 +62,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // REPLACED: Fetching from hardcoded data instead of API
-  void _loadHardcodedHighlights() {
-    setState(() {
-      highlights = Highlight.getHardcodedHighlights();
-      isLoading = false;
-    });
+  Future<void> _loadHighlightsFromDb() async {
+    setState(() => isLoading = true);
+    try {
+      final List<Map<String, dynamic>> data = await DatabaseHelper()
+          .getStemHighlights();
+      if (mounted) {
+        setState(() {
+          highlights = data.map((map) => Highlight.fromMap(map)).toList();
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   void _startAutoScroll() {
@@ -75,8 +84,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (!mounted ||
           _isUserScrolling ||
           !_pageController.hasClients ||
-          highlights.isEmpty)
+          highlights.isEmpty) {
         return;
+      }
       int nextIndex = (_pageController.page!.round() + 1) % highlights.length;
       _pageController.animateToPage(
         nextIndex,
@@ -107,7 +117,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final bool isDark = themeProvider.isDarkMode;
     final bool isEnglish = navProvider.locale.languageCode == 'en';
     final Color textColor = Theme.of(context).colorScheme.onSurface;
-    final bool isTablet = MediaQuery.of(context).size.shortestSide > 600;
+
+    // --- BREAKPOINTS ---
+    final Size screenSize = MediaQuery.of(context).size;
+    final double shortestSide = screenSize.shortestSide;
+    final double totalAvailableHeight = screenSize.height;
+
+    final bool isStandardTablet = shortestSide >= 800;
+    final bool isSmallTablet = shortestSide >= 600 && shortestSide < 800;
+    final bool isAnyTablet = isStandardTablet || isSmallTablet;
+
+    bool isSmallPhone = totalAvailableHeight < 700;
+    double sidePadding = isSmallPhone
+        ? 20.0
+        : 20.0; //empty space for both left and right
 
     return GradientBackground(
       child: SafeArea(
@@ -118,36 +141,59 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               child: Center(
                 child: Container(
                   constraints: BoxConstraints(
-                    maxWidth: isTablet ? 550 : double.infinity,
+                    maxWidth: isStandardTablet
+                        ? 770
+                        : (isSmallTablet ? 630 : double.infinity),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: sidePadding,
+                  ), //empty space to both left and right
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      //60% for buttons, 40% for highlights
                       double totalHeight = constraints.maxHeight;
                       bool isSmallPhone = totalHeight < 650;
 
-                      double gridMultiplier = isSmallPhone ? 0.62 : 0.65;
-                      double highlightMultiplier = isSmallPhone ? 0.33 : 0.34;
+                      // --- DYNAMIC MULTIPLIERS ---
+                      double gridMultiplier;
+                      double highlightMultiplier;
+
+                      if (isStandardTablet) {
+                        gridMultiplier = 0.65; //feature buttons
+                        highlightMultiplier = 0.34; //highlight
+                      } else if (isSmallTablet) {
+                        gridMultiplier = 0.64;
+                        highlightMultiplier = 0.34;
+                      } else {
+                        // STRICTLY YOUR ORIGINAL PHONE LOGIC
+                        gridMultiplier = isSmallPhone ? 0.62 : 0.65;
+                        highlightMultiplier = isSmallPhone ? 0.35 : 0.34;
+                      }
 
                       double gridHeight = totalHeight * gridMultiplier;
                       double highlightHeight =
                           totalHeight * highlightMultiplier;
 
+                      // --- GRID SETTINGS ---
+                      int crossAxisCount = isStandardTablet ? 2 : 2;
+
                       return Column(
                         children: [
-                          //Feature Buttons Grid
                           SizedBox(
                             height: gridHeight,
                             child: GridView.count(
                               padding: const EdgeInsets.only(top: 10),
-                              crossAxisCount: 2,
-                              mainAxisSpacing: isSmallPhone ? 12 : 12,
+                              crossAxisCount: crossAxisCount,
+                              mainAxisSpacing: 12,
                               crossAxisSpacing: 12,
-                              //Ratio calculate based on available grid height
-                              childAspectRatio:
-                                  (constraints.maxWidth / 2) /
-                                  (gridHeight / (isSmallPhone ? 3.3 : 3.20)),
+                              childAspectRatio: isAnyTablet
+                                  ? (constraints.maxWidth / crossAxisCount) /
+                                        (gridHeight /
+                                            (isStandardTablet
+                                                ? 3.15
+                                                : 3.22)) // 3.15 standard tablet, 3.22 small tablet
+                                  : (constraints.maxWidth / 2) /
+                                        (gridHeight /
+                                            (isSmallPhone ? 3.3 : 3.20)),
                               physics: const NeverScrollableScrollPhysics(),
                               children: _features.map((feature) {
                                 return FeatureButton(
@@ -159,16 +205,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               }).toList(),
                             ),
                           ),
-
                           const SizedBox(height: 5),
-
                           Divider(
                             thickness: 2,
                             height: 1,
                             color: isDark ? Colors.white24 : Colors.black12,
                           ),
-
-                          //Highlights Section
                           SizedBox(
                             height: highlightHeight,
                             child: isLoading
@@ -177,14 +219,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   )
                                 : _buildHighlightsSection(
                                     isEnglish,
-                                    isTablet,
+                                    isAnyTablet,
                                     textColor,
                                     isDark,
                                     highlightHeight *
-                                        0.71, // Pass dynamic height
+                                        (isAnyTablet ? 0.78 : 0.71),
                                   ),
                           ),
-                          const SizedBox(height: 0),
                         ],
                       );
                     },
@@ -254,12 +295,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     bool isTablet,
     Color textColor,
     bool isDark,
-    double cardHeight, // Add this parameter
+    double cardHeight,
   ) {
     if (highlights.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 10, bottom: 3, top: 8),
@@ -330,7 +370,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 h.image1Url.startsWith('/')
                     ? h.image1Url.substring(1)
                     : h.image1Url,
-                width: isTablet ? 130 : 110,
+                width: isTablet ? 230 : 110,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   width: 110,
@@ -364,7 +404,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           color: isDark ? Colors.white60 : Colors.black54,
                           fontSize: isTablet ? 14 : 13,
                         ),
-                        maxLines: isTablet ? 4 : 2, //small phones
+                        maxLines: isTablet ? 4 : 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

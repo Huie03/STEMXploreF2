@@ -57,7 +57,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 isDark: isDark,
                 trailing: Switch(
                   value: isDark,
-                  activeColor: allIconColor,
+                  activeThumbColor: allIconColor,
                   onChanged: (value) => themeProvider.toggleTheme(),
                 ),
               ),
@@ -80,7 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 isDark: isDark,
                 trailing: Switch(
                   value: themeProvider.isSoundEnabled,
-                  activeColor: allIconColor,
+                  activeThumbColor: allIconColor,
                   onChanged: (value) {
                     themeProvider.toggleSound(value);
                   },
@@ -104,7 +104,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required Widget trailing,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 28),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(20),

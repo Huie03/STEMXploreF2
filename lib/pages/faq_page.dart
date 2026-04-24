@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import '../widgets/gradient_background.dart';
@@ -8,8 +6,8 @@ import '../widgets/language_toggle.dart';
 import '../navigation_provider.dart';
 import '../widgets/box_shadow.dart';
 import '../widgets/rawscrollbar.dart';
-import '../ipaddress.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:stemxploref2/database_helper.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
 
 class FaqPage extends StatefulWidget {
   static const routeName = '/faq';
@@ -21,6 +19,7 @@ class FaqPage extends StatefulWidget {
 
 class _FaqPageState extends State<FaqPage> {
   final ScrollController _scrollController = ScrollController();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
   int _expandedIndex = -1; // -1 means everything is closed
   late Future<List<Map<String, dynamic>>> _faqFuture;
 
@@ -38,14 +37,10 @@ class _FaqPageState extends State<FaqPage> {
     super.dispose();
   }
 
-  // Remove deactivate entirely
-  // Simplify didChangeDependencies to only handle the scroll jump
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // We no longer reset _expandedIndex here.
-    // We only handle the scrolling logic.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients && _expandedIndex == -1) {
         _scrollController.jumpTo(0);
@@ -54,71 +49,27 @@ class _FaqPageState extends State<FaqPage> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchFaqs() async {
-    final url = Uri.parse('${ipaddress.baseUrl}get_faq.php');
     try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        // Decode the response as a Map (because it starts with { })
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-
-        // Look for the 'data' key you added in PHP
-        if (jsonResponse['status'] == 'success' &&
-            jsonResponse['data'] != null) {
-          List<dynamic> data = jsonResponse['data'];
-          return data.map((item) => item as Map<String, dynamic>).toList();
-        } else {
-          debugPrint("PHP returned success: false or data is null");
-          return [];
-        }
-      } else {
-        debugPrint("Server Error: ${response.statusCode}");
-        return [];
-      }
+      final List<Map<String, dynamic>> data = await _dbHelper.getFaqs();
+      return data;
     } catch (e) {
-      // This will tell you if there is a connection or parsing error
-      debugPrint("Flutter Fetch Error: $e");
+      debugPrint("SQLite Fetch Error: $e");
       return [];
     }
   }
 
-  void _showFullScreenImage(BuildContext context, String imagePath) {
-    showDialog(
-      context: context,
-      useRootNavigator: true,
-      builder: (context) {
-        return Dialog.fullscreen(
-          backgroundColor: Colors.black,
-          child: Stack(
-            children: [
-              PhotoView(
-                // Use NetworkImage for XAMPP server files
-                imageProvider: NetworkImage('${ipaddress.baseUrl}$imagePath'),
-                loadingBuilder: (context, event) =>
-                    const Center(child: CircularProgressIndicator()),
-                initialScale: PhotoViewComputedScale.contained,
-                minScale: PhotoViewComputedScale.contained * 0.8,
-                maxScale: PhotoViewComputedScale.covered * 2.0,
-              ),
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  void _showFullScreenImage(BuildContext context, String assetPath) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, _, _) =>
+            FullScreenImagePage(assetPath: assetPath),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
     );
   }
 
@@ -193,7 +144,7 @@ class _FaqPageState extends State<FaqPage> {
             title,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 22,
+              fontSize: 21,
               color: textColor,
             ),
           ),
@@ -211,7 +162,9 @@ class _FaqPageState extends State<FaqPage> {
         ? const Color.fromARGB(255, 111, 111, 111)
         : const Color.fromARGB(255, 235, 145, 0);
 
-    bool isImagePath = answer.contains('assets/') && (answer.endsWith('.png'));
+    bool isImagePath =
+        answer.contains('assets/') &&
+        (answer.endsWith('.png') || answer.endsWith('.jpg'));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18.0),
@@ -261,27 +214,29 @@ class _FaqPageState extends State<FaqPage> {
                   boxShadow: isDark ? [] : appBoxShadow,
                   borderRadius: BorderRadius.circular(15),
                 ),
+                // ... inside _buildFaqItem if (isExpanded) ...
                 child: isImagePath
                     ? GestureDetector(
-                        // 2. Wrap image in GestureDetector to trigger PhotoView
+                        // 1. When the user taps, navigate to the FullScreenImagePage
                         onTap: () => _showFullScreenImage(context, answer),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            '${ipaddress.baseUrl}$answer',
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Text(
-                                  'Image not found on server',
+                        child: Hero(
+                          // 2. The tag MUST match the one in FullScreenImagePage
+                          tag: answer,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.asset(
+                              answer,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Text(
+                                  'Image not found',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
                                   ),
-                                ),
-                              );
-                            },
+                                );
+                              },
+                            ),
                           ),
                         ),
                       )

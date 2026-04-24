@@ -1,16 +1,14 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
 
 import 'package:stemxploref2/widgets/gradient_background.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart';
 import 'package:stemxploref2/navigation_provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import '../widgets/box_shadow.dart';
-import '../ipaddress.dart';
+import 'package:stemxploref2/database_helper.dart';
 
 class DailyInfoPage extends StatefulWidget {
   static const routeName = '/daily-info';
@@ -26,31 +24,31 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
   List<Map<String, dynamic>> _challenges = [];
   String _errorMessage = '';
 
-  late final String _baseServerUrl;
-  late final Uri _apiUri;
-
   @override
   void initState() {
     super.initState();
-    _baseServerUrl = ipaddress.baseUrl;
-    _apiUri = Uri.parse('${_baseServerUrl}get_daily_info.php');
     _loadInitialData();
   }
 
+  // Fetches data from SQLite instead of HTTP
   Future<void> _loadInitialData() async {
     try {
-      final response = await http.get(_apiUri);
-      if (response.statusCode == 200) {
-        List jsonResponse = json.decode(response.body);
-        if (mounted) {
-          setState(() {
-            _challenges = List<Map<String, dynamic>>.from(jsonResponse);
-            _isLoading = false;
-          });
-        }
+      final dbHelper = DatabaseHelper();
+      final data = await dbHelper.getDailyInfo();
+
+      if (mounted) {
+        setState(() {
+          _challenges = data;
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _errorMessage = "Offline Database Error: $e";
+          _isLoading = false;
+        });
+      }
     }
     _checkTodayStatus();
   }
@@ -69,45 +67,18 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
     if (mounted) setState(() => _isCompleted = true);
   }
 
-  void _showFullScreenImage(BuildContext context, String imageUrl) {
-    showDialog(
-      context: context,
-      useRootNavigator: true,
-      builder: (context) {
-        return Dialog.fullscreen(
-          backgroundColor: Colors.black,
-          child: Stack(
-            children: [
-              // 1. Zoomable Image (Network version)
-              PhotoView(
-                imageProvider: NetworkImage(imageUrl),
-                loadingBuilder: (context, event) =>
-                    const Center(child: CircularProgressIndicator()),
-                initialScale: PhotoViewComputedScale.contained,
-                minScale: PhotoViewComputedScale.contained * 0.8,
-                maxScale: PhotoViewComputedScale.covered * 2.0,
-              ),
-
-              // 2. Close Button
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+  void _showFullScreenImage(BuildContext context, String assetPath) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false, // Allows seeing the background during transition
+        barrierColor: Colors.black,
+        pageBuilder: (context, _, _) =>
+            FullScreenImagePage(assetPath: assetPath),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
     );
   }
 
@@ -156,8 +127,6 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
   Widget _buildBody(bool isEnglish, bool isDark) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_errorMessage.isNotEmpty) return Center(child: Text(_errorMessage));
-    if (_challenges.isEmpty)
-      return const Center(child: Text("No data available"));
 
     final now = DateTime.now();
 
@@ -205,7 +174,7 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
     return Center(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 40.0),
+        padding: const EdgeInsets.fromLTRB(30, 13, 30, 16),
         child: Column(
           children: [_buildChallengeCard(current, isEnglish, isDark)],
         ),
@@ -220,7 +189,7 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
   ) {
     final Color cardBg = Theme.of(context).colorScheme.surface;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
-    final String fullImageUrl = "$_baseServerUrl${info['image_path']}";
+    final String assetPath = info['image_path'] ?? '';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
@@ -245,9 +214,9 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
           ),
           const SizedBox(height: 15),
           GestureDetector(
-            onTap: () => _showFullScreenImage(context, fullImageUrl),
+            onTap: () => _showFullScreenImage(context, assetPath),
             child: Hero(
-              tag: 'daily_info_image_${info['id']}',
+              tag: assetPath,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: ConstrainedBox(
@@ -255,8 +224,8 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
                     maxHeight: 450,
                     maxWidth: double.infinity,
                   ),
-                  child: Image.network(
-                    fullImageUrl,
+                  child: Image.asset(
+                    assetPath,
                     width: double.infinity,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) => Container(
@@ -270,7 +239,7 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
               ),
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 10),
           Text(
             isEnglish ? (info['desc_en'] ?? '') : (info['desc_ms'] ?? ''),
             textAlign: TextAlign.justify,

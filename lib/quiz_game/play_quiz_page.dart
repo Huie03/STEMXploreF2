@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/box_shadow.dart';
 import '../widgets/language_toggle.dart';
-import '../ipaddress.dart';
 import '../navigation_provider.dart';
 import '../quiz_game/quiz_ui.dart';
 import 'package:confetti/confetti.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import '../widgets/rawscrollbar.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/database_helper.dart'; // Import local DB helper
 
 class PlayQuizPage extends StatefulWidget {
   final String subjectAndMode;
@@ -32,15 +30,19 @@ class PlayQuizPage extends StatefulWidget {
 class _PlayQuizPageState extends State<PlayQuizPage> {
   late ConfettiController _confettiController;
   final ScrollController _quizScrollController = ScrollController();
+  final DatabaseHelper _dbHelper = DatabaseHelper(); // Initialize DB Helper
 
   List<dynamic> _questions = [];
   bool _isLoading = true;
+  bool _showResults = false; // Added missing state variable
   String? _errorMessage;
 
   int _currentQuestionIndex = 0;
   int _score = 0;
   late String _subject;
   late String _chapterId;
+  late String _titleEn;
+  late String _titleMs;
 
   int? _selectedOptionIndex;
   bool _isLocked = false;
@@ -80,39 +82,101 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       _errorMessage = null;
     });
     _parseParams();
-    _fetchQuestions();
+    _fetchQuestions(); // Now calls local DB
   }
-
-  late String _titleEn;
-  late String _titleMs;
 
   void _parseParams() {
     final parts = widget.subjectAndMode.split('|');
 
-    _subject = parts[0].trim();
-    Map<String, String> subjectMap = {
-      "1": "Science",
-      "2": "Mathematics",
-      "3": "ASK",
-      "4": "RBT",
-    };
-    _subject = subjectMap[_subject] ?? _subject;
-
     if (parts.length >= 3) {
+      // 1. Normalize the Subject
+      String rawSubject = parts[0].trim();
+
+      // Check for both the ID "4" and the full string "Design And Technology"
+      if (rawSubject == "4" || rawSubject.contains("Design And Technology")) {
+        _subject = "RBT";
+      } else if (rawSubject == "3" || rawSubject.contains("Computer Science")) {
+        _subject = "ASK";
+      } else if (rawSubject == "2") {
+        _subject = "Mathematics";
+      } else if (rawSubject == "1") {
+        _subject = "Science";
+      } else {
+        _subject = rawSubject; // Fallback to whatever was passed
+      }
+
       _titleEn = parts[1].trim();
       _titleMs = parts[2].trim();
 
-      _chapterId = _titleEn.split('-')[0].replaceAll(RegExp(r'[^0-9]'), '');
+      // 2. Extract Chapter ID (Finds the first number in the string)
+      final RegExp numRegex = RegExp(r'\d+');
+      final match = numRegex.firstMatch(_titleEn);
+
+      if (match != null) {
+        _chapterId = match.group(0)!;
+      } else {
+        _chapterId = "1"; // Default to 1 if no number found
+      }
     } else {
       _titleEn = "Quiz Game";
       _titleMs = "Permainan Kuiz";
+      _subject = "Science";
       _chapterId = "1";
+    }
+
+    debugPrint(
+      "Fixed Query Params -> Subject: $_subject, Chapter: $_chapterId",
+    );
+  }
+
+  Future<void> _fetchQuestions() async {
+    try {
+      if (_chapterId.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Invalid Chapter ID";
+        });
+        return;
+      }
+
+      final int id = int.parse(_chapterId);
+
+      // Query local DatabaseHelper
+      final List<Map<String, dynamic>> results = await _dbHelper
+          .getQuizQuestions(_subject, id);
+
+      if (mounted) {
+        setState(() {
+          // 1. Create a mutable list from the results
+          _questions = List.from(results);
+
+          // 2. SHUFFLE the questions randomly
+          _questions.shuffle();
+
+          _isLoading = false;
+        });
+
+        if (_questions.isNotEmpty) {
+          _startBackgroundMusic();
+        } else {
+          setState(
+            () => _errorMessage =
+                "No questions found locally for $_subject Chapter $id.",
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = "Database Error: ${e.toString()}";
+        });
+      }
     }
   }
 
   Future<void> _startBackgroundMusic() async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-
     if (!themeProvider.isSoundEnabled) return;
     if (_audioPlayer.state == PlayerState.playing) return;
 
@@ -121,38 +185,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       await _audioPlayer.resume();
     } catch (e) {
       debugPrint("Error playing audio: $e");
-    }
-  }
-
-  Future<void> _fetchQuestions() async {
-    try {
-      final url = Uri.parse(
-        '${ipaddress.baseUrl}get_quiz_questions.php?subject=$_subject&chapter_id=$_chapterId',
-      );
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> decodedData = json.decode(response.body);
-        if (mounted) {
-          setState(() {
-            _questions = decodedData;
-            _isLoading = false;
-          });
-
-          if (_questions.isNotEmpty) {
-            _startBackgroundMusic();
-          } else {
-            setState(() => _errorMessage = "No questions found.");
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = "Connection Failed.";
-        });
-      }
     }
   }
 
@@ -166,6 +198,11 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       _selectedOptionIndex = selectedIndex;
       _isLocked = true;
       if (selectedIndex == correctIndex) _score++;
+
+      // Store user choice in the local list for Review Mode
+      _questions[_currentQuestionIndex] = Map<String, dynamic>.from(
+        _questions[_currentQuestionIndex],
+      );
       _questions[_currentQuestionIndex]['user_choice'] = selectedIndex;
     });
   }
@@ -238,29 +275,22 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
 
     final q = _questions[_currentQuestionIndex];
 
+    // Mapping SQLite columns to the UI
     final List<Map<String, String>> optionData = [
       {
-        'text': isEnglish
-            ? (q['opt_a_en'] ?? "")
-            : (q['opt_a_ms'] ?? q['opt_a_en'] ?? ""),
+        'text': isEnglish ? (q['opt_a_en'] ?? "") : (q['opt_a_ms'] ?? ""),
         'image': q['opt_a_image']?.toString() ?? "",
       },
       {
-        'text': isEnglish
-            ? (q['opt_b_en'] ?? "")
-            : (q['opt_b_ms'] ?? q['opt_b_en'] ?? ""),
+        'text': isEnglish ? (q['opt_b_en'] ?? "") : (q['opt_b_ms'] ?? ""),
         'image': q['opt_b_image']?.toString() ?? "",
       },
       {
-        'text': isEnglish
-            ? (q['opt_c_en'] ?? "")
-            : (q['opt_c_ms'] ?? q['opt_c_en'] ?? ""),
+        'text': isEnglish ? (q['opt_c_en'] ?? "") : (q['opt_c_ms'] ?? ""),
         'image': q['opt_c_image']?.toString() ?? "",
       },
       {
-        'text': isEnglish
-            ? (q['opt_d_en'] ?? "")
-            : (q['opt_d_ms'] ?? q['opt_d_en'] ?? ""),
+        'text': isEnglish ? (q['opt_d_en'] ?? "") : (q['opt_d_ms'] ?? ""),
         'image': q['opt_d_image']?.toString() ?? "",
       },
     ];
@@ -287,7 +317,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  //QUESTION CARD
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -341,12 +370,21 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                               q['question_image'],
                             ),
                             child: Center(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.network(
-                                  "${ipaddress.baseUrl}${q['question_image']}",
-                                  height: 150,
-                                  fit: BoxFit.contain,
+                              child: Hero(
+                                // The tag must match the one in FullScreenImagePage
+                                tag: q['question_image'],
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.asset(
+                                    // Changed to Image.asset for local paths
+                                    q['question_image'],
+                                    height: 150,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, _, _) => const Icon(
+                                      Icons.broken_image,
+                                      size: 50,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -355,10 +393,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // OPTIONS
                   if (usesImageOptions)
                     GridView.builder(
                       shrinkWrap: true,
@@ -376,7 +411,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                         index: i,
                         text: optionData[i]['text']!,
                         imageUrl:
-                            "${ipaddress.baseUrl}${optionData[i]['image']}",
+                            optionData[i]['image']!, // Pass local asset path
                         correctIndex: correctIndex,
                         selectedIndex: activeSelection,
                         showFeedback: showFeedback,
@@ -396,12 +431,8 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                         onTap: () => _handleAnswer(i, correctIndex),
                       ),
                     ),
-
                   const SizedBox(height: 25),
-
                   _buildNavButtons(isEnglish),
-
-                  // CORRECT ANSWER FEEDBACK
                   if (showFeedback) ...[
                     const SizedBox(height: 20),
                     Container(
@@ -427,7 +458,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
-                          // If text is not empty, show the text
                           if (optionData[correctIndex]['text']!.isNotEmpty)
                             Text(
                               optionData[correctIndex]['text']!,
@@ -438,18 +468,16 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                          // If there is an image, show a small preview of the correct image
                           if (optionData[correctIndex]['image']!
                               .isNotEmpty) ...[
                             const SizedBox(height: 5),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                "${ipaddress.baseUrl}${optionData[correctIndex]['image']}",
+                              child: Image.asset(
+                                // Local asset image
+                                optionData[correctIndex]['image']!,
                                 height: 80,
                                 fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.broken_image),
                               ),
                             ),
                           ],
@@ -468,17 +496,18 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
 
   Widget _buildNavButtons(bool isEng) {
     bool isFirstQuestion = _currentQuestionIndex == 0;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         SizedBox(
-          width: 100,
+          width: 120,
           child: ElevatedButton(
             onPressed: () {
               if (isFirstQuestion) {
                 if (_isReviewMode) {
-                  setState(() => _showResults = true); // Go back to results
+                  setState(() => _showResults = true);
                 } else {
                   _stopMusic();
                   widget.onFinish();
@@ -491,28 +520,27 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                       _questions[_currentQuestionIndex]['user_choice'];
                   _isLocked = _selectedOptionIndex != null;
                 });
-                _quizScrollController.jumpTo(0);
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black.withValues(alpha: 0.8),
+              backgroundColor: isDark
+                  ? const Color.fromARGB(
+                      255,
+                      115,
+                      114,
+                      114,
+                    ) // Or any specific dark mode color like Colors.blueGrey[900]
+                  : Colors.black.withValues(alpha: 0.8),
               foregroundColor: Colors.white,
-              elevation: 0,
-              side: const BorderSide(color: Colors.white70, width: 1.5),
-              padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
             ),
-            child: Text(
-              isEng ? "Back" : "Kembali",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
+            child: Text(isEng ? "Back" : "Kembali"),
           ),
         ),
-
         SizedBox(
-          width: 100,
+          width: 120,
           child: ElevatedButton(
             onPressed: (_isLocked || _isReviewMode)
                 ? () {
@@ -538,11 +566,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEB9000),
               foregroundColor: Colors.white,
-              disabledBackgroundColor: const Color(
-                0xFFEB9000,
-              ).withValues(alpha: 0.6),
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -551,7 +574,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
               _currentQuestionIndex < _questions.length - 1
                   ? (isEng ? "Next" : "Seterusnya")
                   : (isEng ? "Finish" : "Selesai"),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
         ),
@@ -559,12 +581,9 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     );
   }
 
-  bool _showResults = false;
   void _triggerResults() {
     _stopMusic();
-    setState(() {
-      _showResults = true;
-    });
+    setState(() => _showResults = true);
     _confettiController.play();
   }
 
@@ -575,50 +594,21 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       _currentQuestionIndex = 0;
       _selectedOptionIndex = _questions[0]['user_choice'];
     });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_quizScrollController.hasClients) {
-        _quizScrollController.jumpTo(0);
-      }
-    });
   }
 
   void _showFullScreenImage(BuildContext context, String imagePath) {
-    showDialog(
-      context: context,
-      useRootNavigator: true,
-      builder: (context) {
-        return Dialog.fullscreen(
-          backgroundColor: Colors.black,
-          child: Stack(
-            children: [
-              PhotoView(
-                imageProvider: NetworkImage('${ipaddress.baseUrl}$imagePath'),
-                loadingBuilder: (context, event) =>
-                    const Center(child: CircularProgressIndicator()),
-                initialScale: PhotoViewComputedScale.contained,
-                minScale: PhotoViewComputedScale.contained * 0.8,
-                maxScale: PhotoViewComputedScale.covered * 2.0,
-              ),
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false, // Background stays visible during the transition
+        barrierColor: Colors.black,
+        pageBuilder: (context, _, _) =>
+            FullScreenImagePage(assetPath: imagePath),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Smooth fade transition for the background
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
     );
   }
 
@@ -626,23 +616,13 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.wifi_off_rounded, size: 60, color: Colors.white70),
-        const SizedBox(height: 15),
+        const Icon(Icons.error_outline, size: 60, color: Colors.white),
         Text(
           _errorMessage!,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 18),
         ),
-        const SizedBox(height: 25),
         ElevatedButton(
           onPressed: _resetAndStartQuiz,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFF2C458),
-            foregroundColor: Colors.black,
-          ),
           child: const Text("Try Again"),
         ),
       ],

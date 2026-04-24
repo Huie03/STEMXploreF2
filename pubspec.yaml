@@ -25,9 +25,19 @@ dependencies:
   audioplayers: ^5.2.1
   sqflite: ^2.3.0
   path: ^1.9.0
+  path_provider: ^2.1.0
   visibility_detector: ^0.4.0+2
   photo_view: ^0.14.0
+  flutter_launcher_icons: ^0.13.1
 
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/Screen_Logo.png" # Legacy/iOS icon (the one with background)
+  min_sdk_android: 21
+  # The fix for modern Android:
+  adaptive_icon_background: "#FFD38F" 
+  adaptive_icon_foreground: "assets/images/test.png" # Your transparent logo
 
 dev_dependencies:
   flutter_test:
@@ -39,30 +49,27 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/fonts/Alice-Regular.ttf
+    - assets/database/stemxploref2.db
     - assets/images/Logo_F2_2.png
-    - assets/icons/1.png
-    - assets/icons/2.png
-    - assets/icons/3.png
-    - assets/icons/4.png
-    - assets/icons/5.png
-    - assets/icons/6.png
-    - assets/flag/language uk_flag.png
-    - assets/flag/language ms_flag.png
-    - assets/textbook/ASK/BC_ASK.jpg
-    - assets/textbook/RBT/BC_RBT.jpg
-    - assets/textbook/Science/BC_Science.jpg
-    - assets/textbook/Mathematics/BC_Mathematics.jpg
-    - assets/images/STEMvideo1.png
-    - assets/images/nutrition.png
-    - assets/images/biodiversity.png
-    - assets/images/ecosystem.png
-    - assets/images/Logo_Kedah.png
-    - assets/images/Logo_UUM.png
+    - assets/icons/
+    - assets/flag/
+    - assets/textbook/
+    - assets/images/
     - assets/audio/quiz_bm.music.mp3
     - assets/stem_info/images/
     - assets/stem_info/videos/
     - assets/daily_info/
     - assets/highlights/images/
     - assets/highlights/videos/
-
-
+    - assets/FAQ/
+    - assets/Quiz/
+    - assets/ASK/Book_cover/
+    - assets/ASK/Infographics/
+    - assets/Math/Book_cover/
+    - assets/Math/Infographics/
+    - assets/RBT/Book_cover/
+    - assets/RBT/Infographics/
+    - assets/Science/Book_cover/
+    - assets/Science/Infographics/
+    - assets/STEM_Careers/

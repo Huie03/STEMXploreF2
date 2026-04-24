@@ -1,14 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_localization/flutter_localization.dart';
-import 'package:http/http.dart' as http;
-//import 'package:provider/provider.dart';
-import '../ipaddress.dart';
-//import 'package:stemxploref2/theme_provider.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/box_shadow.dart';
 import '../widgets/rawscrollbar.dart';
+import 'package:stemxploref2/database_helper.dart';
 
 class QuizGamePage extends StatefulWidget {
   final Function(String, String) onQuizStart;
@@ -28,6 +24,7 @@ class _QuizGamePageState extends State<QuizGamePage> {
   late String selectedCategory;
   List quizzes = [];
   bool isLoading = true;
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   final ScrollController _filterScrollController = ScrollController();
   final ScrollController _quizListController = ScrollController();
@@ -90,22 +87,31 @@ class _QuizGamePageState extends State<QuizGamePage> {
   Future<void> fetchQuizzes(String subject) async {
     setState(() => isLoading = true);
     try {
-      final response = await http.get(
-        Uri.parse('${ipaddress.baseUrl}get_quiz_subject.php?subject=$subject'),
-      );
+      final allQuizzes = await _dbHelper.getQuizSubjects();
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      final filtered = allQuizzes.where((q) {
+        // Standardize comparison to avoid issues with extra spaces or case
+        String subEn = (q['quiz_subject_en'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+        String subMs = (q['quiz_subject_ms'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+        String target = subject.trim().toLowerCase();
+
+        return subEn == target || subMs == target;
+      }).toList();
+
+      if (mounted) {
         setState(() {
-          quizzes = data;
+          quizzes = filtered;
           isLoading = false;
         });
-      } else {
-        throw Exception('Failed to load quizzes');
       }
     } catch (e) {
-      setState(() => isLoading = false);
-      print("Error: $e");
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -126,7 +132,7 @@ class _QuizGamePageState extends State<QuizGamePage> {
               _buildAppBar(isEnglish, isDark),
               const SizedBox(height: 10),
               _buildCategoryTabs(isEnglish, isDark, cardBg, textColor),
-              const SizedBox(height: 10),
+              const SizedBox(height: 1),
               Expanded(
                 child: isLoading
                     ? const Center(
@@ -168,7 +174,12 @@ class _QuizGamePageState extends State<QuizGamePage> {
     Color textColor,
   ) {
     final List<String> displaySubjects = isEnglish
-        ? subjectsEn
+        ? [
+            "Science",
+            "Mathematics",
+            "Fundamentals of Computer Science", // Change "Computer Science" to this
+            "Design And Technology",
+          ]
         : [
             "Sains",
             "Matematik",
@@ -233,28 +244,31 @@ class _QuizGamePageState extends State<QuizGamePage> {
       controller: _quizListController,
       child: ListView.builder(
         controller: _quizListController,
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(30, 13, 30, 16),
         itemCount: quizzes.length,
         itemBuilder: (context, index) {
           final quiz = quizzes[index];
+          final String titleEn = quiz['quiz_title_en']?.toString() ?? "Quiz";
+          final String titleMs = quiz['quiz_title_ms']?.toString() ?? "Kuiz";
+          final String imagePath = quiz['image_url']?.toString() ?? "";
+          final int totalQuestions = quiz['quiz_total_question'] ?? 0;
+
           return GestureDetector(
+            // Inside QuizGamePage onTap
             onTap: () {
-              Map<String, String> subjectToId = {
-                "Science": "1",
-                "Mathematics": "2",
-                "Computer Science": "3",
-                "Design And Technology": "4",
-              };
-              String subjectId = subjectToId[selectedCategory] ?? "1";
-              String tEn = quiz['title_en'] ?? "Quiz";
-              String tMs = quiz['title_ms'] ?? "Kuiz";
-              widget.onQuizStart("$subjectId | $tEn | $tMs", "start");
+              // Pass the actual subject name and the title which contains the chapter number
+              String subjectName =
+                  quiz['quiz_subject_en']; // e.g., "Science" [cite: 17]
+              String titleEn =
+                  quiz['quiz_title_en']; // e.g., "Chapter 13-Meteoroid..." [cite: 17, 22]
+              String titleMs = quiz['quiz_title_ms'];
+
+              widget.onQuizStart("$subjectName | $titleEn | $titleMs", "start");
             },
             child: _quizCard(
-              title: isEnglish ? quiz['title_en'] : quiz['title_ms'],
-              sub:
-                  "${quiz['total_questions']} ${isEnglish ? "Questions" : "Soalan"}",
-              imgPath: quiz['image_url'] ?? "",
+              title: isEnglish ? titleEn : titleMs,
+              sub: "$totalQuestions ${isEnglish ? "Questions" : "Soalan"}",
+              imgPath: imagePath,
               isEnglish: isEnglish,
             ),
           );
@@ -327,14 +341,19 @@ class _QuizGamePageState extends State<QuizGamePage> {
           const SizedBox(width: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              "${ipaddress.baseUrl}$imgPath",
-              width: 70,
-              height: 85,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.broken_image, size: 80, color: Colors.grey),
-            ),
+            child: imgPath.isNotEmpty
+                ? Image.asset(
+                    imgPath,
+                    width: 70,
+                    height: 85,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.broken_image,
+                      size: 80,
+                      color: Colors.grey,
+                    ),
+                  )
+                : const Icon(Icons.book, size: 50, color: Colors.grey),
           ),
         ],
       ),

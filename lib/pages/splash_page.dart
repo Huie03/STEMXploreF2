@@ -71,13 +71,39 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     const String assetPath = 'assets/images/Logo_F2_2.png';
 
+    // RESPONSIVE LOGIC
+    final Size screenSize = MediaQuery.of(context).size;
+    final double shortestSide = screenSize.shortestSide;
+
+    final bool isTablet = screenSize.shortestSide >= 600;
+    final bool isSmallPhone = shortestSide < 380;
+
+    double imageSize;
+    if (isTablet) {
+      imageSize = screenSize.width * 0.65;
+    } else if (isSmallPhone) {
+      imageSize = 280; // Smaller logo for small screens
+    } else {
+      imageSize = 330; // Standard phone
+    }
+
+    // Adjust font sizes
+    final double titleFontSize = isTablet ? 24 : (isSmallPhone ? 13 : 15);
+    final double hintFontSize = isTablet ? 18 : (isSmallPhone ? 12 : 14);
+    final double iconSize = isTablet ? 50 : (isSmallPhone ? 28 : 35);
+
+    final double textTranslateOffset = isTablet
+        ? -45
+        : (isSmallPhone ? -25 : -30);
+    final double bottomPadding = isTablet ? 120 : (isSmallPhone ? 40 : 60);
+
     return Stack(
       children: [
         // 1. BRANDING GROUP (Logo + Text)
         Center(
           child: Padding(
-            padding: const EdgeInsets.only(
-              bottom: 60,
+            padding: EdgeInsets.only(
+              bottom: bottomPadding,
             ), // Adjust this value to move it higher
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -86,23 +112,26 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
                   scale: _pulseAnimation,
                   child: Image.asset(
                     assetPath,
-                    width: 330,
-                    height: 330,
+                    width: imageSize,
+                    height: imageSize,
                     fit: BoxFit.contain,
                   ),
                 ),
                 Transform.translate(
-                  offset: const Offset(0, -30),
-                  child: Text(
-                    'Developing STEM Skills Through Exploration',
-                    style: GoogleFonts.alice(
-                      textStyle: const TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                  offset: Offset(0, textTranslateOffset),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      'Developing STEM Skills Through Exploration',
+                      style: GoogleFonts.alice(
+                        textStyle: TextStyle(
+                          fontSize: titleFontSize,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
@@ -112,7 +141,7 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
 
         // 2. INTERACTION GROUP (Icon + "Touch to start")
         Positioned(
-          bottom: 50, // Pinned to bottom
+          bottom: isTablet ? 70 : 50,
           left: 0,
           right: 0,
           child: Column(
@@ -120,9 +149,9 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
             children: [
               ScaleTransition(
                 scale: _pulseAnimation,
-                child: const Icon(
+                child: Icon(
                   Icons.touch_app,
-                  size: 35,
+                  size: iconSize,
                   color: Color(0xFFFFA600),
                 ),
               ),
@@ -130,8 +159,8 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
               Text(
                 'Touch to start',
                 style: GoogleFonts.alice(
-                  textStyle: const TextStyle(
-                    fontSize: 14,
+                  textStyle: TextStyle(
+                    fontSize: hintFontSize,
                     color: Color.fromARGB(136, 0, 0, 0),
                     fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.bold,

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
-import 'package:visibility_detector/visibility_detector.dart'; // Added for stop handling
+import '../widgets/video_player.dart';
 import 'highlight.dart';
 import '../widgets/gradient_background.dart';
 import 'package:flutter_localization/flutter_localization.dart';
@@ -10,7 +8,7 @@ import '../widgets/rawscrollbar.dart';
 import '../widgets/box_shadow.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:stemxploref2/full_screen_image_page.dart'; // Make sure the filename matches exactly
 
 class HighlightDetailPage extends StatefulWidget {
   static const routeName = '/highlight-detail';
@@ -233,7 +231,19 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                   ),
                                   const SizedBox(height: 3),
                                   ...widget.highlight.extraSources.map((extra) {
-                                    final String? extraVid = extra['videoUrl'];
+                                    final String? extraVid = extra['videoUrl']
+                                        ?.toString();
+                                    final String desc = isEnglish
+                                        ? (extra['descEn']?.toString() ?? '')
+                                        : (extra['descMs']?.toString() ?? '');
+                                    final String citation = isEnglish
+                                        ? (extra['citationEn']?.toString() ??
+                                              '')
+                                        : (extra['citationMs']?.toString() ??
+                                              '');
+                                    final String sUrl =
+                                        extra['sourceUrl']?.toString() ?? '';
+
                                     final bool hasVideo =
                                         extraVid != null && extraVid.isNotEmpty;
 
@@ -245,22 +255,13 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          //Description
-                                          _buildBodyText(
-                                            isEnglish
-                                                ? (extra['descEn'] ?? '')
-                                                : (extra['descMs'] ?? ''),
-                                            subTextColor,
-                                          ),
-                                          //Video Player
+                                          _buildBodyText(desc, subTextColor),
                                           if (hasVideo) ...[
                                             VideoPlayerWidget(
                                               assetPath: extraVid,
                                             ),
                                             const SizedBox(height: 12),
                                           ],
-
-                                          //Citation
                                           Text(
                                             isEnglish ? 'Source:' : 'Sumber:',
                                             style: TextStyle(
@@ -270,19 +271,15 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                                             ),
                                           ),
                                           Text(
-                                            isEnglish
-                                                ? (extra['citationEn'] ?? '')
-                                                : (extra['citationMs'] ?? ''),
-                                            style: TextStyle(
+                                            citation,
+                                            style: const TextStyle(
                                               fontSize: 11,
                                               height: 1,
                                             ),
                                           ),
-
-                                          //Source URL
                                           const SizedBox(height: 4),
                                           Text(
-                                            extra['sourceUrl'] ?? '',
+                                            sUrl,
                                             style: const TextStyle(
                                               fontSize: 11,
                                               color: Colors.blueAccent,
@@ -311,48 +308,25 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
   }
 
   void _showFullScreenImage(BuildContext context, String assetPath) {
-    showDialog(
-      context: context,
-      useRootNavigator: true,
-      builder: (context) {
-        return Dialog.fullscreen(
-          backgroundColor: Colors.black,
-          child: Stack(
-            children: [
-              PhotoView(
-                imageProvider: AssetImage(assetPath),
-                loadingBuilder: (context, event) =>
-                    const Center(child: CircularProgressIndicator()),
-                initialScale: PhotoViewComputedScale.contained,
-                minScale: PhotoViewComputedScale.contained * 0.8,
-                maxScale: PhotoViewComputedScale.covered * 2.0,
-              ),
-
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false, // Allows seeing the background during transition
+        barrierColor: Colors.black,
+        pageBuilder: (context, _, _) =>
+            FullScreenImagePage(assetPath: assetPath),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Smooth fade transition as the image expands
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
     );
   }
 
   Widget _buildLocalImage(String path) {
     if (path.isEmpty) return const SizedBox.shrink();
 
+    // Remove leading slash if present to avoid asset load errors
     final String assetPath = path.startsWith('/') ? path.substring(1) : path;
 
     return GestureDetector(
@@ -360,7 +334,7 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(15),
         child: Hero(
-          tag: assetPath,
+          tag: assetPath, // This matches the tag in FullScreenImagePage
           child: Image.asset(assetPath, fit: BoxFit.cover),
         ),
       ),
@@ -380,107 +354,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
           color: color,
         ),
       ),
-    );
-  }
-}
-
-class VideoPlayerWidget extends StatefulWidget {
-  final String assetPath;
-  const VideoPlayerWidget({super.key, required this.assetPath});
-
-  @override
-  State<VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
-}
-
-class _VideoPlayerWidgetState extends State<VideoPlayerWidget>
-    with WidgetsBindingObserver {
-  VideoPlayerController? _videoPlayerController;
-  ChewieController? _chewieController;
-  bool _isDisposed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _initializePlayer();
-  }
-
-  Future<void> _initializePlayer() async {
-    _videoPlayerController = VideoPlayerController.asset(widget.assetPath);
-
-    try {
-      await _videoPlayerController!.initialize();
-
-      if (_isDisposed || !mounted) {
-        _videoPlayerController?.dispose();
-        return;
-      }
-
-      _chewieController = ChewieController(
-        videoPlayerController: _videoPlayerController!,
-        aspectRatio: _videoPlayerController!.value.aspectRatio,
-        autoPlay: false,
-        looping: false,
-        materialProgressColors: ChewieProgressColors(
-          playedColor: Colors.redAccent,
-          handleColor: Colors.orange,
-        ),
-      );
-
-      if (mounted) setState(() {});
-    } catch (e) {
-      debugPrint("Video Error: $e");
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.paused) {
-      _videoPlayerController?.pause();
-    }
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-    WidgetsBinding.instance.removeObserver(this);
-
-    _chewieController?.dispose();
-    _videoPlayerController?.pause();
-    _videoPlayerController?.dispose();
-
-    debugPrint("CLEANUP: Video resources released for ${widget.assetPath}");
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return VisibilityDetector(
-      key: Key(widget.assetPath),
-      onVisibilityChanged: (visibilityInfo) {
-        if (visibilityInfo.visibleFraction < 0.1 && mounted) {
-          _videoPlayerController?.pause();
-        }
-      },
-      child:
-          _chewieController != null &&
-              _chewieController!.videoPlayerController.value.isInitialized
-          ? Container(
-              height: 220,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.black,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Chewie(controller: _chewieController!),
-              ),
-            )
-          : const SizedBox(
-              height: 200,
-              child: Center(child: CircularProgressIndicator()),
-            ),
     );
   }
 }

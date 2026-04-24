@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter_localization/flutter_localization.dart';
 import '../widgets/gradient_background.dart';
 import '../widgets/language_toggle.dart';
-import '../ipaddress.dart';
 import '../widgets/rawscrollbar.dart';
 import '../widgets/box_shadow.dart';
 import 'package:stemxploref2/theme_provider.dart';
+import 'package:stemxploref2/database_helper.dart';
 import 'package:provider/provider.dart';
 
 class SubjectChaptersPage extends StatefulWidget {
@@ -29,6 +27,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   late String selectedSubject;
   final ScrollController _filterScrollController = ScrollController();
   final ScrollController _verticalScrollController = ScrollController();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   final List<String> subjects = [
     "Science",
@@ -38,12 +37,6 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    selectedSubject = widget.initialSubject;
-  }
-
-  @override
   void dispose() {
     _filterScrollController.dispose();
     _verticalScrollController.dispose();
@@ -51,16 +44,42 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Ensure we start with the value passed from MainScreen (which is "Science")
+    selectedSubject = widget.initialSubject;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncStateToSubject(selectedSubject);
+    });
+  }
+
+  @override
   void didUpdateWidget(covariant SubjectChaptersPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // This triggers when the parent screen changes the 'initialSubject'
     if (oldWidget.initialSubject != widget.initialSubject) {
       setState(() {
+        // 1. Update the local state to match the new subject from parent
         selectedSubject = widget.initialSubject;
       });
-      int newIndex = subjects.indexOf(selectedSubject);
-      if (newIndex != -1) {
-        _scrollToIndex(newIndex);
-      }
+
+      // 2. Sync the UI (scroll to the new tab and reset the chapter list to top)
+      _syncStateToSubject(selectedSubject);
+    }
+  }
+
+  void _syncStateToSubject(String subject) {
+    // Find the index of the subject in your internal list (the DB keys)
+    int index = subjects.indexOf(subject);
+    if (index != -1) {
+      _scrollToIndex(index);
+    }
+
+    // Reset the vertical chapter list to the very top so the user
+    // doesn't start halfway down a new subject's chapters
+    if (_verticalScrollController.hasClients) {
+      _verticalScrollController.jumpTo(0);
     }
   }
 
@@ -79,39 +98,51 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   }
 
   String _translateSubject(String subject, bool isEnglish) {
-    if (isEnglish) return subject;
+    if (isEnglish) {
+      // Logic for English display
+      switch (subject) {
+        case "Computer Science (ASK)":
+          return "Fundamentals of Computer Science";
+        case "Design and Technology (RBT)":
+          return "Design and Technology";
+        default:
+          // For Science and Mathematics, or any others, just return the string
+          return subject;
+      }
+    }
+
+    // Logic for Malay display
     switch (subject) {
       case "Science":
         return "Sains";
       case "Mathematics":
         return "Matematik";
       case "Computer Science (ASK)":
-        return "Asas Sains Komputer (ASK)";
+        return "Asas Sains Komputer";
       case "Design and Technology (RBT)":
-        return "Reka Bentuk dan Teknologi (RBT)";
+        return "Reka Bentuk dan Teknologi";
       default:
         return subject;
     }
   }
 
-  Future<List<dynamic>> fetchChapters(String subject) async {
-    final url = Uri.parse(
-      '${ipaddress.baseUrl}get_chapters.php?subject=$subject',
-    );
+  // UPDATED: Now fetches from SQLite instead of PHP
+  Future<List<Map<String, dynamic>>> _getChaptersFromDb(String subject) async {
     try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body);
-        data.sort((a, b) {
-          int numA = int.tryParse(a['chapter_number'].toString()) ?? 0;
-          int numB = int.tryParse(b['chapter_number'].toString()) ?? 0;
-          return numA.compareTo(numB);
-        });
-        return data;
-      }
-      return [];
+      final List<Map<String, dynamic>> data = await _dbHelper.getChapters(
+        subject,
+      );
+
+      // Sort chapters numerically
+      List<Map<String, dynamic>> sortedData = List.from(data);
+      sortedData.sort((a, b) {
+        int numA = int.tryParse(a['chapter_number'].toString()) ?? 0;
+        int numB = int.tryParse(b['chapter_number'].toString()) ?? 0;
+        return numA.compareTo(numB);
+      });
+      return sortedData;
     } catch (e) {
-      debugPrint("Network Error: $e");
+      debugPrint("Database Error: $e");
       return [];
     }
   }
@@ -148,7 +179,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
               const SizedBox(height: 8),
               Expanded(
                 child: FutureBuilder<List<dynamic>>(
-                  future: fetchChapters(selectedSubject),
+                  future: _getChaptersFromDb(selectedSubject),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -317,7 +348,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
         ? (data['title_en'] ?? "No Title")
         : (data['title_ms'] ?? "Tiada Tajuk");
 
-    final String fullImageUrl = '${ipaddress.baseUrl}${data['image_url']}';
+    final String assetPath = data['image_url'] ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -353,15 +384,13 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
           const SizedBox(width: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              Uri.encodeFull(fullImageUrl),
+            child: Image.asset(
+              assetPath,
               height: 85,
               width: 70,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint("Failed to load: $fullImageUrl");
-                return Icon(Icons.book, size: 40, color: subTextColor);
-              },
+              errorBuilder: (context, error, stackTrace) =>
+                  Icon(Icons.book, size: 40, color: subTextColor),
             ),
           ),
         ],

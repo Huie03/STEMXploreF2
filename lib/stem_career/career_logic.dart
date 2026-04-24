@@ -27,24 +27,43 @@ mixin CareerLogic {
       'Engineering': 0,
       'Technology': 0,
     };
+
     for (var entry in singleChoices.entries) {
       final q = dbQuestions.firstWhere(
-        (e) => e['id'].toString() == entry.key.toString(),
+        (e) => int.parse(e['id'].toString()) == entry.key,
+        orElse: () => <String, dynamic>{},
       );
-      final opt = (q['options'] as List).firstWhere(
-        (o) => o['id'].toString() == entry.value.toString(),
-      );
-      applyScore(opt['score_tag'], scores, 2);
-    }
-    if (dbQuestions.isNotEmpty) {
-      final qSkills = dbQuestions.last;
-      for (var optId in multiChoicesQ5) {
-        final opt = (qSkills['options'] as List).firstWhere(
-          (o) => o['id'].toString() == optId.toString(),
+
+      if (q.isNotEmpty) {
+        final List options = q['options'] as List;
+        final opt = options.firstWhere(
+          (o) => int.parse(o['id'].toString()) == entry.value,
+          orElse: () => <String, dynamic>{},
         );
-        applyScore(opt['score_tag'], scores, 1);
+
+        if (opt.isNotEmpty) {
+          applyScore(opt['score_tag'], scores, 2);
+        }
       }
     }
+
+    //Question 5 (Multi-choice Skills)
+    if (dbQuestions.isNotEmpty) {
+      final qSkills = dbQuestions.last;
+      final List options = qSkills['options'] as List;
+
+      for (var optId in multiChoicesQ5) {
+        final opt = options.firstWhere(
+          (o) => int.parse(o['id'].toString()) == optId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (opt.isNotEmpty) {
+          applyScore(opt['score_tag'], scores, 1);
+        }
+      }
+    }
+
+    // Find the highest score
     return scores.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   }
 

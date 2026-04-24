@@ -19,7 +19,7 @@ import 'pages/info_page.dart';
 import 'pages/settings_page.dart';
 import 'stem_highlights/highlight.dart';
 import 'stem_highlights/highlight_detail_page.dart';
-import 'favorite/favorite_provider.dart';
+import 'bookmark/bookmark_provider.dart';
 import 'package:stemxploref2/theme_provider.dart';
 
 void main() async {
@@ -39,7 +39,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
+        ChangeNotifierProvider(create: (_) => BookmarkProvider()),
       ],
       child: const STEMXploreApp(),
     ),
@@ -59,7 +59,7 @@ class _STEMXploreAppState extends State<STEMXploreApp> {
   @override
   void initState() {
     super.initState();
-    localization.init(mapLocales: LOCALES, initLanguageCode: 'en');
+    localization.init(mapLocales: locales, initLanguageCode: 'en');
 
     localization.onTranslatedLanguage = (Locale? locale) {
       setState(() {});

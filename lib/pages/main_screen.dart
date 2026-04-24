@@ -4,11 +4,11 @@ import '/navigation_provider.dart';
 import '/widgets/curved_navigation_bar.dart';
 
 import 'home_page.dart';
-import '../favorite/favorite_page.dart';
+import '../bookmark/bookmark_page.dart';
 import 'info_page.dart';
 import 'settings_page.dart';
 import '/stem_info/stem_info_page.dart';
-import '/learning_materials/learning_materials_page.dart';
+//import '/learning_materials/learning_materials_page.dart';
 import '/quiz_game/quiz_game_page.dart';
 import '../quiz_game/play_quiz_page.dart';
 import '/stem_career/stem_careers_page.dart';
@@ -31,7 +31,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   dynamic selectedHighlight;
   dynamic selectedStemInfo;
-  String? selectedSubjectName;
+  String selectedSubjectName = "Science";
   String selectedQuizCategory = "Science";
   Map<String, dynamic>? selectedChapterData;
   String? selectedQuizData;
@@ -46,7 +46,7 @@ class _MainScreenState extends State<MainScreen> {
   void onChapterSelected(Map<String, dynamic> chapterData) {
     setState(() {
       selectedChapterData = chapterData;
-      _lastIndexBeforeDetail = 12; // User came from Subjects/Chapters
+      _lastIndexBeforeDetail = 5; // User came from Subjects/Chapters
     });
     Provider.of<NavigationProvider>(context, listen: false).setIndex(13);
   }
@@ -77,6 +77,10 @@ class _MainScreenState extends State<MainScreen> {
     Provider.of<NavigationProvider>(context, listen: false).setIndex(11);
   }
 
+  void updateSubjectState(String newSubject) {
+    selectedSubjectName = newSubject;
+  }
+
   @override
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
@@ -86,25 +90,18 @@ class _MainScreenState extends State<MainScreen> {
         : navProvider.currentIndex;
 
     final List<Widget> pages = [
-      // Inside pages/main_screen.dart
-      // Change this block in your MainScreen:
       HomePage(
         onHighlightTap: (Highlight h) {
-          // 1. Update the state so the IndexedStack builds the Detail page
           setState(() => selectedHighlight = h);
-
-          // 2. Switch to the index that holds the detail page
           Provider.of<NavigationProvider>(context, listen: false).setIndex(10);
-
-          // 3. Return a dummy Future so your existing 'await' in HomePage doesn't crash
           return Future.value();
         },
       ), // 0
-      FavoritePage(
+      BookmarkPage(
         onChapterTap: (chapterData) {
           setState(() {
             selectedChapterData = chapterData;
-            _lastIndexBeforeDetail = 1; // Explicitly set to Favorites index
+            _lastIndexBeforeDetail = 1;
           });
           navProvider.setIndex(13); // Navigate to Details
         },
@@ -112,42 +109,49 @@ class _MainScreenState extends State<MainScreen> {
       const InfoPage(), // 2
       const SettingsPage(), // 3
       StemInfoPage(onSelect: onStemSelect), // 4
-      LearningMaterialPage(
-        onSubjectTap: onSubjectSelected,
-        onBackOverride: () => navProvider.setIndex(0),
+      SubjectChaptersPage(
+        key: navProvider.currentIndex == 5
+            ? const ValueKey('learning_active')
+            : UniqueKey(),
+        initialSubject: selectedSubjectName,
+        onChapterTap: onChapterSelected,
       ), // 5
-      // Index 6: Updated QuizGamePage
       QuizGamePage(
         key: navProvider.currentIndex == 6
             ? const ValueKey('quiz_menu')
             : UniqueKey(),
-        initialSubject: selectedQuizCategory, // Pass the tracked variable
+        initialSubject: selectedQuizCategory,
         onQuizStart: (quizData, mode) {
-          // Update the tracked variable whenever a user starts a quiz
-          // This ensures if they come back, it's set to the one they just played
           final String subjectId = quizData.split('|')[0].trim();
+
           setState(() {
-            if (subjectId == "1") selectedQuizCategory = "Science";
-            if (subjectId == "2") selectedQuizCategory = "Mathematics";
-            if (subjectId == "3") selectedQuizCategory = "Computer Science";
-            if (subjectId == "4")
+            if (subjectId == "1" || subjectId == "Science") {
+              selectedQuizCategory = "Science";
+            } else if (subjectId == "2" || subjectId == "Mathematics") {
+              selectedQuizCategory = "Mathematics";
+            } else if (subjectId == "3" ||
+                subjectId == "ASK" ||
+                subjectId == "Computer Science") {
+              selectedQuizCategory = "Computer Science";
+            } else if (subjectId == "4" ||
+                subjectId == "RBT" ||
+                subjectId == "Design And Technology") {
               selectedQuizCategory = "Design And Technology";
+            }
           });
 
           onQuizSubjectSelected(quizData);
         },
-      ),
+      ), // 6
+
       const StemCareersPage(), // 7
       const DailyInfoPage(), // 8
       // 9
       FaqPage(
-        // The key changes ONLY when the index is 9.
-        // This forces the FAQ page to REBUILD (resetting _expandedIndex)
-        // ONLY when the user navigates TO this page from another tab.
         key: navProvider.currentIndex == 9
             ? const ValueKey('faq_active')
             : UniqueKey(),
-      ),
+      ), // 9
 
       selectedHighlight != null
           ? HighlightDetailPage(highlight: selectedHighlight)
@@ -160,22 +164,13 @@ class _MainScreenState extends State<MainScreen> {
             )
           : const SizedBox.shrink(), // 11
 
-      selectedSubjectName != null
-          ? SubjectChaptersPage(
-              initialSubject: selectedSubjectName!,
-              onChapterTap: onChapterSelected,
-            )
-          : const SizedBox.shrink(), // 12
+      const SizedBox.shrink(), // 12
 
       selectedChapterData != null
           ? MaterialDetailPage(chapterData: selectedChapterData!)
           : const SizedBox.shrink(), // 13
-      // Inside MainScreen pages list
       selectedQuizData != null
           ? PlayQuizPage(
-              // IMPORTANT: The key MUST be here.
-              // When selectedQuizData changes from "ASK|Easy" to "Science|Easy",
-              // Flutter sees the key is different and runs initState() again.
               key: ValueKey(selectedQuizData),
               subjectAndMode: selectedQuizData!,
               onFinish: () {
@@ -183,7 +178,7 @@ class _MainScreenState extends State<MainScreen> {
                 navProvider.setIndex(6);
               },
             )
-          : const SizedBox.shrink(), // Index 14
+          : const SizedBox.shrink(), // 14
     ];
 
     return PopScope(
@@ -197,15 +192,12 @@ class _MainScreenState extends State<MainScreen> {
         } else if (navProvider.currentIndex == 13) {
           // Use the stored variable to return to the correct index
           navProvider.setIndex(_lastIndexBeforeDetail);
-        } else if (navProvider.currentIndex == 12) {
-          navProvider.setIndex(5); // Back to Subjects from Chapters
+        } else if (navProvider.currentIndex == 5 ||
+            navProvider.currentIndex == 6) {
+          navProvider.setIndex(0);
         } else if (navProvider.currentIndex == 10 ||
             navProvider.currentIndex == 11) {
           navProvider.setIndex(navProvider.currentIndex == 10 ? 0 : 4);
-        } else if (navProvider.currentIndex == 6) {
-          // If user is on the Quiz List and goes back to Home
-          setState(() => selectedQuizCategory = "Science");
-          navProvider.setIndex(0);
         } else {
           navProvider.setIndex(0);
         }
@@ -215,17 +207,15 @@ class _MainScreenState extends State<MainScreen> {
         bottomNavigationBar: AppCurvedNavBar(
           currentIndex: activeNavIconIndex,
           onTap: (index) {
-            // If the user clicks the Quiz Game tab (index 6)
-            if (index == 6) {
-              selectedQuizCategory = "Science";
+            if (index == 5) {
+              setState(() {
+                selectedSubjectName = "Science"; // Reset to Science
+              });
             }
 
-            // RESTART LOGIC: If user clicks Home (0), Bookmark (1), etc.
-            // we clear the quiz data so it's fresh for next time.
+            // Clear quiz if switching tabs
             if (selectedQuizData != null) {
-              setState(() {
-                selectedQuizData = null;
-              });
+              setState(() => selectedQuizData = null);
             }
             navProvider.setIndex(index);
           },

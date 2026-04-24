@@ -1,13 +1,13 @@
 import 'package:flutter_localization/flutter_localization.dart';
 
 // The Map of Locales for main.dart
-const List<MapLocale> LOCALES = [
-  MapLocale('en', EN_DATA),
-  MapLocale('ms', MS_DATA),
+const List<MapLocale> locales = [
+  MapLocale('en', endata),
+  MapLocale('ms', msdata),
 ];
 
 // ENGLISH DATA
-const Map<String, dynamic> EN_DATA = {
+const Map<String, dynamic> endata = {
   'home_title': 'STEMXplore F2',
   'info_title': 'Info',
   'bookmark_title': 'Bookmark',
@@ -69,7 +69,7 @@ const Map<String, dynamic> EN_DATA = {
 };
 
 // MALAY DATA
-const Map<String, dynamic> MS_DATA = {
+const Map<String, dynamic> msdata = {
   'home_title': 'STEMXplore F2',
   'info_title': 'Maklumat',
   'bookmark_title': 'Penanda Buku',

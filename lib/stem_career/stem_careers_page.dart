@@ -1,17 +1,15 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:stemxploref2/widgets/gradient_background.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart';
 import 'package:stemxploref2/widgets/rawscrollbar.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import '../navigation_provider.dart';
-import '../ipaddress.dart';
 import '../widgets/box_shadow.dart';
 import 'package:stemxploref2/stem_career/career_quiz.dart';
 import '../stem_career/career_logic.dart';
-import 'package:photo_view/photo_view.dart';
+import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/database_helper.dart';
 
 class StemCareersPage extends StatefulWidget {
   static const routeName = '/stem-careers';
@@ -31,6 +29,8 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
   int _expandedIndex = -1;
   final ScrollController _scrollController = ScrollController(),
       _exploreScrollController = ScrollController();
+
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   @override
   void dispose() {
@@ -69,21 +69,49 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
       _errorMessage = null;
     });
     try {
-      final response = await http
-          .get(Uri.parse('${ipaddress.baseUrl}fetch_career_quiz.php'))
-          .timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      final db = await _dbHelper.database;
+      final List<Map<String, dynamic>> rawQuestions = await db.query(
+        'stem_questions',
+      );
+      final List<Map<String, dynamic>> rawOptions = await db.query(
+        'stem_options',
+      );
+
+      final List<Map<String, dynamic>> structuredQuestions = rawQuestions.map((
+        q,
+      ) {
+        return {
+          'id': q['id'].toString(),
+          'q_text_en': q['q_text_en'],
+          'q_text_ms': q['q_text_ms'],
+          'options': rawOptions
+              .where(
+                (opt) => opt['question_id'].toString() == q['id'].toString(),
+              )
+              .map(
+                (opt) => {
+                  'id': opt['id'].toString(),
+                  'opt_text_en': opt['opt_text_en'],
+                  'opt_text_ms': opt['opt_text_ms'],
+                  'score_tag': opt['score_tag']?.toString(),
+                },
+              )
+              .toList(),
+        };
+      }).toList();
+
+      final List<Map<String, dynamic>> careers = await db.query('stem_careers');
+
+      if (mounted) {
         setState(() {
-          dbQuestions = data['questions'] ?? [];
-          allCareers = data['careers'] ?? [];
+          dbQuestions = structuredQuestions;
+          allCareers = careers;
           _isLoading = false;
         });
-      } else {
-        _handleLoadError("Server Error: ${response.statusCode}");
       }
     } catch (e) {
-      _handleLoadError("Connection Failed!\nMake sure XAMPP is running.");
+      debugPrint("SQLite Error: $e");
+      _handleLoadError("Database Error!\nUnable to load offline career data.");
     }
   }
 
@@ -112,6 +140,12 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     final bool isEn = nav.locale.languageCode == 'en',
         isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // RESPONSIVE CALCULATIONS
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isTablet = screenWidth >= 600;
+    final double verticalGap = isTablet ? 3 : 5;
+    final double responsiveRatio = isTablet ? 10 : 10;
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
       body: GradientBackground(
@@ -122,7 +156,13 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  child: _buildBody(isEn, context),
+                  child: _buildBody(
+                    isEn,
+                    context,
+                    isTablet,
+                    verticalGap,
+                    responsiveRatio,
+                  ),
                 ),
               ),
             ],
@@ -150,7 +190,13 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     ),
   );
 
-  Widget _buildBody(bool isEn, BuildContext context) {
+  Widget _buildBody(
+    bool isEn,
+    BuildContext context,
+    bool isTablet,
+    double verticalGap,
+    double responsiveRatio,
+  ) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_errorMessage != null && (_showQuiz || _isExploreAllMode)) {
       return _buildErrorState(isEn);
@@ -158,7 +204,7 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     if (_isExploreAllMode) return _buildExploreAllView(isEn, context);
     if (_showResults) return _buildResultsView(isEn, context);
     return _showQuiz
-        ? _buildFullQuiz(isEn, context)
+        ? _buildFullQuiz(isEn, context, isTablet, verticalGap, responsiveRatio)
         : _buildStartCard(isEn, context);
   }
 
@@ -182,7 +228,7 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     return Center(
       child: StemQuizDesign.buildContainer(
         context: context,
-        margin: const EdgeInsets.symmetric(horizontal: 40),
+        margin: const EdgeInsets.symmetric(horizontal: 35),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -220,7 +266,17 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     );
   }
 
-  Widget _buildFullQuiz(bool isEn, BuildContext context) {
+  Widget _buildFullQuiz(
+    bool isEn,
+    BuildContext context,
+    bool isTablet,
+    double verticalGap,
+    double responsiveRatio,
+  ) {
+    if (dbQuestions.length < 5) {
+      return const Center(child: Text("Loading career questions..."));
+    }
+
     final progress =
         (singleChoices.length + (multiChoicesQ5.isNotEmpty ? 1 : 0)) / 5;
     return StemQuizDesign.buildContainer(
@@ -240,8 +296,26 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
                     children: [
                       ...dbQuestions
                           .sublist(0, 4)
-                          .map((q) => _buildQuestion(q, isEn, context, false)),
-                      _buildQuestion(dbQuestions[4], isEn, context, true),
+                          .map(
+                            (q) => _buildQuestion(
+                              q,
+                              isEn,
+                              context,
+                              false,
+                              isTablet,
+                              verticalGap,
+                              responsiveRatio,
+                            ),
+                          ),
+                      _buildQuestion(
+                        dbQuestions[4],
+                        isEn,
+                        context,
+                        true,
+                        isTablet,
+                        verticalGap,
+                        responsiveRatio,
+                      ),
                     ],
                   ),
                 ),
@@ -263,7 +337,15 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     );
   }
 
-  Widget _buildQuestion(Map q, bool isEn, BuildContext context, bool isMulti) {
+  Widget _buildQuestion(
+    Map q,
+    bool isEn,
+    BuildContext context,
+    bool isMulti,
+    bool isTablet,
+    double verticalGap,
+    double responsiveRatio,
+  ) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     int qId = int.parse(q['id'].toString());
     return Padding(
@@ -284,20 +366,22 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 2.8,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 10,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: isTablet ? 2 : 1,
+                mainAxisSpacing: verticalGap,
+                crossAxisSpacing: 15,
+                childAspectRatio: responsiveRatio,
               ),
               itemCount: (q['options'] as List).length,
               itemBuilder: (c, i) => _optionRow(
                 q['options'][i],
                 isEn,
                 context,
-                multiChoicesQ5.contains(int.parse(q['options'][i]['id'])),
+                multiChoicesQ5.contains(
+                  int.parse(q['options'][i]['id'].toString()),
+                ),
                 () => setState(() {
-                  int id = int.parse(q['options'][i]['id']);
+                  int id = int.parse(q['options'][i]['id'].toString());
                   multiChoicesQ5.contains(id)
                       ? multiChoicesQ5.remove(id)
                       : multiChoicesQ5.add(id);
@@ -310,8 +394,10 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
                 opt,
                 isEn,
                 context,
-                singleChoices[qId] == int.parse(opt['id']),
-                () => setState(() => singleChoices[qId] = int.parse(opt['id'])),
+                singleChoices[qId] == int.parse(opt['id'].toString()),
+                () => setState(
+                  () => singleChoices[qId] = int.parse(opt['id'].toString()),
+                ),
               ),
             ),
         ],
@@ -346,13 +432,11 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
             Expanded(
               child: Text(
                 isEn ? opt['opt_text_en'] : opt['opt_text_ms'],
-                // Add these three lines:
                 softWrap: true,
                 maxLines: 2,
                 overflow: TextOverflow.visible,
                 style: TextStyle(
-                  fontSize:
-                      15, // Slightly smaller font (13 instead of 15) helps a lot
+                  fontSize: 15,
                   color: selected
                       ? activeColor
                       : (isDark ? Colors.white : Colors.black),
@@ -463,14 +547,15 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
                 padding: const EdgeInsets.only(right: 5),
                 itemCount: sorted.length,
                 itemBuilder: (c, i) {
-                  final career = sorted[i], cat = career['category_en'];
+                  final career = sorted[i];
+                  final String catEn = career['category_en'] ?? '';
+                  final String catMs = career['category_ms'] ?? catEn;
                   bool showHeader =
-                      i == 0 || cat != sorted[i - 1]['category_en'];
+                      i == 0 || catEn != sorted[i - 1]['category_en'];
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (showHeader)
-                        _catHeader(isEn ? cat : career['category_ms'], cat),
+                      if (showHeader) _catHeader(isEn ? catEn : catMs, catEn),
                       _careerTile(career, i, isEn, context),
                     ],
                   );
@@ -478,10 +563,9 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
               ),
             ),
           ),
-          const SizedBox(height: 15), // Spacing added as requested
+          const SizedBox(height: 15),
           Align(
-            alignment:
-                Alignment.bottomRight, // Pins the button to the bottom right
+            alignment: Alignment.bottomRight,
             child: StemQuizDesign.actionButton(
               context,
               isEn ? "Exit" : "Keluar",
@@ -496,7 +580,6 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     );
   }
 
-  // --- Minor UI Components ---
   Widget _buildProgressBar(bool isEn, double progress, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
@@ -561,7 +644,7 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
 
   Widget _suggestedHeader(bool isEn, String field, Color color) {
     return Align(
-      alignment: Alignment.centerLeft, // This pushes the text to the left slide
+      alignment: Alignment.centerLeft,
       child: RichText(
         text: TextSpan(
           style: TextStyle(
@@ -583,24 +666,11 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
   }
 
   Widget _mindMap(Map career, bool isEn) {
-    String? rawPath = isEn ? career['image_en_url'] : career['image_ms_url'];
-
-    if (rawPath == null || rawPath.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(20),
-        child: Text("No image path found in DB"),
-      );
-    }
-
-    String base = ipaddress.baseUrl.endsWith('/')
-        ? ipaddress.baseUrl.substring(0, ipaddress.baseUrl.length - 1)
-        : ipaddress.baseUrl;
-
-    String path = rawPath.startsWith('/') ? rawPath : "/$rawPath";
-    String finalUrl = "$base$path";
+    String? assetPath = isEn ? career['image_en'] : career['image_ms'];
+    if (assetPath == null || assetPath.isEmpty) return const SizedBox.shrink();
 
     return GestureDetector(
-      onTap: () => _showFullMindMap(context, finalUrl), // OPEN ZOOM VIEW
+      onTap: () => _showFullMindMap(context, assetPath),
       child: Container(
         margin: const EdgeInsets.only(top: 10),
         decoration: BoxDecoration(
@@ -610,32 +680,12 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: Hero(
-            tag: finalUrl, // Match the tag in the full-screen view
-            child: Image.network(
-              finalUrl,
+            tag: assetPath,
+            child: Image.asset(
+              assetPath,
               fit: BoxFit.contain,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return const SizedBox(
-                  height: 150,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      const Icon(Icons.broken_image, color: Colors.red),
-                      Text(
-                        "Load Error!\nURL: $finalUrl",
-                        style: const TextStyle(color: Colors.red, fontSize: 10),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              },
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.broken_image, color: Colors.red),
             ),
           ),
         ),
@@ -643,69 +693,40 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
     );
   }
 
-  void _showFullMindMap(BuildContext context, String imageUrl) {
+  void _showFullMindMap(BuildContext context, String assetPath) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            backgroundColor: Colors.black,
-            // CHANGED: Added leading with Icons.close
-            leading: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            iconTheme: const IconThemeData(color: Colors.white),
-            elevation: 0,
-          ),
-          body: Center(
-            child: Hero(
-              tag: imageUrl,
-              child: PhotoView(
-                imageProvider: NetworkImage(imageUrl),
-                initialScale: PhotoViewComputedScale.contained,
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 3.0,
-                backgroundDecoration: const BoxDecoration(color: Colors.black),
-                loadingBuilder: (context, event) => const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ),
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, _, _) =>
+            FullScreenImagePage(assetPath: assetPath),
+        transitionsBuilder: (context, animation, _, child) =>
+            FadeTransition(opacity: animation, child: child),
       ),
     );
   }
 
   void _handleCompletion(bool isEn) {
-    // 1. Check the validation requirement
     if (multiChoicesQ5.length < 3) {
-      // 2. If validation fails, show the custom designed dialog directly
       final bool isDark = Provider.of<ThemeProvider>(
         context,
         listen: false,
       ).isDarkMode;
-
       showDialog(
         context: context,
         builder: (context) => Dialog(
           backgroundColor: Colors.transparent,
-          elevation: 0,
           child: Container(
             padding: const EdgeInsets.all(25),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF3D3D3D) : Colors.white,
               borderRadius: BorderRadius.circular(20),
-              // Applying your imported appBoxShadow for depth
               boxShadow: isDark ? [] : appBoxShadow,
-              border: isDark ? Border.all(color: Colors.white10) : null,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Using a red warning icon as per your original requirement
                 const Icon(Icons.info_outline, color: Colors.red, size: 40),
                 const SizedBox(height: 15),
                 Text(
@@ -720,7 +741,6 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
                   ),
                 ),
                 const SizedBox(height: 25),
-                // Using your design helper's action button
                 StemQuizDesign.actionButton(
                   context,
                   "OK",
@@ -732,10 +752,9 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
         ),
       );
     } else {
-      // 3. If validation passes, transition to the results view
       setState(() {
         _showResults = true;
-        _expandedIndex = -1; // Reset career tiles expansion
+        _expandedIndex = -1;
       });
     }
   }

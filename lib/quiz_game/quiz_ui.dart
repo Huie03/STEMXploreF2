@@ -38,7 +38,7 @@ class QuizUi {
     required BuildContext context,
     required int index,
     required String text,
-    String? imageUrl,
+    String? imageUrl, // This will now handle the asset path from SQLite
     required int correctIndex,
     int? selectedIndex,
     required bool showFeedback,
@@ -58,26 +58,24 @@ class QuizUi {
       }
     }
 
-    // If feedback is shown, text is white.
     Color contentColor = (showFeedback && (isCorrect || isWrong))
         ? Colors.white
         : Theme.of(context).colorScheme.onSurface;
 
-    // Icon colors
     Widget? feedbackIcon;
     if (showFeedback && (isCorrect || isWrong)) {
       feedbackIcon = Icon(
         isCorrect ? Icons.check_circle : Icons.cancel,
         color: isCorrect
-            ? Color.fromARGB(243, 12, 206, 18)
-            : Color.fromARGB(255, 255, 0, 0),
+            ? const Color.fromARGB(243, 12, 206, 18)
+            : const Color.fromARGB(255, 255, 0, 0),
         size: imageUrl != null ? 30 : 24,
       );
     }
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      margin: imageUrl == null
+      margin: imageUrl == null || imageUrl.isEmpty
           ? const EdgeInsets.symmetric(vertical: 6)
           : EdgeInsets.zero,
       decoration: BoxDecoration(
@@ -91,13 +89,14 @@ class QuizUi {
         child: Stack(
           children: [
             Padding(
-              padding: EdgeInsets.all(imageUrl != null ? 8.0 : 16.0),
-              child: imageUrl != null
+              padding: EdgeInsets.all(
+                imageUrl != null && imageUrl.isNotEmpty ? 8.0 : 16.0,
+              ),
+              child: imageUrl != null && imageUrl.isNotEmpty
                   ? _buildImageLayout(imageUrl, text, contentColor)
                   : _buildTextLayout(text, feedbackIcon, contentColor),
             ),
-
-            if (imageUrl != null && feedbackIcon != null)
+            if (imageUrl != null && imageUrl.isNotEmpty && feedbackIcon != null)
               Positioned(
                 top: 12,
                 right: 12,
@@ -135,20 +134,18 @@ class QuizUi {
     );
   }
 
-  static Widget _buildImageLayout(String url, String text, Color textColor) {
+  // UPDATED: Handles asset paths from SQLite instead of network URLs
+  static Widget _buildImageLayout(String path, String text, Color textColor) {
     final bool hasText = text.trim().isNotEmpty;
 
-    Widget imageWidget = Image.network(
-      url,
+    // Use Image.asset because your SQLite stores paths like 'assets/Quiz/...'
+    Widget imageWidget = Image.asset(
+      path,
       fit: BoxFit.contain,
       width: double.infinity,
       height: double.infinity,
-      errorBuilder: (_, __, ___) =>
+      errorBuilder: (_, _, _) =>
           const Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-      },
     );
 
     if (!hasText) {
@@ -172,7 +169,6 @@ class QuizUi {
             ),
           ),
         ),
-
         Expanded(
           flex: 1,
           child: Center(
@@ -182,7 +178,7 @@ class QuizUi {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14, // Slightly smaller for SQLite image layouts
                 fontWeight: FontWeight.bold,
                 color: textColor,
               ),
@@ -203,7 +199,8 @@ class QuizUi {
     required VoidCallback onReview,
   }) {
     final bool isPerfect = score == total;
-    final bool shouldCelebrate = score >= 7;
+    // Celeberation logic matches the standard 70% threshold
+    final bool shouldCelebrate = total > 0 && (score / total) >= 0.7;
 
     return Container(
       color: Colors.transparent,
@@ -347,6 +344,7 @@ class QuizUi {
     required BuildContext context,
     required Widget child,
     List<BoxShadow>? boxShadow,
+    EdgeInsetsGeometry? padding,
   }) {
     return Container(
       width: double.infinity,
@@ -355,6 +353,7 @@ class QuizUi {
         borderRadius: BorderRadius.circular(20),
         boxShadow: boxShadow,
       ),
+      padding: padding ?? const EdgeInsets.fromLTRB(30, 13, 30, 16),
       child: child,
     );
   }

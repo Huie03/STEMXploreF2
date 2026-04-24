@@ -20,15 +20,31 @@ class FeatureButton extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final bool isDark = themeProvider.isDarkMode;
 
-    final Color buttonColor = isDark
-        ? const Color(0xFFEB9000)
-        : const Color(0xFFEB9000);
+    final Size screenSize = MediaQuery.of(context).size;
+    final double shortestSide = screenSize.shortestSide;
+    final double screenHeight = screenSize.height;
+
+    final bool isTablet = shortestSide >= 600;
+    final bool isSmallPhone = screenHeight < 700;
+
+    final Color buttonColor = const Color(0xFFEB9000);
     final Color textColor = Theme.of(context).colorScheme.onSurface;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         double availableHeight = constraints.maxHeight;
-        double imageSize = availableHeight * 0.60;
+
+        double imageMultiplier = isTablet ? 0.63 : 0.60;
+        double imageSize = availableHeight * imageMultiplier;
+
+        double dynamicFontSize;
+        if (isTablet) {
+          dynamicFontSize = 20.0;
+        } else if (isSmallPhone) {
+          dynamicFontSize = 14.0;
+        } else {
+          dynamicFontSize = 17.0;
+        }
 
         return Container(
           decoration: BoxDecoration(
@@ -51,14 +67,14 @@ class FeatureButton extends StatelessWidget {
                     height: imageSize,
                     fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 5),
+                  SizedBox(height: isSmallPhone ? 2 : 5),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
                       label,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 17,
+                        fontSize: dynamicFontSize,
                         fontWeight: FontWeight.bold,
                         color: textColor,
                       ),
