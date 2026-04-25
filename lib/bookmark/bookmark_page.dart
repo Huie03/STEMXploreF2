@@ -281,14 +281,24 @@ class _BookmarkPageState extends State<BookmarkPage> {
   }
 
   String _translateSubject(String subject, bool isEnglish) {
-    if (isEnglish) return subject;
+    if (isEnglish) {
+      switch (subject) {
+        case "Computer Science (ASK)":
+          return "Fundamentals of Computer Science";
+        case "Design and Technology (RBT)":
+          return "Design and Technology";
+        default:
+          return subject;
+      }
+    }
+
     switch (subject) {
       case "Science":
         return "Sains";
       case "Mathematics":
         return "Matematik";
       case "Computer Science (ASK)":
-        return "Asas Sains Komputer (ASK)";
+        return "Asas Sains Komputer";
       case "Design and Technology (RBT)":
         return "Reka Bentuk dan Teknologi (RBT)";
       default:
