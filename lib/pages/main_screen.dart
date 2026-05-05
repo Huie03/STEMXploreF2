@@ -41,16 +41,15 @@ class _MainScreenState extends State<MainScreen> {
     Provider.of<NavigationProvider>(context, listen: false).setIndex(12);
   }
 
-  // When coming from Learning Materials (SubjectChapters)
   void onChapterSelected(Map<String, dynamic> chapterData) {
     setState(() {
       selectedChapterData = chapterData;
+      selectedSubjectName = chapterData['subject'] ?? "Science";
       _lastIndexBeforeDetail = 5;
     });
     Provider.of<NavigationProvider>(context, listen: false).setIndex(13);
   }
 
-  // When coming from Favorites
   void onFavoriteChapterSelected(Map<String, dynamic> chapterData) {
     setState(() {
       selectedChapterData = chapterData;
@@ -95,6 +94,17 @@ class _MainScreenState extends State<MainScreen> {
           Provider.of<NavigationProvider>(context, listen: false).setIndex(10);
           return Future.value();
         },
+
+        onLearningTap: () {
+          setState(() => selectedSubjectName = "Science");
+          navProvider.setIndex(5);
+        },
+
+        onQuizTap: () {
+          setState(() => selectedQuizCategory = "Science");
+          navProvider.setIndex(6);
+          Provider.of<NavigationProvider>(context, listen: false).setIndex(6);
+        },
       ), // 0
       BookmarkPage(
         onChapterTap: (chapterData) {
@@ -105,13 +115,14 @@ class _MainScreenState extends State<MainScreen> {
           navProvider.setIndex(13); // Navigate to Details
         },
       ),
-      const InfoPage(), // 2
+      InfoPage(key: ValueKey('info_${navProvider.currentIndex}')), // 2
       const SettingsPage(), // 3
-      StemInfoPage(onSelect: onStemSelect), // 4
+      StemInfoPage(
+        key: ValueKey('stem_info_${navProvider.currentIndex}'),
+        onSelect: onStemSelect,
+      ), // 4
       SubjectChaptersPage(
-        key: navProvider.currentIndex == 5
-            ? const ValueKey('learning_active')
-            : UniqueKey(),
+        key: ValueKey('subject_chapters_${navProvider.currentIndex}'),
         initialSubject: selectedSubjectName,
         onChapterTap: onChapterSelected,
       ), // 5
@@ -153,12 +164,19 @@ class _MainScreenState extends State<MainScreen> {
       ), // 9
 
       selectedHighlight != null
-          ? HighlightDetailPage(highlight: selectedHighlight)
+          ? HighlightDetailPage(
+              key: ValueKey(
+                'highlight_${selectedHighlight.id}_${navProvider.currentIndex}',
+              ),
+              highlight: selectedHighlight,
+            )
           : const SizedBox.shrink(), // 10
 
       selectedStemInfo != null
           ? StemDetailPage(
-              key: ValueKey(selectedStemInfo['title_en'] ?? 'stem_detail'),
+              key: ValueKey(
+                'stem_${selectedStemInfo['id']}_${navProvider.currentIndex}',
+              ),
               stemInfo: selectedStemInfo,
             )
           : const SizedBox.shrink(), // 11
@@ -168,6 +186,7 @@ class _MainScreenState extends State<MainScreen> {
       selectedChapterData != null
           ? MaterialDetailPage(chapterData: selectedChapterData!)
           : const SizedBox.shrink(), // 13
+
       selectedQuizData != null
           ? PlayQuizPage(
               key: ValueKey(selectedQuizData),
@@ -187,15 +206,16 @@ class _MainScreenState extends State<MainScreen> {
 
         if (navProvider.currentIndex == 14) {
           setState(() => selectedQuizData = null);
-          navProvider.setIndex(6); // Back to Quiz List from the Game
+          navProvider.setIndex(6);
         } else if (navProvider.currentIndex == 13) {
           navProvider.setIndex(_lastIndexBeforeDetail);
         } else if (navProvider.currentIndex == 5 ||
             navProvider.currentIndex == 6) {
+          setState(() {
+            selectedSubjectName = "Science";
+            selectedQuizCategory = "Science";
+          });
           navProvider.setIndex(0);
-        } else if (navProvider.currentIndex == 10 ||
-            navProvider.currentIndex == 11) {
-          navProvider.setIndex(navProvider.currentIndex == 10 ? 0 : 4);
         } else {
           navProvider.setIndex(0);
         }
@@ -207,11 +227,16 @@ class _MainScreenState extends State<MainScreen> {
           onTap: (index) {
             if (index == 5) {
               setState(() {
-                selectedSubjectName = "Science"; // Reset to Science
+                selectedSubjectName = "Science";
               });
             }
 
-            // Clear quiz if switching tabs
+            if (index == 6) {
+              setState(() {
+                selectedQuizCategory = "Science";
+              });
+            }
+
             if (selectedQuizData != null) {
               setState(() => selectedQuizData = null);
             }

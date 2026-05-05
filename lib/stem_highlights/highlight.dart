@@ -19,6 +19,8 @@ class Highlight {
   final String sourceUrl;
   final String? videoUrl;
   final List<Map<String, String?>> extraSources;
+  final String? cEn;
+  final String? cMs;
 
   Highlight({
     required this.id,
@@ -39,6 +41,8 @@ class Highlight {
     required this.sourceUrl,
     this.videoUrl,
     this.extraSources = const [],
+    this.cEn,
+    this.cMs,
   });
 
   factory Highlight.fromMap(Map<String, dynamic> map) {
@@ -67,6 +71,8 @@ class Highlight {
               ).map((x) => Map<String, String?>.from(x)),
             )
           : [],
+      cEn: map['C_en'],
+      cMs: map['C_ms'],
     );
   }
 }

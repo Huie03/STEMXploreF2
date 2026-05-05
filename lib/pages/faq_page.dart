@@ -23,29 +23,23 @@ class _FaqPageState extends State<FaqPage> {
   int _expandedIndex = -1; // -1 means everything is closed
   late Future<List<Map<String, dynamic>>> _faqFuture;
 
-  // 1. Keep initState as is - it ensures boxes are closed on fresh entry
   @override
   void initState() {
     super.initState();
     _expandedIndex = -1;
     _faqFuture = _fetchFaqs();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+    });
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients && _expandedIndex == -1) {
-        _scrollController.jumpTo(0);
-      }
-    });
   }
 
   Future<List<Map<String, dynamic>>> _fetchFaqs() async {

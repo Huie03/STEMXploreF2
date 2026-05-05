@@ -243,6 +243,10 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                           confettiController: _confettiController,
                           onReplay: _resetAndStartQuiz,
                           onReview: _viewReview,
+                          onExit: () {
+                            _stopMusic();
+                            widget.onFinish();
+                          },
                         )
                       : (_errorMessage != null
                             ? _buildError()
@@ -435,38 +439,27 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                       child: Column(
                         children: [
                           Text(
-                            "${isEnglish ? "Correct Answer" : "Jawapan Betul"}:",
+                            isEnglish ? "Explanation:" : "Penerangan:",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: textColor.withValues(alpha: 0.8),
-                              fontSize: 16,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            isEnglish
+                                ? (q['explanation_en'] ??
+                                      "No explanation available.")
+                                : (q['explanation_ms'] ??
+                                      "Tiada penerangan tersedia."),
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: textColor,
+                              height: 1.4,
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
-                          if (optionData[correctIndex]['text']!.isNotEmpty)
-                            Text(
-                              optionData[correctIndex]['text']!,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: textColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          if (optionData[correctIndex]['image']!
-                              .isNotEmpty) ...[
-                            const SizedBox(height: 5),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.asset(
-                                // Local asset image
-                                optionData[correctIndex]['image']!,
-                                height: 80,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -509,9 +502,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: isDark
-                  ? const Color.fromARGB(255, 115, 114, 114)
-                  : Colors.black.withValues(alpha: 0.8),
+              backgroundColor: const Color(0xFFEB9000),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),

@@ -22,19 +22,15 @@ class StemDetailPage extends StatefulWidget {
 
 class _StemDetailPageState extends State<StemDetailPage> {
   final ScrollController _scrollController = ScrollController();
-  bool _needsScrollReset = true;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_needsScrollReset) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.jumpTo(0);
-          _needsScrollReset = false;
-        }
-      });
-    }
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+    });
   }
 
   @override
@@ -80,7 +76,6 @@ class _StemDetailPageState extends State<StemDetailPage> {
     final String? detailImage = getString('detailImage');
     final String? sourceText = getString('source');
 
-    // Extract video path from the data map
     final String? videoPath = item['video']?.toString();
     final bool hasVideo = videoPath != null && videoPath.trim().isNotEmpty;
 

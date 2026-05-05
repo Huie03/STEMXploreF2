@@ -20,7 +20,6 @@ class StemInfoPage extends StatefulWidget {
 
 class _StemInfoPageState extends State<StemInfoPage> {
   final ScrollController _scrollController = ScrollController();
-  bool _needsScrollReset = true;
 
   List<Map<String, dynamic>> _stemInfoList = [];
   bool _isLoading = true;
@@ -29,6 +28,12 @@ class _StemInfoPageState extends State<StemInfoPage> {
   void initState() {
     super.initState();
     _loadDataFromDatabase();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+    });
   }
 
   Future<void> _loadDataFromDatabase() async {
@@ -42,19 +47,6 @@ class _StemInfoPageState extends State<StemInfoPage> {
     } catch (e) {
       debugPrint("Error loading database: $e");
       setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_needsScrollReset) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.jumpTo(0);
-          _needsScrollReset = false;
-        }
-      });
     }
   }
 

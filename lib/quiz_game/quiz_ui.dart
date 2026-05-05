@@ -195,6 +195,7 @@ class QuizUi {
     required ConfettiController confettiController,
     required VoidCallback onReplay,
     required VoidCallback onReview,
+    required VoidCallback onExit,
   }) {
     final bool isPerfect = score == total;
     final bool shouldCelebrate = total > 0 && (score / total) >= 0.7;
@@ -263,6 +264,14 @@ class QuizUi {
                       icon: Icons.visibility,
                       color: const Color(0xFFEB9000),
                       pressed: onReview,
+                      outlined: true,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildDialogBtn(
+                      label: isEnglish ? "EXIT" : "KELUAR",
+                      icon: Icons.exit_to_app,
+                      color: const Color(0xFFEB9000),
+                      pressed: onExit,
                       outlined: true,
                     ),
                   ],

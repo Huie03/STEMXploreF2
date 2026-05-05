@@ -25,6 +25,7 @@ class SubjectChaptersPage extends StatefulWidget {
 
 class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   late String selectedSubject;
+  late Future<List<Map<String, dynamic>>> _chaptersFuture;
   final ScrollController _filterScrollController = ScrollController();
   final ScrollController _verticalScrollController = ScrollController();
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -46,37 +47,45 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   @override
   void initState() {
     super.initState();
+    // CRITICAL: This ensures the reset from the parent is captured
     selectedSubject = widget.initialSubject;
+    _chaptersFuture = _getChaptersFromDb(selectedSubject);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncStateToSubject(selectedSubject);
+      // Only scroll the top bar, don't force jumpTo(0) here
+      int index = subjects.indexOf(selectedSubject);
+      if (index != -1) _scrollToIndex(index);
     });
   }
 
   @override
   void didUpdateWidget(covariant SubjectChaptersPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // This triggers when the parent screen changes the 'initialSubject'
+
+    // If the parent (MainScreen) forces a subject change
     if (oldWidget.initialSubject != widget.initialSubject) {
       setState(() {
-        //Update the local state to match the new subject from parent
         selectedSubject = widget.initialSubject;
+        _chaptersFuture = _getChaptersFromDb(selectedSubject);
       });
-
-      //Sync the UI (scroll to the new tab and reset the chapter list to top)
       _syncStateToSubject(selectedSubject);
     }
   }
 
   void _syncStateToSubject(String subject) {
-    // Find the index of the subject
     int index = subjects.indexOf(subject);
     if (index != -1) {
       _scrollToIndex(index);
     }
 
+    // Only jump to the top of the vertical list if we have a controller
+    // and we are intentionally resetting (e.g., user clicked a new subject tab)
     if (_verticalScrollController.hasClients) {
-      _verticalScrollController.jumpTo(0);
+      // If the vertical scroll is already at 0, no need to jump.
+      // This prevents unnecessary resets during simple UI rebuilds.
+      if (_verticalScrollController.offset != 0) {
+        _verticalScrollController.jumpTo(0);
+      }
     }
   }
 
@@ -172,7 +181,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
               const SizedBox(height: 8),
               Expanded(
                 child: FutureBuilder<List<dynamic>>(
-                  future: _getChaptersFromDb(selectedSubject),
+                  future: _chaptersFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -288,9 +297,21 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
           bool isSelected = selectedSubject == subjects[index];
 
           return GestureDetector(
+            // Update your _buildAnimatedFilter's onTap
             onTap: () {
-              setState(() => selectedSubject = subjects[index]);
-              _scrollToIndex(index);
+              if (selectedSubject == subjects[index]) return; // Optimization
+
+              setState(() {
+                selectedSubject = subjects[index];
+                _chaptersFuture = _getChaptersFromDb(selectedSubject);
+              });
+
+              _scrollToIndex(index); // Centers the horizontal tab
+
+              // Reset the vertical list to the top immediately
+              if (_verticalScrollController.hasClients) {
+                _verticalScrollController.jumpTo(0);
+              }
             },
             child: AnimatedScale(
               scale: isSelected ? 1.05 : 0.95,

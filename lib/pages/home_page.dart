@@ -9,11 +9,20 @@ import 'package:stemxploref2/stem_highlights/highlight.dart';
 import 'package:stemxploref2/database_helper.dart';
 import 'package:stemxploref2/widgets/feature_button.dart';
 import 'package:stemxploref2/widgets/box_shadow.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class HomePage extends StatefulWidget {
   static const routeName = '/home';
   final Function(Highlight) onHighlightTap;
-  const HomePage({super.key, required this.onHighlightTap});
+  final VoidCallback onQuizTap;
+  final VoidCallback onLearningTap;
+
+  const HomePage({
+    super.key,
+    required this.onHighlightTap,
+    required this.onQuizTap,
+    required this.onLearningTap,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -193,8 +202,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 return FeatureButton(
                                   label: translate(feature['key'], isEnglish),
                                   imageAsset: feature['icon'],
-                                  onTap: () =>
-                                      navProvider.setIndex(feature['index']),
+                                  onTap: () {
+                                    if (feature['index'] == 5) {
+                                      widget.onLearningTap();
+                                    } else if (feature['index'] == 6) {
+                                      widget.onQuizTap();
+                                    } else {
+                                      navProvider.setIndex(feature['index']);
+                                    }
+                                  },
                                 );
                               }).toList(),
                             ),
@@ -292,6 +308,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     double cardHeight,
   ) {
     if (highlights.isEmpty) return const SizedBox.shrink();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -328,6 +345,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             },
           ),
         ),
+
+        const SizedBox(height: 10),
+        Center(
+          child: SmoothPageIndicator(
+            controller: _pageController,
+            count: highlights.length,
+            effect: ExpandingDotsEffect(
+              dotHeight: 8,
+              dotWidth: 8,
+              activeDotColor: const Color(0xFFEB9000),
+              dotColor: isDark ? Colors.white24 : Colors.black12,
+              expansionFactor: 3,
+              spacing: 5,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -339,6 +372,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     bool isDark,
     bool isTablet,
   ) {
+    String contentImagePath = (isEnglish ? h.cEn : h.cMs) ?? "";
+
     return GestureDetector(
       onTap: () async {
         _autoScrollTimer?.cancel();
@@ -353,71 +388,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           boxShadow: isDark ? [] : appBoxShadow,
           border: isDark ? Border.all(color: Colors.white10) : null,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(16),
-              ),
-              child: Image.asset(
-                h.image1Url.startsWith('/')
-                    ? h.image1Url.substring(1)
-                    : h.image1Url,
-                width: isTablet ? 230 : 110,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 110,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.broken_image),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: contentImagePath.isNotEmpty
+              ? Image.asset(
+                  contentImagePath.startsWith('/')
+                      ? contentImagePath.substring(1)
+                      : contentImagePath,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.broken_image, size: 40),
+                  ),
+                )
+              : Container(
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.image, size: 40),
                 ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isEnglish ? h.titleEn : h.titleMs,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: isTablet ? 17 : 15,
-                        height: 1.1,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 5),
-                    Expanded(
-                      child: Text(
-                        isEnglish ? h.subtitleEn : h.subtitleMs,
-                        style: TextStyle(
-                          color: isDark ? Colors.white60 : Colors.black54,
-                          fontSize: isTablet ? 14 : 13,
-                        ),
-                        maxLines: isTablet ? 4 : 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomRight,
-                      child: Text(
-                        translate('readMore', isEnglish),
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

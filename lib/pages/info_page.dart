@@ -19,20 +19,20 @@ class _InfoPageState extends State<InfoPage> {
   final ScrollController _scrollController = ScrollController();
 
   @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
+  void initState() {
+    super.initState();
 
-  //Reset scroll
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    Future.microtask(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.jumpTo(0);
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override

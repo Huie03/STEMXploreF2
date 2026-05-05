@@ -22,19 +22,15 @@ class HighlightDetailPage extends StatefulWidget {
 
 class _HighlightDetailPageState extends State<HighlightDetailPage> {
   final ScrollController _scrollController = ScrollController();
-  bool _needsScrollReset = true;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_needsScrollReset) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.jumpTo(0);
-          _needsScrollReset = false;
-        }
-      });
-    }
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+    });
   }
 
   @override
@@ -55,6 +51,7 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
     final Color subTextColor = isDark ? Colors.white : Colors.black;
 
     return Scaffold(
+      key: ValueKey(widget.highlight.id),
       body: GradientBackground(
         child: SafeArea(
           bottom: false,
@@ -86,7 +83,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
                   child: AppRawScrollbar(
                     controller: _scrollController,
                     child: SingleChildScrollView(
-                      key: UniqueKey(),
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
                       child: Column(
