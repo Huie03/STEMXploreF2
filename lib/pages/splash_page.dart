@@ -144,22 +144,14 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ScaleTransition(
-                scale: _pulseAnimation,
-                child: Icon(
-                  Icons.touch_app,
-                  size: iconSize,
-                  color: Color(0xFFFFA600),
-                ),
-              ),
-              const SizedBox(height: 6),
+              Icon(Icons.touch_app, size: iconSize, color: Color(0xFFFFA600)),
+              const SizedBox(height: 0),
               Text(
-                'Touch to start',
+                'Tap to start',
                 style: GoogleFonts.alice(
                   textStyle: TextStyle(
                     fontSize: hintFontSize,
                     color: Color.fromARGB(136, 0, 0, 0),
-                    fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

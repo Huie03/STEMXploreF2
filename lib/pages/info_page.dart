@@ -140,23 +140,6 @@ class _InfoPageState extends State<InfoPage> {
 
                           const SizedBox(height: 25),
 
-                          // What's New Card
-                          buildInfoCard(
-                            icon: Icons.new_releases,
-                            title: isEnglish ? "What’s New" : "Apa Yang Baharu",
-                            content: isEnglish
-                                ? "• Added interactive STEM modules\n"
-                                      "• Improved bilingual support\n"
-                                      "• Enhanced UI design"
-                                : "• Modul STEM interaktif ditambah\n"
-                                      "• Sokongan dwibahasa dipertingkatkan\n"
-                                      "• Reka bentuk UI dipertingkat",
-                            textColor: textColor,
-                            textAlign: TextAlign.start,
-                          ),
-
-                          const SizedBox(height: 15),
-
                           // About Card
                           buildInfoCard(
                             icon: Icons.info,

@@ -50,6 +50,12 @@ class QuizUi {
     final Color themeSurface = Theme.of(context).colorScheme.surface;
     Color backgroundColor = themeSurface;
 
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    Color borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.5)
+        : Theme.of(context).colorScheme.outlineVariant;
+    double borderWidth = 1.0;
+
     if (showFeedback) {
       if (isCorrect) {
         backgroundColor = const Color.fromARGB(243, 12, 206, 18);
@@ -81,7 +87,8 @@ class QuizUi {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: appBoxShadow,
+        border: Border.all(color: borderColor, width: borderWidth),
+        boxShadow: showFeedback ? [] : appBoxShadow,
       ),
       child: InkWell(
         onTap: showFeedback ? null : onTap,
@@ -197,6 +204,11 @@ class QuizUi {
     required VoidCallback onReview,
     required VoidCallback onExit,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final adaptiveGold = isDark
+        ? Colors.orange.shade300
+        : const Color(0xFFEB9000);
     final bool isPerfect = score == total;
     final bool shouldCelebrate = total > 0 && (score / total) >= 0.7;
 
@@ -212,7 +224,7 @@ class QuizUi {
                 margin: const EdgeInsets.symmetric(horizontal: 30),
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colorScheme.surface,
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: appBoxShadow,
                 ),
@@ -228,18 +240,21 @@ class QuizUi {
                     Text(
                       isPerfect
                           ? (isEnglish ? "Outstanding!" : "Luar Biasa!")
-                          : (isEnglish ? "Quiz Finished!" : "Kuiz Selesai!"),
+                          : (isEnglish ? "Quiz Completed!" : "Kuiz Selesai!"),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 26,
-                        color: Colors.black,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       isEnglish ? "Your Score" : "Markah Anda",
-                      style: TextStyle(color: Colors.grey[600], fontSize: 18),
+                      style: TextStyle(
+                        color: colorScheme.onSurface,
+                        fontSize: 18,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -252,17 +267,17 @@ class QuizUi {
                     ),
                     const SizedBox(height: 30),
                     _buildDialogBtn(
-                      label: isEnglish ? "REPLAY" : "MAIN SEMULA",
+                      label: isEnglish ? "RETRY" : "CUBA SEMULA",
                       icon: Icons.replay,
-                      color: const Color(0xFFEB9000),
+                      color: adaptiveGold,
                       pressed: onReplay,
-                      outlined: false,
+                      outlined: true,
                     ),
                     const SizedBox(height: 12),
                     _buildDialogBtn(
                       label: isEnglish ? "REVIEW ANSWERS" : "SEMAK JAWAPAN",
                       icon: Icons.visibility,
-                      color: const Color(0xFFEB9000),
+                      color: adaptiveGold,
                       pressed: onReview,
                       outlined: true,
                     ),
@@ -270,7 +285,7 @@ class QuizUi {
                     _buildDialogBtn(
                       label: isEnglish ? "EXIT" : "KELUAR",
                       icon: Icons.exit_to_app,
-                      color: const Color(0xFFEB9000),
+                      color: adaptiveGold,
                       pressed: onExit,
                       outlined: true,
                     ),
@@ -361,6 +376,119 @@ class QuizUi {
       ),
       padding: padding ?? const EdgeInsets.fromLTRB(30, 13, 30, 16),
       child: child,
+    );
+  }
+
+  static Widget buildReviewCard({
+    required BuildContext context,
+    required int index,
+    required String question,
+    String? questionImageUrl,
+    required Widget optionsWidget,
+    required String userAnswer,
+    required String correctAnswer,
+    required String? explanation,
+    required bool isCorrect,
+    required bool isEnglish,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: isDark ? [] : appBoxShadow,
+        border: isDark ? Border.all(color: colorScheme.outlineVariant) : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  "Q${index + 1}. $question",
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Icon(
+                isCorrect ? Icons.check_circle : Icons.cancel,
+                color: isCorrect ? Colors.green : Colors.redAccent,
+              ),
+            ],
+          ),
+          if (questionImageUrl != null && questionImageUrl.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                questionImageUrl,
+                height: 150,
+                width: double.infinity,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ],
+          const SizedBox(height: 5),
+          optionsWidget,
+          const SizedBox(height: 10),
+          Text(
+            "${isEnglish ? "Your answer" : "Jawapan anda"}: $userAnswer",
+            style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+          ),
+          Text(
+            "${isEnglish ? "Correct answer" : "Jawapan betul"}: $correctAnswer",
+            style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
+          ),
+          if (explanation != null && explanation.trim().isNotEmpty) ...[
+            const SizedBox(height: 15),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                // ADAPTIVE EXPLANATION BOX
+                color: isDark ? colorScheme.surface : Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.5)
+                      : Colors.orange.shade200,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isEnglish ? "Explanation:" : "Penerangan:",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    explanation,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

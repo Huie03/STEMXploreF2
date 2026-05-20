@@ -169,14 +169,30 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
 
   Future<void> _startBackgroundMusic() async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
     if (!themeProvider.isSoundEnabled) return;
     if (_audioPlayer.state == PlayerState.playing) return;
 
     try {
-      await _audioPlayer.setSource(AssetSource('audio/quiz_bm.music.mp3'));
-      await _audioPlayer.resume();
+      // Setting the Global Audio Context for Android Focus
+      await AudioPlayer.global.setAudioContext(
+        const AudioContext(
+          android: AudioContextAndroid(
+            contentType: AndroidContentType.music,
+            usageType: AndroidUsageType.game,
+            audioFocus: AndroidAudioFocus.gain,
+          ),
+        ),
+      );
+
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+
+      // Play using AssetSource
+      await _audioPlayer.play(AssetSource('audio/quiz_bm.music.mp3'));
+
+      debugPrint("Android Audio started.");
     } catch (e) {
-      debugPrint("Error playing audio: $e");
+      debugPrint("Android Audio Error: $e");
     }
   }
 
@@ -234,6 +250,8 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                       ? const Center(
                           child: CircularProgressIndicator(color: Colors.white),
                         )
+                      : _isReviewMode // Add this check!
+                      ? _buildReviewList(isEnglish)
                       : _showResults
                       ? QuizUi.buildResultsView(
                           context: context,
@@ -264,6 +282,8 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   }
 
   Widget _buildQuizContent(bool isEnglish) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     final Color cardBg = Theme.of(context).colorScheme.surface;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
 
@@ -432,8 +452,9 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                         color: cardBg,
                         borderRadius: BorderRadius.circular(15),
                         border: Border.all(
-                          color: const Color(0xFFEB9000),
-                          width: 2.0,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.5)
+                              : Theme.of(context).colorScheme.outlineVariant,
                         ),
                       ),
                       child: Column(
@@ -442,7 +463,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                             isEnglish ? "Explanation:" : "Penerangan:",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: textColor.withValues(alpha: 0.8),
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 15,
                             ),
                           ),
@@ -474,82 +495,75 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   }
 
   Widget _buildNavButtons(bool isEng) {
+    // Check if we are at the very first question
     bool isFirstQuestion = _currentQuestionIndex == 0;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        SizedBox(
-          width: 120,
-          child: ElevatedButton(
-            onPressed: () {
-              if (isFirstQuestion) {
-                if (_isReviewMode) {
-                  setState(() => _showResults = true);
-                } else {
-                  _stopMusic();
-                  widget.onFinish();
-                  if (Navigator.canPop(context)) Navigator.pop(context);
-                }
-              } else {
-                setState(() {
-                  _currentQuestionIndex--;
-                  _selectedOptionIndex =
-                      _questions[_currentQuestionIndex]['user_choice'];
-                  _isLocked = _selectedOptionIndex != null;
-                });
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEB9000),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-            child: Text(isEng ? "Back" : "Kembali"),
-          ),
-        ),
-        SizedBox(
-          width: 120,
-          child: ElevatedButton(
-            onPressed: (_isLocked || _isReviewMode)
-                ? () {
-                    if (_currentQuestionIndex < _questions.length - 1) {
-                      setState(() {
-                        _currentQuestionIndex++;
-                        _selectedOptionIndex =
-                            _questions[_currentQuestionIndex]['user_choice'];
-                        _isLocked = _selectedOptionIndex != null;
-                      });
-                      _quizScrollController.jumpTo(0);
-                    } else {
-                      if (_isReviewMode) {
-                        _stopMusic();
-                        widget.onFinish();
-                        if (Navigator.canPop(context)) Navigator.pop(context);
-                      } else {
-                        _triggerResults();
-                      }
-                    }
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEB9000),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-            child: Text(
-              _currentQuestionIndex < _questions.length - 1
-                  ? (isEng ? "Next" : "Seterusnya")
-                  : (isEng ? "Finish" : "Selesai"),
-            ),
-          ),
+        _btn(isEng ? "Back" : "Kembali", () {
+          if (isFirstQuestion) {
+            _audioPlayer.stop();
+            widget.onFinish();
+
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              debugPrint(
+                "No history to pop, staying on page or triggering onFinish.",
+              );
+            }
+          } else {
+            setState(() {
+              _currentQuestionIndex--;
+              _selectedOptionIndex =
+                  _questions[_currentQuestionIndex]['user_choice'];
+              _isLocked = true;
+            });
+          }
+        }),
+
+        _btn(
+          _currentQuestionIndex < _questions.length - 1
+              ? (isEng ? "Next" : "Seterusnya")
+              : (isEng ? "Finish" : "Selesai"),
+          () {
+            if (_currentQuestionIndex < _questions.length - 1) {
+              setState(() {
+                _currentQuestionIndex++;
+                _selectedOptionIndex =
+                    _questions[_currentQuestionIndex]['user_choice'];
+                _isLocked = _selectedOptionIndex != null;
+              });
+              _quizScrollController.jumpTo(0);
+            } else {
+              _triggerResults();
+            }
+          },
+          enabled: _isLocked,
         ),
       ],
+    );
+  }
+
+  Widget _btn(String label, VoidCallback onTap, {bool enabled = true}) {
+    return SizedBox(
+      width: 120,
+      height: 45,
+      child: ElevatedButton(
+        onPressed: enabled ? onTap : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFEB9000),
+          disabledBackgroundColor: const Color.fromARGB(255, 201, 201, 201),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 
@@ -599,4 +613,144 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       ],
     ),
   );
+
+  Widget _buildReviewList(bool isEng) {
+    return Column(
+      children: [
+        // Stats Header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(25, 0, 20, 10),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "${isEng ? "Score" : "Markah"}: $_score/${_questions.length}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: _questions.length,
+            itemBuilder: (context, index) {
+              final q = _questions[index];
+              final int correctIdx = "ABCD".indexOf(q['correct_option'] ?? "A");
+              final int userIdx = q['user_choice'] ?? -1;
+
+              final List<Map<String, String>> opts = [
+                {
+                  't': isEng ? q['opt_a_en'] : q['opt_a_ms'],
+                  'img': q['opt_a_image'] ?? "",
+                },
+                {
+                  't': isEng ? q['opt_b_en'] : q['opt_b_ms'],
+                  'img': q['opt_b_image'] ?? "",
+                },
+                {
+                  't': isEng ? q['opt_c_en'] : q['opt_c_ms'],
+                  'img': q['opt_c_image'] ?? "",
+                },
+                {
+                  't': isEng ? q['opt_d_en'] : q['opt_d_ms'],
+                  'img': q['opt_d_image'] ?? "",
+                },
+              ];
+
+              bool usesImages = opts.any((o) => o['img']!.isNotEmpty);
+
+              return Column(
+                children: [
+                  QuizUi.buildReviewCard(
+                    context: context,
+                    index: index,
+                    isEnglish: isEng,
+                    isCorrect: userIdx == correctIdx,
+                    question: isEng
+                        ? q['question_text_en']
+                        : q['question_text_ms'],
+                    questionImageUrl: q['question_image'],
+                    userAnswer: userIdx != -1 ? opts[userIdx]['t']! : "N/A",
+                    correctAnswer: opts[correctIdx]['t']!,
+                    explanation: isEng
+                        ? q['explanation_en']
+                        : q['explanation_ms'],
+                    optionsWidget: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: usesImages ? 460 : 380,
+                      ),
+                      child: usesImages
+                          ? GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                    mainAxisExtent: 200,
+                                  ),
+                              itemCount: 4,
+                              itemBuilder: (context, i) => QuizUi.buildOptionTile(
+                                context: context,
+                                index: i,
+                                text: opts[i]['t']!,
+                                imageUrl: opts[i]['img'],
+                                correctIndex: correctIdx,
+                                selectedIndex: userIdx,
+                                showFeedback:
+                                    true, // This enables the borders in QuizUi
+                                onTap: () {}, // Disable taps in review
+                              ),
+                            )
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: List.generate(
+                                4,
+                                (i) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: QuizUi.buildOptionTile(
+                                    context: context,
+                                    index: i,
+                                    text: opts[i]['t']!,
+                                    imageUrl: opts[i]['img'],
+                                    correctIndex: correctIdx,
+                                    selectedIndex: userIdx,
+                                    showFeedback:
+                                        true, // This enables the borders in QuizUi
+                                    onTap: () {},
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                  if (index == _questions.length - 1)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 30, top: 10),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _btn(isEng ? "EXIT" : "KELUAR", () {
+                          _audioPlayer.stop();
+                          widget.onFinish();
+                          if (Navigator.canPop(context)) Navigator.pop(context);
+                        }),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 }

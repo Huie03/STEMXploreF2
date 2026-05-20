@@ -213,27 +213,48 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
           const SizedBox(height: 15),
           GestureDetector(
             onTap: () => _showFullScreenImage(context, assetPath),
-            child: Hero(
-              tag: assetPath,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 450,
-                    maxWidth: double.infinity,
-                  ),
-                  child: Image.asset(
-                    assetPath,
-                    width: double.infinity,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 200,
-                      width: double.infinity,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.broken_image, size: 50),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  Hero(
+                    tag: assetPath,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 450,
+                        maxWidth: double.infinity,
+                      ),
+                      child: Image.asset(
+                        assetPath,
+                        width: double.infinity,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 200,
+                          width: double.infinity,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.broken_image, size: 50),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.zoom_out_map,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -262,7 +283,7 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
       style: ElevatedButton.styleFrom(
         backgroundColor: _isCompleted
             ? completedBg
-            : (isDark ? const Color(0xFFEFA638) : const Color(0xFFEB9000)),
+            : (isDark ? const Color(0xFFEB9000) : const Color(0xFFEB9000)),
         disabledBackgroundColor: completedBg,
         foregroundColor: _isCompleted
             ? successGreen

@@ -211,21 +211,43 @@ class _FaqPageState extends State<FaqPage> {
                         onTap: () => _showFullScreenImage(context, answer),
                         child: Hero(
                           tag: answer,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: Image.asset(
-                              answer,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Text(
-                                  'Image not found',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
+                          child: Stack(
+                            // Added Stack to allow overlaying the icon
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child: Image.asset(
+                                  answer,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Text(
+                                      'Image not found',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              // Added Zoom Icon Overlay
+                              Positioned(
+                                top: 12,
+                                right: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.4),
+                                    shape: BoxShape.circle,
                                   ),
-                                );
-                              },
-                            ),
+                                  child: const Icon(
+                                    Icons.zoom_out_map,
+                                    color: Colors.white,
+                                    size: 30,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       )

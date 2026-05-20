@@ -312,7 +312,6 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
         pageBuilder: (context, _, _) =>
             FullScreenImagePage(assetPath: assetPath),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Smooth fade transition as the image expands
           return FadeTransition(opacity: animation, child: child);
         },
       ),
@@ -327,11 +326,39 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
 
     return GestureDetector(
       onTap: () => _showFullScreenImage(context, assetPath),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Hero(
-          tag: assetPath,
-          child: Image.asset(assetPath, fit: BoxFit.cover),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Hero(
+                tag: assetPath,
+                child: Image.asset(
+                  assetPath,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                ),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.zoom_out_map,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

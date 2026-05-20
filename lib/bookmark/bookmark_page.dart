@@ -102,7 +102,7 @@ class _BookmarkPageState extends State<BookmarkPage> {
                 children: [
                   _buildCustomAppBar(
                     context,
-                    isEnglish ? "Bookmarks" : "Penanda buku",
+                    isEnglish ? "Bookmarks" : "Tanda buku",
                     titleColor,
                   ),
                   Padding(
@@ -142,7 +142,6 @@ class _BookmarkPageState extends State<BookmarkPage> {
                             // Delete icon beside the Select All checkbox
                             IconButton(
                               constraints: const BoxConstraints(),
-                              padding: const EdgeInsets.only(left: 8),
                               icon: const Icon(
                                 Icons.delete_sweep_rounded,
                                 color: Colors.redAccent,
@@ -400,17 +399,42 @@ class _BookmarkPageState extends State<BookmarkPage> {
     String title,
     Color titleColor,
   ) {
+    // Determine language from context for the sub-text
+    final navProvider = Provider.of<NavigationProvider>(context, listen: false);
+    final bool isEnglish = navProvider.locale.languageCode == 'en';
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 5, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: titleColor,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: titleColor,
+                  ),
+                ),
+                Text(
+                  isEnglish
+                      ? "• You can add bookmarks from learning materials."
+                      : "• Anda boleh menambah tanda buku daripada bahan pembelajaran.",
+                  style: TextStyle(fontSize: 12, color: titleColor),
+                ),
+                Text(
+                  isEnglish
+                      ? "• Select the checkbox for delete."
+                      : "• Pilih kotak pilihan untuk memadam.",
+                  style: TextStyle(fontSize: 12, color: titleColor),
+                ),
+              ],
             ),
           ),
           const LanguageToggle(),

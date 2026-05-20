@@ -70,7 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ? Icons.volume_up
                     : Icons.volume_off,
                 iconColor: allIconColor,
-                title: isEnglish ? "Sound" : "Suara",
+                title: isEnglish ? "Music sound" : "Bunyi muzik",
 
                 subtitle: isEnglish
                     ? (themeProvider.isSoundEnabled ? "On" : "Off")

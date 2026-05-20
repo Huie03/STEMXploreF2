@@ -72,7 +72,7 @@ const Map<String, dynamic> endata = {
 const Map<String, dynamic> msdata = {
   'home_title': 'STEMXplore F2',
   'info_title': 'Maklumat',
-  'bookmark_title': 'Penanda Buku',
+  'bookmark_title': 'Tanda Buku',
   'last_access': 'Bahan pembelajaran terakhir dicapai:',
   'science': 'Sains',
   'chapter': 'Bab',

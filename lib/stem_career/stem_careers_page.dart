@@ -678,14 +678,34 @@ class _StemCareersPageState extends State<StemCareersPage> with CareerLogic {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Hero(
-            tag: assetPath,
-            child: Image.asset(
-              assetPath,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.broken_image, color: Colors.red),
-            ),
+          child: Stack(
+            children: [
+              Hero(
+                tag: assetPath,
+                child: Image.asset(
+                  assetPath,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.broken_image, color: Colors.red),
+                ),
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.zoom_out_map,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
