@@ -6,7 +6,7 @@ import 'package:stemxploref2/bookmark/bookmark_provider.dart';
 import 'package:stemxploref2/widgets/gradient_background.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart';
 import 'package:stemxploref2/widgets/box_shadow.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/full_screen_image.dart';
 
 class MaterialDetailPage extends StatefulWidget {
   final Map<String, dynamic> chapterData;
@@ -53,10 +53,8 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     final String label = isEnglish ? "Chapter" : "Bab";
     final String fullChapterString = "$label $chapterNum - $chapterTitle";
 
-    // Watch the provider for changes
     final favoriteProvider = context.watch<BookmarkProvider>();
 
-    // This will now correctly trigger a rebuild when the list updates
     final bool isBookmarked = favoriteProvider.isFavorited(
       rawSubject,
       chapterNum,
@@ -168,7 +166,6 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
           IconButton(
             onPressed: () async {
               final Map<String, dynamic> dataToToggle = {
-                // These keys must be identical to what you use in FavoriteProvider
                 'title': rawSub,
                 'chapter_num': num,
                 'title_en': tEn,
@@ -336,13 +333,12 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
     );
   }
 
-  void _showFullScreenImage(BuildContext context, String assetPath) {
+  void _showFullScreenImage(BuildContext context, String imagePath) {
     Navigator.push(
       context,
       PageRouteBuilder(
         opaque: false,
-        pageBuilder: (context, _, _) =>
-            FullScreenImagePage(assetPath: assetPath),
+        pageBuilder: (context, _, _) => FullScreenImage(assetPath: imagePath),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

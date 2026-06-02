@@ -62,8 +62,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
 
-              const SizedBox(height: 20), // Spacing between cards
-
+              const SizedBox(height: 20),
               _buildSettingsCard(
                 cardBg: cardBg,
                 icon: themeProvider.isSoundEnabled

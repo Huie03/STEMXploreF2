@@ -6,21 +6,21 @@ import 'package:stemxploref2/widgets/box_shadow.dart';
 import 'package:stemxploref2/widgets/rawscrollbar.dart';
 import 'package:stemxploref2/database_helper.dart';
 
-class QuizGamePage extends StatefulWidget {
+class QuizSelectionPage extends StatefulWidget {
   final Function(String, String) onQuizStart;
   final String initialSubject;
 
-  const QuizGamePage({
+  const QuizSelectionPage({
     super.key,
     required this.onQuizStart,
     required this.initialSubject,
   });
 
   @override
-  State<QuizGamePage> createState() => _QuizGamePageState();
+  State<QuizSelectionPage> createState() => _QuizGamePageState();
 }
 
-class _QuizGamePageState extends State<QuizGamePage> {
+class _QuizGamePageState extends State<QuizSelectionPage> {
   late String selectedCategory;
   List quizzes = [];
   bool isLoading = true;
@@ -51,7 +51,7 @@ class _QuizGamePageState extends State<QuizGamePage> {
   }
 
   @override
-  void didUpdateWidget(covariant QuizGamePage oldWidget) {
+  void didUpdateWidget(covariant QuizSelectionPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialSubject != widget.initialSubject) {
       setState(() {

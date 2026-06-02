@@ -169,8 +169,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         gridMultiplier = 0.64;
                         highlightMultiplier = 0.34;
                       } else {
-                        gridMultiplier = isSmallPhone ? 0.62 : 0.65;
-                        highlightMultiplier = isSmallPhone ? 0.35 : 0.34;
+                        gridMultiplier = isSmallPhone ? 0.60 : 0.65;
+                        highlightMultiplier = isSmallPhone ? 0.38 : 0.34;
                       }
 
                       double gridHeight = totalHeight * gridMultiplier;
@@ -234,6 +234,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     isDark,
                                     highlightHeight *
                                         (isAnyTablet ? 0.78 : 0.71),
+                                    isSmallPhone,
                                   ),
                           ),
                         ],
@@ -306,6 +307,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     Color textColor,
     bool isDark,
     double cardHeight,
+    bool isSmallPhone,
   ) {
     if (highlights.isEmpty) return const SizedBox.shrink();
 
@@ -313,12 +315,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 10, bottom: 3, top: 8),
+          padding: const EdgeInsets.only(left: 10, top: 8),
           child: Text(
             translate('highlights', isEnglish),
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: isSmallPhone ? 15 : 18,
               color: textColor,
             ),
           ),
@@ -346,7 +348,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         ),
 
-        const SizedBox(height: 10),
+        SizedBox(height: isSmallPhone ? 5 : 10),
         Center(
           child: SmoothPageIndicator(
             controller: _pageController,

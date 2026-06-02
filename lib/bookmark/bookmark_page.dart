@@ -399,7 +399,6 @@ class _BookmarkPageState extends State<BookmarkPage> {
     String title,
     Color titleColor,
   ) {
-    // Determine language from context for the sub-text
     final navProvider = Provider.of<NavigationProvider>(context, listen: false);
     final bool isEnglish = navProvider.locale.languageCode == 'en';
 

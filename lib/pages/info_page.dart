@@ -151,8 +151,10 @@ class _InfoPageState extends State<InfoPage> {
                                 : "STEMXplore F2 ialah platform mudah alih interaktif untuk pelajar Tingkatan 2 bagi membina ",
                             highlightedWord: isEnglish ? "skills" : "kemahiran",
                             trailingContent: isEnglish
-                                ? " through engaging, real-world learning experiences and interactive activities, supporting Quality Education (SDG 4)."
-                                : " STEM penting melalui pengalaman pembelajaran dunia sebenar yang menarik serta aktiviti interaktif, menyokong Pendidikan Berkualiti (SDG 4).",
+                                ? " through engaging, real-world learning experiences and interactive activities, "
+                                      "supporting Quality Education (SDG 4)."
+                                : " STEM penting melalui pengalaman pembelajaran dunia sebenar yang menarik serta aktiviti interaktif, "
+                                      "menyokong Pendidikan Berkualiti (SDG 4).",
                             textColor: textColor,
                           ),
 

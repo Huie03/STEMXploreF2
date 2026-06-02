@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/full_screen_image.dart';
 import 'package:stemxploref2/widgets/gradient_background.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart';
 import 'package:stemxploref2/navigation_provider.dart';
@@ -65,14 +65,14 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
     if (mounted) setState(() => _isCompleted = true);
   }
 
-  void _showFullScreenImage(BuildContext context, String assetPath) {
+  void _showFullScreenImage(BuildContext context, String imagePath) {
     Navigator.push(
       context,
+
       PageRouteBuilder(
-        opaque: false, // Allows seeing the background during transition
+        opaque: false, 
         barrierColor: Colors.black,
-        pageBuilder: (context, _, _) =>
-            FullScreenImagePage(assetPath: assetPath),
+        pageBuilder: (context, _, _) => FullScreenImage(assetPath: imagePath),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -187,7 +187,7 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
   ) {
     final Color cardBg = Theme.of(context).colorScheme.surface;
     final Color textColor = Theme.of(context).colorScheme.onSurface;
-    final String assetPath = info['image_path'] ?? '';
+    final String imagePath = info['image_path'] ?? '';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
@@ -212,21 +212,21 @@ class _DailyInfoPageState extends State<DailyInfoPage> {
           ),
           const SizedBox(height: 15),
           GestureDetector(
-            onTap: () => _showFullScreenImage(context, assetPath),
+            onTap: () => _showFullScreenImage(context, imagePath),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Stack(
                 alignment: Alignment.bottomRight,
                 children: [
                   Hero(
-                    tag: assetPath,
+                    tag: imagePath,
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(
                         maxHeight: 450,
                         maxWidth: double.infinity,
                       ),
                       child: Image.asset(
-                        assetPath,
+                        imagePath,
                         width: double.infinity,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) => Container(

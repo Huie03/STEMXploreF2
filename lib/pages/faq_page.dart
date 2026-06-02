@@ -7,7 +7,7 @@ import 'package:stemxploref2/navigation_provider.dart';
 import 'package:stemxploref2/widgets/box_shadow.dart';
 import 'package:stemxploref2/widgets/rawscrollbar.dart';
 import 'package:stemxploref2/database_helper.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/full_screen_image.dart';
 
 class FaqPage extends StatefulWidget {
   static const routeName = '/faq';
@@ -20,7 +20,7 @@ class FaqPage extends StatefulWidget {
 class _FaqPageState extends State<FaqPage> {
   final ScrollController _scrollController = ScrollController();
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  int _expandedIndex = -1; // -1 means everything is closed
+  int _expandedIndex = -1;
   late Future<List<Map<String, dynamic>>> _faqFuture;
 
   @override
@@ -52,14 +52,13 @@ class _FaqPageState extends State<FaqPage> {
     }
   }
 
-  void _showFullScreenImage(BuildContext context, String assetPath) {
+  void _showFullScreenImage(BuildContext context, String imagePath) {
     Navigator.push(
       context,
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black,
-        pageBuilder: (context, _, _) =>
-            FullScreenImagePage(assetPath: assetPath),
+        pageBuilder: (context, _, _) => FullScreenImage(assetPath: imagePath),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -212,7 +211,6 @@ class _FaqPageState extends State<FaqPage> {
                         child: Hero(
                           tag: answer,
                           child: Stack(
-                            // Added Stack to allow overlaying the icon
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),

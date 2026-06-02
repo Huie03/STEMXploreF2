@@ -1,6 +1,6 @@
 // main.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; //App in portrait, no rotate to landscape
+import 'package:flutter/services.dart'; //To make sure in potrait
 import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:stemxploref2/l10n/languages.dart';
@@ -72,7 +72,6 @@ class _STEMXploreAppState extends State<STEMXploreApp> {
 
       debugShowCheckedModeBanner: false,
 
-      // THEME
       theme: ThemeProvider.lightTheme,
       darkTheme: ThemeProvider.darkTheme,
       themeMode: themeProvider.themeMode,

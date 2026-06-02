@@ -43,7 +43,7 @@ class FeatureButton extends StatelessWidget {
         } else if (isSmallPhone) {
           dynamicFontSize = 14.0;
         } else {
-          dynamicFontSize = 17.0;
+          dynamicFontSize = 16.0;
         }
 
         return Container(

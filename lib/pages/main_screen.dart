@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stemxploref2/navigation_provider.dart';
 import 'package:stemxploref2/widgets/curved_navigation_bar.dart';
-
 import 'package:stemxploref2/pages/home_page.dart';
 import 'package:stemxploref2/bookmark/bookmark_page.dart';
 import 'package:stemxploref2/pages/info_page.dart';
 import 'package:stemxploref2/pages/settings_page.dart';
 import 'package:stemxploref2/stem_info/stem_info_page.dart';
-import 'package:stemxploref2/quiz_game/quiz_game_page.dart';
+import 'package:stemxploref2/quiz_game/quiz_selection_page.dart';
 import 'package:stemxploref2/quiz_game/play_quiz_page.dart';
 import 'package:stemxploref2/stem_career/stem_careers_page.dart';
 import 'package:stemxploref2/daily_info/daily_info_page.dart';
@@ -126,7 +125,7 @@ class _MainScreenState extends State<MainScreen> {
         initialSubject: selectedSubjectName,
         onChapterTap: onChapterSelected,
       ), // 5
-      QuizGamePage(
+      QuizSelectionPage(
         key: navProvider.currentIndex == 6
             ? const ValueKey('quiz_menu')
             : UniqueKey(),
@@ -154,7 +153,12 @@ class _MainScreenState extends State<MainScreen> {
         },
       ), // 6
 
-      const StemCareersPage(), // 7
+      StemCareersPage(
+        onExit: () {
+          navProvider.setIndex(0); // 0  //HomePage
+        },
+      ), // 7
+
       const DailyInfoPage(), // 8
       // 9
       FaqPage(

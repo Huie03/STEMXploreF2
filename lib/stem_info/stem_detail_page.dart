@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_localization/flutter_localization.dart';
 import 'package:stemxploref2/theme_provider.dart';
 import 'package:stemxploref2/widgets/video_player.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/full_screen_image.dart';
 import 'package:stemxploref2/widgets/gradient_background.dart';
 import 'package:stemxploref2/navigation_provider.dart';
 import 'package:stemxploref2/widgets/curved_navigation_bar.dart';
@@ -45,8 +45,7 @@ class _StemDetailPageState extends State<StemDetailPage> {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black,
-        pageBuilder: (context, _, _) =>
-            FullScreenImagePage(assetPath: imagePath),
+        pageBuilder: (context, _, _) => FullScreenImage(assetPath: imagePath),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },

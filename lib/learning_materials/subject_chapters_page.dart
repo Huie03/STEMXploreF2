@@ -47,12 +47,10 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   @override
   void initState() {
     super.initState();
-    // CRITICAL: This ensures the reset from the parent is captured
     selectedSubject = widget.initialSubject;
     _chaptersFuture = _getChaptersFromDb(selectedSubject);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Only scroll the top bar, don't force jumpTo(0) here
       int index = subjects.indexOf(selectedSubject);
       if (index != -1) _scrollToIndex(index);
     });
@@ -62,7 +60,6 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
   void didUpdateWidget(covariant SubjectChaptersPage oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // If the parent (MainScreen) forces a subject change
     if (oldWidget.initialSubject != widget.initialSubject) {
       setState(() {
         selectedSubject = widget.initialSubject;
@@ -77,12 +74,7 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
     if (index != -1) {
       _scrollToIndex(index);
     }
-
-    // Only jump to the top of the vertical list if we have a controller
-    // and we are intentionally resetting (e.g., user clicked a new subject tab)
     if (_verticalScrollController.hasClients) {
-      // If the vertical scroll is already at 0, no need to jump.
-      // This prevents unnecessary resets during simple UI rebuilds.
       if (_verticalScrollController.offset != 0) {
         _verticalScrollController.jumpTo(0);
       }
@@ -135,7 +127,6 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
         subject,
       );
 
-      // Sort chapters numerically
       List<Map<String, dynamic>> sortedData = List.from(data);
       sortedData.sort((a, b) {
         int numA = int.tryParse(a['chapter_number'].toString()) ?? 0;
@@ -297,18 +288,16 @@ class _SubjectChaptersPageState extends State<SubjectChaptersPage> {
           bool isSelected = selectedSubject == subjects[index];
 
           return GestureDetector(
-            // Update your _buildAnimatedFilter's onTap
             onTap: () {
-              if (selectedSubject == subjects[index]) return; // Optimization
+              if (selectedSubject == subjects[index]) return;
 
               setState(() {
                 selectedSubject = subjects[index];
                 _chaptersFuture = _getChaptersFromDb(selectedSubject);
               });
 
-              _scrollToIndex(index); // Centers the horizontal tab
+              _scrollToIndex(index);
 
-              // Reset the vertical list to the top immediately
               if (_verticalScrollController.hasClients) {
                 _verticalScrollController.jumpTo(0);
               }

@@ -16,7 +16,6 @@ class DatabaseHelper {
   // Initializes the database by copying the asset to local storage
   Future<Database> _initDb() async {
     var databasesPath = await getDatabasesPath();
-    // Name of the file on the user's phone
     String path = join(databasesPath, "stemxploref2_local.db");
 
     bool exists = await databaseExists(path);
@@ -39,13 +38,11 @@ class DatabaseHelper {
     return await openDatabase(path);
   }
 
-  //Get Daily Info Facts
   Future<List<Map<String, dynamic>>> getDailyInfo() async {
     final db = await database;
     return await db.query('daily_info');
   }
 
-  //Get All Chapters for a specific subject
   Future<List<Map<String, dynamic>>> getChapters(String subject) async {
     final db = await database;
     return await db.query(
@@ -53,6 +50,12 @@ class DatabaseHelper {
       where: 'subject_name = ?',
       whereArgs: [subject],
     );
+  }
+
+  //Get Subject Info for Quiz
+  Future<List<Map<String, dynamic>>> getQuizSubjects() async {
+    final db = await database;
+    return await db.query('quiz_subject');
   }
 
   //Get Quiz Questions for a specific subject and chapter
@@ -68,7 +71,7 @@ class DatabaseHelper {
     );
   }
 
-  // Get STEM Career Categories
+  // Get STEM Career
   Future<List<Map<String, dynamic>>> getStemCareers() async {
     final db = await database;
     return await db.query('stem_careers');
@@ -78,12 +81,6 @@ class DatabaseHelper {
   Future<List<Map<String, dynamic>>> getFaqs() async {
     final db = await database;
     return await db.query('faqs');
-  }
-
-  //Get Subject Info for Quizzes
-  Future<List<Map<String, dynamic>>> getQuizSubjects() async {
-    final db = await database;
-    return await db.query('quiz_subject');
   }
 
   // Save or Retrieve Bookmarks

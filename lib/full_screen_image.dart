@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 
-class FullScreenImagePage extends StatelessWidget {
+class FullScreenImage extends StatelessWidget {
   final String assetPath;
   final bool isNetwork;
 
-  const FullScreenImagePage({
+  const FullScreenImage({
     super.key,
     required this.assetPath,
     this.isNetwork = false,
@@ -41,7 +41,7 @@ class FullScreenImagePage extends StatelessWidget {
             ),
           ),
 
-          //The Close Button
+          //Close Button
           SafeArea(
             child: Align(
               alignment: Alignment.topLeft,

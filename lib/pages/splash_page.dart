@@ -88,8 +88,8 @@ class _LogoState extends State<Logo> with SingleTickerProviderStateMixin {
 
     // Adjust font sizes
     final double titleFontSize = isTablet ? 24 : (isSmallPhone ? 13 : 15);
-    final double hintFontSize = isTablet ? 18 : (isSmallPhone ? 12 : 14);
-    final double iconSize = isTablet ? 50 : (isSmallPhone ? 28 : 35);
+    final double hintFontSize = isTablet ? 18 : (isSmallPhone ? 12 : 15);
+    final double iconSize = isTablet ? 50 : (isSmallPhone ? 28 : 36);
 
     final double textTranslateOffset = isTablet
         ? -45

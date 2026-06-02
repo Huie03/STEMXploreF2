@@ -8,7 +8,7 @@ import 'package:stemxploref2/widgets/language_toggle.dart';
 import 'package:stemxploref2/widgets/rawscrollbar.dart';
 import 'package:stemxploref2/widgets/box_shadow.dart';
 import 'package:stemxploref2/theme_provider.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/full_screen_image.dart';
 
 class HighlightDetailPage extends StatefulWidget {
   static const routeName = '/highlight-detail';
@@ -37,6 +37,20 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _showFullScreenImage(BuildContext context, String imagePath) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (context, _, _) => FullScreenImage(assetPath: imagePath),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 
   @override
@@ -303,29 +317,13 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
     );
   }
 
-  void _showFullScreenImage(BuildContext context, String assetPath) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        opaque: false,
-        barrierColor: Colors.black,
-        pageBuilder: (context, _, _) =>
-            FullScreenImagePage(assetPath: assetPath),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ),
-    );
-  }
-
   Widget _buildLocalImage(String path) {
     if (path.isEmpty) return const SizedBox.shrink();
 
-    // Remove leading slash if present to avoid asset load errors
-    final String assetPath = path.startsWith('/') ? path.substring(1) : path;
+    final String imagePath = path.startsWith('/') ? path.substring(1) : path;
 
     return GestureDetector(
-      onTap: () => _showFullScreenImage(context, assetPath),
+      onTap: () => _showFullScreenImage(context, imagePath),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: ClipRRect(
@@ -334,9 +332,9 @@ class _HighlightDetailPageState extends State<HighlightDetailPage> {
             alignment: Alignment.bottomRight,
             children: [
               Hero(
-                tag: assetPath,
+                tag: imagePath,
                 child: Image.asset(
-                  assetPath,
+                  imagePath,
                   fit: BoxFit.cover,
                   width: double.infinity,
                 ),

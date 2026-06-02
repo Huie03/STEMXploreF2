@@ -4,13 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:confetti/confetti.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:stemxploref2/widgets/gradient_background.dart';
-import 'package:stemxploref2/widgets/box_shadow.dart';
 import 'package:stemxploref2/widgets/language_toggle.dart';
 import 'package:stemxploref2/navigation_provider.dart';
 import 'package:stemxploref2/quiz_game/quiz_ui.dart';
+import 'package:stemxploref2/quiz_game/quiz_content.dart';
+import 'package:stemxploref2/quiz_game/quiz_answer.dart';
 import 'package:stemxploref2/theme_provider.dart';
-import 'package:stemxploref2/widgets/rawscrollbar.dart';
-import 'package:stemxploref2/full_screen_image_page.dart';
+import 'package:stemxploref2/full_screen_image.dart';
 import 'package:stemxploref2/database_helper.dart';
 
 class PlayQuizPage extends StatefulWidget {
@@ -30,6 +30,7 @@ class PlayQuizPage extends StatefulWidget {
 class _PlayQuizPageState extends State<PlayQuizPage> {
   late ConfettiController _confettiController;
   final ScrollController _quizScrollController = ScrollController();
+  final ScrollController _reviewScrollController = ScrollController();
   final DatabaseHelper _dbHelper = DatabaseHelper(); // Initialize DB Helper
 
   List<dynamic> _questions = [];
@@ -66,6 +67,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     _confettiController.dispose();
     _audioPlayer.dispose();
     _quizScrollController.dispose();
+    _reviewScrollController.dispose();
     super.dispose();
   }
 
@@ -169,12 +171,10 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
 
   Future<void> _startBackgroundMusic() async {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-
     if (!themeProvider.isSoundEnabled) return;
     if (_audioPlayer.state == PlayerState.playing) return;
 
     try {
-      // Setting the Global Audio Context for Android Focus
       await AudioPlayer.global.setAudioContext(
         const AudioContext(
           android: AudioContextAndroid(
@@ -186,18 +186,16 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       );
 
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-
-      // Play using AssetSource
       await _audioPlayer.play(AssetSource('audio/quiz_bm.music.mp3'));
-
-      debugPrint("Android Audio started.");
     } catch (e) {
       debugPrint("Android Audio Error: $e");
     }
   }
 
   void _stopMusic() {
-    _audioPlayer.stop();
+    if (_audioPlayer.state == PlayerState.playing) {
+      _audioPlayer.stop();
+    }
   }
 
   void _handleAnswer(int selectedIndex, int correctIndex) {
@@ -217,15 +215,6 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
   Widget build(BuildContext context) {
     final navProvider = Provider.of<NavigationProvider>(context);
     final bool isEnglish = navProvider.locale.languageCode == 'en';
-    final themeProvider = Provider.of<ThemeProvider>(context);
-
-    if (!themeProvider.isSoundEnabled) {
-      _stopMusic();
-    } else if (_questions.isNotEmpty &&
-        _audioPlayer.state != PlayerState.playing &&
-        !_isLoading) {
-      _startBackgroundMusic();
-    }
 
     return PopScope(
       canPop: true,
@@ -250,8 +239,21 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                       ? const Center(
                           child: CircularProgressIndicator(color: Colors.white),
                         )
-                      : _isReviewMode // Add this check!
-                      ? _buildReviewList(isEnglish)
+                      : _isReviewMode
+                      ? QuizReviewAnswer.buildReviewList(
+                          context: context,
+                          questions: _questions,
+                          score: _score,
+                          scrollController: _reviewScrollController,
+                          isEnglish: isEnglish,
+                          exitButton: _btn(isEnglish ? "EXIT" : "KELUAR", () {
+                            _stopMusic();
+                            widget.onFinish();
+                            if (Navigator.canPop(context)) {
+                              Navigator.pop(context);
+                            }
+                          }),
+                        )
                       : _showResults
                       ? QuizUi.buildResultsView(
                           context: context,
@@ -268,9 +270,17 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
                         )
                       : (_errorMessage != null
                             ? _buildError()
-                            : AppRawScrollbar(
-                                controller: _quizScrollController,
-                                child: _buildQuizContent(isEnglish),
+                            : QuizContent(
+                                questions: _questions,
+                                currentQuestionIndex: _currentQuestionIndex,
+                                selectedOptionIndex: _selectedOptionIndex,
+                                isLocked: _isLocked,
+                                isReviewMode: _isReviewMode,
+                                isEnglish: isEnglish,
+                                scrollController: _quizScrollController,
+                                onOptionTap: _handleAnswer,
+                                onImageTap: _showFullScreenImage,
+                                navButtons: _buildNavButtons(isEnglish),
                               )),
                 ),
               ],
@@ -281,221 +291,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
     );
   }
 
-  Widget _buildQuizContent(bool isEnglish) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final Color cardBg = Theme.of(context).colorScheme.surface;
-    final Color textColor = Theme.of(context).colorScheme.onSurface;
-
-    final q = _questions[_currentQuestionIndex];
-
-    final List<Map<String, String>> optionData = [
-      {
-        'text': isEnglish ? (q['opt_a_en'] ?? "") : (q['opt_a_ms'] ?? ""),
-        'image': q['opt_a_image']?.toString() ?? "",
-      },
-      {
-        'text': isEnglish ? (q['opt_b_en'] ?? "") : (q['opt_b_ms'] ?? ""),
-        'image': q['opt_b_image']?.toString() ?? "",
-      },
-      {
-        'text': isEnglish ? (q['opt_c_en'] ?? "") : (q['opt_c_ms'] ?? ""),
-        'image': q['opt_c_image']?.toString() ?? "",
-      },
-      {
-        'text': isEnglish ? (q['opt_d_en'] ?? "") : (q['opt_d_ms'] ?? ""),
-        'image': q['opt_d_image']?.toString() ?? "",
-      },
-    ];
-
-    bool usesImageOptions = optionData.any((opt) => opt['image']!.isNotEmpty);
-    final int? activeSelection = _isReviewMode
-        ? q['user_choice']
-        : _selectedOptionIndex;
-    final bool showFeedback = _isLocked || _isReviewMode;
-
-    String rawLetter =
-        q['correct_option']?.toString().trim().toUpperCase() ?? "";
-    int correctIndex = "ABCD".indexOf(rawLetter);
-    if (correctIndex == -1) correctIndex = 0;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          controller: _quizScrollController,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: appBoxShadow,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "${isEnglish ? "Question" : "Soalan"} ${_currentQuestionIndex + 1}",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
-                            ),
-                            Text(
-                              "${_currentQuestionIndex + 1} / ${_questions.length}",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: textColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          isEnglish
-                              ? (q['question_text_en'] ?? "")
-                              : (q['question_text_ms'] ?? ""),
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
-                            height: 1.4,
-                          ),
-                        ),
-                        if (q['question_image'] != null &&
-                            q['question_image'].isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          GestureDetector(
-                            onTap: () => _showFullScreenImage(
-                              context,
-                              q['question_image'],
-                            ),
-                            child: Center(
-                              child: Hero(
-                                tag: q['question_image'],
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.asset(
-                                    q['question_image'],
-                                    height: 150,
-                                    fit: BoxFit.contain,
-                                    errorBuilder: (_, _, _) => const Icon(
-                                      Icons.broken_image,
-                                      size: 50,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  if (usesImageOptions)
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            mainAxisExtent: 180,
-                          ),
-                      itemCount: 4,
-                      itemBuilder: (context, i) => QuizUi.buildOptionTile(
-                        context: context,
-                        index: i,
-                        text: optionData[i]['text']!,
-                        imageUrl: optionData[i]['image']!,
-                        correctIndex: correctIndex,
-                        selectedIndex: activeSelection,
-                        showFeedback: showFeedback,
-                        onTap: () => _handleAnswer(i, correctIndex),
-                      ),
-                    )
-                  else
-                    ...List.generate(
-                      4,
-                      (i) => QuizUi.buildOptionTile(
-                        context: context,
-                        index: i,
-                        text: optionData[i]['text']!,
-                        correctIndex: correctIndex,
-                        selectedIndex: activeSelection,
-                        showFeedback: showFeedback,
-                        onTap: () => _handleAnswer(i, correctIndex),
-                      ),
-                    ),
-                  const SizedBox(height: 25),
-                  _buildNavButtons(isEnglish),
-                  if (showFeedback) ...[
-                    const SizedBox(height: 20),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.5)
-                              : Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            isEnglish ? "Explanation:" : "Penerangan:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            isEnglish
-                                ? (q['explanation_en'] ??
-                                      "No explanation available.")
-                                : (q['explanation_ms'] ??
-                                      "Tiada penerangan tersedia."),
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: textColor,
-                              height: 1.4,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildNavButtons(bool isEng) {
-    // Check if we are at the very first question
     bool isFirstQuestion = _currentQuestionIndex == 0;
 
     return Row(
@@ -503,7 +299,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       children: [
         _btn(isEng ? "Back" : "Kembali", () {
           if (isFirstQuestion) {
-            _audioPlayer.stop();
+            _stopMusic();
             widget.onFinish();
 
             if (Navigator.canPop(context)) {
@@ -561,7 +357,11 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
         ),
         child: Text(
           label,
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
         ),
       ),
     );
@@ -588,8 +388,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       PageRouteBuilder(
         opaque: false,
         barrierColor: Colors.black,
-        pageBuilder: (context, _, _) =>
-            FullScreenImagePage(assetPath: imagePath),
+        pageBuilder: (context, _, _) => FullScreenImage(assetPath: imagePath),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -604,7 +403,7 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
         const Icon(Icons.error_outline, size: 60, color: Colors.white),
         Text(
           _errorMessage!,
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: const TextStyle(color: Colors.white, fontSize: 15),
         ),
         ElevatedButton(
           onPressed: _resetAndStartQuiz,
@@ -613,144 +412,4 @@ class _PlayQuizPageState extends State<PlayQuizPage> {
       ],
     ),
   );
-
-  Widget _buildReviewList(bool isEng) {
-    return Column(
-      children: [
-        // Stats Header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(25, 0, 20, 10),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "${isEng ? "Score" : "Markah"}: $_score/${_questions.length}",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: _questions.length,
-            itemBuilder: (context, index) {
-              final q = _questions[index];
-              final int correctIdx = "ABCD".indexOf(q['correct_option'] ?? "A");
-              final int userIdx = q['user_choice'] ?? -1;
-
-              final List<Map<String, String>> opts = [
-                {
-                  't': isEng ? q['opt_a_en'] : q['opt_a_ms'],
-                  'img': q['opt_a_image'] ?? "",
-                },
-                {
-                  't': isEng ? q['opt_b_en'] : q['opt_b_ms'],
-                  'img': q['opt_b_image'] ?? "",
-                },
-                {
-                  't': isEng ? q['opt_c_en'] : q['opt_c_ms'],
-                  'img': q['opt_c_image'] ?? "",
-                },
-                {
-                  't': isEng ? q['opt_d_en'] : q['opt_d_ms'],
-                  'img': q['opt_d_image'] ?? "",
-                },
-              ];
-
-              bool usesImages = opts.any((o) => o['img']!.isNotEmpty);
-
-              return Column(
-                children: [
-                  QuizUi.buildReviewCard(
-                    context: context,
-                    index: index,
-                    isEnglish: isEng,
-                    isCorrect: userIdx == correctIdx,
-                    question: isEng
-                        ? q['question_text_en']
-                        : q['question_text_ms'],
-                    questionImageUrl: q['question_image'],
-                    userAnswer: userIdx != -1 ? opts[userIdx]['t']! : "N/A",
-                    correctAnswer: opts[correctIdx]['t']!,
-                    explanation: isEng
-                        ? q['explanation_en']
-                        : q['explanation_ms'],
-                    optionsWidget: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: usesImages ? 460 : 380,
-                      ),
-                      child: usesImages
-                          ? GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 12,
-                                    mainAxisSpacing: 12,
-                                    mainAxisExtent: 200,
-                                  ),
-                              itemCount: 4,
-                              itemBuilder: (context, i) => QuizUi.buildOptionTile(
-                                context: context,
-                                index: i,
-                                text: opts[i]['t']!,
-                                imageUrl: opts[i]['img'],
-                                correctIndex: correctIdx,
-                                selectedIndex: userIdx,
-                                showFeedback:
-                                    true, // This enables the borders in QuizUi
-                                onTap: () {}, // Disable taps in review
-                              ),
-                            )
-                          : Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: List.generate(
-                                4,
-                                (i) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 8.0),
-                                  child: QuizUi.buildOptionTile(
-                                    context: context,
-                                    index: i,
-                                    text: opts[i]['t']!,
-                                    imageUrl: opts[i]['img'],
-                                    correctIndex: correctIdx,
-                                    selectedIndex: userIdx,
-                                    showFeedback:
-                                        true, // This enables the borders in QuizUi
-                                    onTap: () {},
-                                  ),
-                                ),
-                              ),
-                            ),
-                    ),
-                  ),
-                  if (index == _questions.length - 1)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 30, top: 10),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: _btn(isEng ? "EXIT" : "KELUAR", () {
-                          _audioPlayer.stop();
-                          widget.onFinish();
-                          if (Navigator.canPop(context)) Navigator.pop(context);
-                        }),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
 }

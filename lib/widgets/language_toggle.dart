@@ -35,8 +35,7 @@ class LanguageToggle extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         child: Column(
-          mainAxisSize: MainAxisSize
-              .min, // Prevents column from taking full screen height
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               decoration: BoxDecoration(
@@ -57,7 +56,7 @@ class LanguageToggle extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 4), // Space between flag and text
+            const SizedBox(height: 4),
             Text(
               isEnglish ? 'MY' : 'EN',
               style: TextStyle(
