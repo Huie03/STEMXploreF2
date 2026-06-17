@@ -220,6 +220,8 @@ class _MainScreenState extends State<MainScreen> {
             selectedQuizCategory = "Science";
           });
           navProvider.setIndex(0);
+        } else if (navProvider.currentIndex == 11) {
+          navProvider.setIndex(4);
         } else {
           navProvider.setIndex(0);
         }

@@ -233,10 +233,10 @@ class _MaterialDetailPageState extends State<MaterialDetailPage> {
                   isAdding
                       ? (isEnglish
                             ? "Added to bookmarks"
-                            : "Ditambah ke penanda buku")
+                            : "Ditambah ke tanda buku")
                       : (isEnglish
                             ? "Bookmark removed"
-                            : "Penanda buku telah dialih keluar"),
+                            : "Tanda buku telah dialih keluar"),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
