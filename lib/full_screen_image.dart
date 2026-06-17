@@ -3,13 +3,8 @@ import 'package:photo_view/photo_view.dart';
 
 class FullScreenImage extends StatelessWidget {
   final String assetPath;
-  final bool isNetwork;
 
-  const FullScreenImage({
-    super.key,
-    required this.assetPath,
-    this.isNetwork = false,
-  });
+  const FullScreenImage({super.key, required this.assetPath});
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +16,7 @@ class FullScreenImage extends StatelessWidget {
             child: Hero(
               tag: assetPath,
               child: PhotoView(
-                imageProvider: isNetwork
-                    ? NetworkImage(assetPath) as ImageProvider
-                    : AssetImage(assetPath) as ImageProvider,
+                imageProvider: AssetImage(assetPath),
                 initialScale: PhotoViewComputedScale.contained,
                 minScale: PhotoViewComputedScale.contained * 0.8,
                 maxScale: PhotoViewComputedScale.covered * 4.0,
